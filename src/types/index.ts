@@ -56,6 +56,8 @@ export interface Interview {
   checkpoints_memo: string | null
   positives: string | null
   negatives: string | null
+  neo_connection: string | null    // NEOとキャリアの接続ポイント
+  neo_strategy: string | null      // NEO活用方針
   final_comment: string | null
 
   verdict: '合格' | 'ボーダー' | '不合格' | null
