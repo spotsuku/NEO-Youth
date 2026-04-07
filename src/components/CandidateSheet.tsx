@@ -4,8 +4,8 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import { Candidate, Interview, EvalLabel, SCORE_CRITERIA } from '@/types'
 import styles from './CandidateSheet.module.css'
 
-const COLORS: string[] = ['#c0392b','#2563a8','#2e7d52','#6b3fa0','#c4882a','#1a6b7a','#8b3a62']
-function getColor(persona: string | null): string {
+const COLORS = ['#c0392b','#2563a8','#2e7d52','#6b3fa0','#c4882a','#1a6b7a','#8b3a62']
+function getColor(persona: string | null) {
   if (!persona) return COLORS[0]
   if (persona.includes('起業')) return COLORS[0]
   if (persona.includes('クリエイター')) return COLORS[4]
@@ -24,27 +24,24 @@ const FIELD_LABELS: Record<string, string> = {
   own_challenge: '自分の課題は何か',
   neo_connection: 'NEOとキャリアの接続ポイント',
   neo_strategy: 'NEO活用方針',
-  final_comment: '総評', verdict: '最終判定',
-  verdict_reason: '判定理由',
+  final_comment: '総評', verdict: '最終判定', verdict_reason: '判定理由',
 }
 
 interface Log {
-  id: number
-  field_name: string
-  old_value: string
-  new_value: string
-  changed_by: string
-  changed_at: string
+  id: number; field_name: string; old_value: string
+  new_value: string; changed_by: string; changed_at: string
 }
 
 interface Props {
   candidate: Candidate
   interview: Interview | null
   onSave: (data: Partial<Interview>) => Promise<void>
+  onCandidateUpdate: (name: string, data: Partial<Candidate>) => void
   getEvalLetter: (ev: string | null) => EvalLabel
 }
 
 type ScoreKey = 'score_smile'|'score_respect'|'score_premise'|'score_passion'|'score_thinking'|'score_honest'
+type SaveStatus = 'idle'|'saving'|'saved'|'error'
 
 const emptyForm = (): Partial<Interview> => ({
   interview_date: '', interviewer: '',
@@ -55,30 +52,28 @@ const emptyForm = (): Partial<Interview> => ({
   final_comment: '', verdict: null, verdict_reason: '',
 })
 
-type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
-
-export default function CandidateSheet({ candidate: c, interview, onSave, getEvalLetter }: Props) {
+export default function CandidateSheet({ candidate: c, interview, onSave, onCandidateUpdate, getEvalLetter }: Props) {
   const [form, setForm] = useState<Partial<Interview>>(() => ({ ...emptyForm(), ...(interview ?? {}) }))
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
   const [logs, setLogs] = useState<Log[]>([])
   const [showLogs, setShowLogs] = useState(false)
+  const [editMode, setEditMode] = useState(false)
+  const [candEdit, setCandEdit] = useState<Partial<Candidate>>({})
+  const [candSaving, setCandSaving] = useState(false)
+  const [candSaved, setCandSaved] = useState(false)
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const lastSaved = useRef<Partial<Interview>>(form)
 
   useEffect(() => {
-    const next = { ...emptyForm(), ...(interview ?? {}) }
-    setForm(next)
-    lastSaved.current = next
+    setForm({ ...emptyForm(), ...(interview ?? {}) })
     setSaveStatus('idle')
+    setEditMode(false)
+    setCandEdit({})
   }, [interview, c.name])
 
-  // 変更ログ取得
   useEffect(() => {
     if (!showLogs) return
     fetch(`/api/interviews/${encodeURIComponent(c.name)}`)
-      .then(r => r.json())
-      .then(data => Array.isArray(data) && setLogs(data))
-      .catch(() => {})
+      .then(r => r.json()).then(d => Array.isArray(d) && setLogs(d)).catch(() => {})
   }, [showLogs, c.name])
 
   const color = getColor(c.persona)
@@ -86,69 +81,71 @@ export default function CandidateSheet({ candidate: c, interview, onSave, getEva
   const evalClassMap: Record<string, string> = { A: styles.evA, B: styles.evB, C: styles.evC, D: styles.evD }
   const evalClass = evalClassMap[evL] ?? styles.evC
 
-  // 即時保存（ボタン押下）
   const doSave = useCallback(async (data: Partial<Interview>) => {
     setSaveStatus('saving')
     try {
       await onSave(data)
-      lastSaved.current = data
       setSaveStatus('saved')
       setTimeout(() => setSaveStatus('idle'), 3000)
-    } catch {
-      setSaveStatus('error')
-    }
+    } catch { setSaveStatus('error') }
   }, [onSave])
 
-  // フィールド変更 → 1.5秒後に自動保存
   const set = useCallback((key: keyof Interview, val: unknown) => {
     setForm(prev => {
       const next = { ...prev, [key]: val }
-      // 自動保存タイマーリセット
       if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
       setSaveStatus('saving')
-      autoSaveTimer.current = setTimeout(() => {
-        doSave(next)
-      }, 1500)
+      autoSaveTimer.current = setTimeout(() => doSave(next), 1500)
       return next
     })
   }, [doSave])
 
+  const saveCandEdit = useCallback(async () => {
+    if (Object.keys(candEdit).length === 0) { setEditMode(false); return }
+    setCandSaving(true)
+    try {
+      const res = await fetch(`/api/candidates/${encodeURIComponent(c.name)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(candEdit),
+      })
+      if (res.ok) {
+        const updated = await res.json()
+        onCandidateUpdate(c.name, updated)
+        setCandSaved(true)
+        setTimeout(() => { setCandSaved(false); setEditMode(false); setCandEdit({}) }, 2000)
+      }
+    } finally { setCandSaving(false) }
+  }, [c.name, candEdit, onCandidateUpdate])
+
+  const setCand = (key: keyof Candidate, val: string) => setCandEdit(prev => ({ ...prev, [key]: val }))
+  const cv = (key: keyof Candidate) => (key in candEdit ? candEdit[key] : c[key]) as string ?? ''
+
   const scoreTotal = SCORE_CRITERIA.reduce((s, cr) => s + (form[cr.key as ScoreKey] ?? 0), 0)
   const hasScore = SCORE_CRITERIA.some(cr => form[cr.key as ScoreKey] !== null)
-
   const overallColor = c.overall === '採用' || c.overall === '合格' ? 'var(--grn)'
     : c.overall === 'ボーダー' ? 'var(--gold)' : 'var(--red)'
   const checkPts = (c.check_points ?? '').split(/[。\n]/).filter(s => s.trim())
-
-  const saveLabel = saveStatus === 'saving' ? '保存中…'
-    : saveStatus === 'saved' ? '✓ 保存済み'
-    : saveStatus === 'error' ? '⚠ 保存失敗'
-    : '💾 保存する'
+  const saveLabel = saveStatus === 'saving' ? '保存中…' : saveStatus === 'saved' ? '✓ 保存済み'
+    : saveStatus === 'error' ? '⚠ 保存失敗' : '💾 保存する'
 
   return (
     <div className={styles.sheet}>
-      {/* ── 保存ステータスバー ── */}
+      {/* ── ステータスバー ── */}
       <div className={`${styles.statusBar} ${styles['status_' + saveStatus]}`}>
-        <span>{saveStatus === 'saving' ? '⏳ 自動保存中…'
-          : saveStatus === 'saved' ? '✓ Supabaseに保存済み'
-          : saveStatus === 'error' ? '⚠ 保存に失敗しました。再度保存ボタンを押してください'
-          : '　'}</span>
-        <button className={styles.logBtn} onClick={() => setShowLogs(v => !v)}>
-          🕐 変更ログ {showLogs ? '▲' : '▼'}
-        </button>
+        <span>{saveStatus === 'saving' ? '⏳ 自動保存中…' : saveStatus === 'saved' ? '✓ Supabaseに保存済み'
+          : saveStatus === 'error' ? '⚠ 保存に失敗しました。再度保存ボタンを押してください' : '　'}</span>
+        <button className={styles.logBtn} onClick={() => setShowLogs(v => !v)}>🕐 変更ログ {showLogs ? '▲' : '▼'}</button>
       </div>
 
-      {/* ── 変更ログパネル ── */}
+      {/* ── 変更ログ ── */}
       {showLogs && (
         <div className={styles.logPanel}>
           <div className={styles.logTitle}>変更ログ（直近50件）</div>
-          {logs.length === 0
-            ? <div className={styles.logEmpty}>まだ変更ログはありません</div>
+          {logs.length === 0 ? <div className={styles.logEmpty}>まだ変更ログはありません</div>
             : logs.map(log => (
               <div key={log.id} className={styles.logRow}>
-                <span className={styles.logTime}>
-                  {new Date(log.changed_at).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}
-                </span>
+                <span className={styles.logTime}>{new Date(log.changed_at).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}</span>
                 <span className={styles.logWho}>{log.changed_by}</span>
                 <span className={styles.logField}>{FIELD_LABELS[log.field_name] ?? log.field_name}</span>
                 <span className={styles.logVal}>
@@ -156,8 +153,7 @@ export default function CandidateSheet({ candidate: c, interview, onSave, getEva
                   <strong>{log.new_value.substring(0, 40)}</strong>
                 </span>
               </div>
-            ))
-          }
+            ))}
         </div>
       )}
 
@@ -189,7 +185,7 @@ export default function CandidateSheet({ candidate: c, interview, onSave, getEva
         </div>
       </div>
 
-      {/* ── 2次選考採点 + 応募書類 ── */}
+      {/* ── 2次採点 + 応募書類 ── */}
       <div className={styles.grid2}>
         <div className={styles.card}>
           <div className={styles.cardTitle}>2次選考 採点</div>
@@ -209,30 +205,85 @@ export default function CandidateSheet({ candidate: c, interview, onSave, getEva
           </div>
           {c.sec2_comment && <div className={styles.sec2Comment}>{c.sec2_comment}</div>}
         </div>
+
         <div className={styles.card}>
-          <div className={styles.cardTitle}>応募書類 サマリー</div>
-          {c.motivation && <div className={styles.docBlock}><div className={styles.docLabel}>応募動機</div><div className={styles.docText}>{c.motivation}</div></div>}
-          {c.pr && <div className={styles.docBlock}><div className={styles.docLabel}>自己PR・実績</div><div className={styles.docText}>{c.pr}</div></div>}
-          {c.career && <div className={styles.docBlock}><div className={styles.docLabel}>卒業後キャリア</div><div className={styles.docText}>{c.career}</div></div>}
+          <div className={styles.cardTitle}>
+            応募書類 サマリー
+            <button
+              className={`${styles.editToggleBtn} ${editMode ? styles.editToggleBtnOn : ''}`}
+              onClick={() => { setEditMode(v => !v); setCandEdit({}) }}
+            >{editMode ? '✕ キャンセル' : '✏ 編集'}</button>
+          </div>
+          {editMode ? (
+            <div className={styles.editCandForm}>
+              <div className={styles.editCandField}>
+                <div className={styles.editCandLabel}>応募動機</div>
+                <textarea className={styles.editCandArea} value={cv('motivation')} onChange={e => setCand('motivation', e.target.value)} />
+              </div>
+              <div className={styles.editCandField}>
+                <div className={styles.editCandLabel}>自己PR・実績</div>
+                <textarea className={styles.editCandArea} value={cv('pr')} onChange={e => setCand('pr', e.target.value)} />
+              </div>
+              <div className={styles.editCandField}>
+                <div className={styles.editCandLabel}>卒業後キャリア</div>
+                <textarea className={`${styles.editCandArea} ${styles.editCandShort}`} value={cv('career')} onChange={e => setCand('career', e.target.value)} />
+              </div>
+              <button
+                className={`${styles.editCandSave} ${candSaved ? styles.editCandSaveDone : ''}`}
+                onClick={saveCandEdit} disabled={candSaving}
+              >{candSaving ? '保存中…' : candSaved ? '✓ 保存しました' : '💾 書類データを保存'}</button>
+            </div>
+          ) : (
+            <>
+              {c.motivation && <div className={styles.docBlock}><div className={styles.docLabel}>応募動機</div><div className={styles.docText}>{c.motivation}</div></div>}
+              {c.pr && <div className={styles.docBlock}><div className={styles.docLabel}>自己PR・実績</div><div className={styles.docText}>{c.pr}</div></div>}
+              {c.career && <div className={styles.docBlock}><div className={styles.docLabel}>卒業後キャリア</div><div className={styles.docText}>{c.career}</div></div>}
+            </>
+          )}
         </div>
       </div>
 
       {/* ── 強み / 懸念 ── */}
       <div className={styles.grid2}>
-        {c.strengths && <div className={styles.highlightBox}><div className={styles.hlTitle}>💪 強み（1次選考評価）</div><div className={styles.hlText}>{c.strengths}</div></div>}
-        {c.concerns && <div className={styles.warningBox}><div className={styles.warnTitle}>⚠ 懸念点（1次選考評価）</div><div className={styles.warnText}>{c.concerns}</div></div>}
+        <div className={styles.highlightBox}>
+          <div className={styles.hlTitle}>💪 強み（1次選考評価）{editMode && <span className={styles.editingBadge}>編集中</span>}</div>
+          {editMode
+            ? <textarea className={styles.editCandArea} value={cv('strengths')} onChange={e => setCand('strengths', e.target.value)} />
+            : <div className={styles.hlText}>{c.strengths}</div>}
+        </div>
+        <div className={styles.warningBox}>
+          <div className={styles.warnTitle}>⚠ 懸念点（1次選考評価）{editMode && <span className={styles.editingBadge}>編集中</span>}</div>
+          {editMode
+            ? <textarea className={styles.editCandArea} value={cv('concerns')} onChange={e => setCand('concerns', e.target.value)} />
+            : <div className={styles.warnText}>{c.concerns}</div>}
+        </div>
       </div>
 
-      {c.overall_comment && (
+      {/* ── 1次総評 ── */}
+      {(c.overall_comment || editMode) && (
         <div className={styles.card} style={{ marginBottom: '0.85rem' }}>
           <div className={styles.cardTitle}>
             1次選考 総評
-            {c.overall && <span className={styles.overallChip} style={{ color: overallColor, borderColor: overallColor }}>{c.overall}</span>}
+            {c.overall && !editMode && <span className={styles.overallChip} style={{ color: overallColor, borderColor: overallColor }}>{c.overall}</span>}
+            {editMode && <span className={styles.editingBadge}>編集中</span>}
           </div>
-          <div className={styles.docText}>{c.overall_comment}</div>
+          {editMode
+            ? <textarea className={styles.editCandArea} value={cv('overall_comment')} onChange={e => setCand('overall_comment', e.target.value)} />
+            : <div className={styles.docText}>{c.overall_comment}</div>}
         </div>
       )}
 
+      {/* 編集モード中の保存ボタン（下部にも表示） */}
+      {editMode && (
+        <div style={{ marginBottom: '0.85rem', textAlign: 'right' }}>
+          <button
+            className={`${styles.editCandSave} ${candSaved ? styles.editCandSaveDone : ''}`}
+            onClick={saveCandEdit} disabled={candSaving}
+          >{candSaving ? '保存中…' : candSaved ? '✓ 保存しました' : '💾 書類・評価データを保存'}</button>
+        </div>
+      )}
+
+      {/* ── 確認ポイント ── */}
       {checkPts.length > 0 && (
         <div className={styles.checkCard}>
           <div className={styles.cardTitle}>🎯 最終面接での確認ポイント</div>
@@ -263,7 +314,6 @@ export default function CandidateSheet({ candidate: c, interview, onSave, getEva
         </div>
       </div>
 
-      {/* ── 採点 ── */}
       <div className={styles.card} style={{ marginBottom: '0.85rem' }}>
         <div className={styles.cardTitle}>最終面接 採点（各 /4点 合計 /24点）</div>
         <div className={styles.scoreInputGrid}>
@@ -321,20 +371,19 @@ export default function CandidateSheet({ candidate: c, interview, onSave, getEva
           value={form.own_challenge ?? ''} onChange={e => set('own_challenge', e.target.value)} />
       </div>
 
-      {/* ── NEO特有の2項目 ── */}
       <div className={styles.neoGrid}>
         <div className={styles.neoCard}>
           <div className={styles.neoCardTitle}>🔗 NEOとキャリアの接続ポイント</div>
           <div className={styles.neoCardSub}>この候補者のキャリアビジョンとNEOのプログラムがどう接続しているか</div>
           <textarea className={`${styles.textarea} ${styles.tall}`}
-            placeholder="例: 環境ビジネスの起業を目指しており、NEOのパートナー企業との実践PJが直接的な事業検証の場になる。1期生との人脈形成も将来の共同創業者探しに繋がる可能性がある。"
+            placeholder="例: 環境ビジネスの起業を目指しており、NEOのパートナー企業との実践PJが直接的な事業検証の場になる。"
             value={form.neo_connection ?? ''} onChange={e => set('neo_connection', e.target.value)} />
         </div>
         <div className={styles.neoCard}>
           <div className={styles.neoCardTitle}>🎯 NEO活用方針</div>
           <div className={styles.neoCardSub}>NEO入学後、この候補者をどう活かし・育てるか</div>
           <textarea className={`${styles.textarea} ${styles.tall}`}
-            placeholder="例: 起業型PJのリーダーとして配置し、事業創出フェーズで中心的役割を担わせる。メンターには経営者視点の強い企業担当者をアサインする。"
+            placeholder="例: 起業型PJのリーダーとして配置し、事業創出フェーズで中心的役割を担わせる。"
             value={form.neo_strategy ?? ''} onChange={e => set('neo_strategy', e.target.value)} />
         </div>
       </div>
@@ -345,7 +394,6 @@ export default function CandidateSheet({ candidate: c, interview, onSave, getEva
           value={form.final_comment ?? ''} onChange={e => set('final_comment', e.target.value)} />
       </div>
 
-      {/* ── 判定 ── */}
       <div className={styles.card} style={{ marginBottom: '0.85rem' }}>
         <div className={styles.cardTitle}>最終判定</div>
         <div className={styles.verdictRow}>
@@ -353,9 +401,7 @@ export default function CandidateSheet({ candidate: c, interview, onSave, getEva
             <button key={v}
               className={`${styles.verdictBtn} ${v === '合格' ? styles.vPass : v === 'ボーダー' ? styles.vBorder : styles.vFail} ${form.verdict === v ? styles.verdictSel : ''}`}
               onClick={() => set('verdict', form.verdict === v ? null : v)}
-            >
-              {v === '合格' ? '✓ 合格' : v === 'ボーダー' ? '△ ボーダー' : '✕ 不合格'}
-            </button>
+            >{v === '合格' ? '✓ 合格' : v === 'ボーダー' ? '△ ボーダー' : '✕ 不合格'}</button>
           ))}
         </div>
         <div className={styles.field}>
@@ -367,11 +413,8 @@ export default function CandidateSheet({ candidate: c, interview, onSave, getEva
 
       <button
         className={`${styles.saveBtn} ${saveStatus === 'saved' ? styles.saveBtnSaved : saveStatus === 'error' ? styles.saveBtnError : ''}`}
-        onClick={() => doSave(form)}
-        disabled={saveStatus === 'saving'}
-      >
-        {saveLabel}
-      </button>
+        onClick={() => doSave(form)} disabled={saveStatus === 'saving'}
+      >{saveLabel}</button>
       <div style={{ height: '2.5rem' }} />
     </div>
   )
