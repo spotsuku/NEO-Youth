@@ -214,6 +214,49 @@
 .verdictSel.vBorder { background: var(--gold) !important; color: #fff; box-shadow: 0 3px 8px rgba(196,136,42,0.25); }
 .verdictSel.vFail   { background: var(--red)  !important; color: #fff; box-shadow: 0 3px 8px rgba(192,57,43,0.25); }
 
+/* ── 候補者データ編集UI ── */
+.editToggleBtn {
+  margin-left: auto;
+  font-size: 0.62rem; font-weight: 600;
+  padding: 0.15rem 0.55rem; border-radius: 3px;
+  border: 1px solid var(--bd2); background: var(--sur2);
+  color: var(--ink2); cursor: pointer; transition: all 0.1s;
+}
+.editToggleBtn:hover { border-color: var(--red); color: var(--red); }
+.editToggleBtnOn { background: var(--ink); color: #fff; border-color: var(--ink); }
+.editToggleBtnOn:hover { background: #2a201a; border-color: #2a201a; color: #fff; }
+
+.editingBadge {
+  font-size: 0.55rem; font-weight: 600;
+  padding: 0.1rem 0.38rem; border-radius: 3px;
+  background: rgba(196,136,42,0.15); color: var(--gold);
+  border: 1px solid rgba(196,136,42,0.3); margin-left: 0.4rem;
+}
+
+.editCandForm { display: flex; flex-direction: column; gap: 0.55rem; }
+.editCandField { }
+.editCandLabel { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mu); margin-bottom: 0.22rem; }
+.editCandArea {
+  width: 100%; padding: 0.5rem 0.65rem;
+  border: 1.5px solid var(--gold); border-radius: 5px;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-size: 0.78rem; color: var(--ink); background: rgba(196,136,42,0.04);
+  resize: vertical; outline: none; min-height: 72px;
+}
+.editCandArea:focus { border-color: var(--red); background: #fff; box-shadow: 0 0 0 3px rgba(192,57,43,0.07); }
+.editCandShort { min-height: 44px; }
+
+.editCandSave {
+  padding: 0.6rem 1rem; background: var(--ink); color: #fff;
+  border: none; border-radius: 5px;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-size: 0.78rem; font-weight: 700;
+  cursor: pointer; transition: all 0.1s; align-self: flex-end;
+}
+.editCandSave:hover:not(:disabled) { background: #2a201a; }
+.editCandSave:disabled { opacity: 0.6; cursor: not-allowed; }
+.editCandSaveDone { background: var(--grn) !important; }
+
 /* ── NEO特有の2項目 ── */
 .neoGrid {
   display: grid;
