@@ -68,23 +68,22 @@ export default function InterviewDashboard({ candidates: rawCandidates, initialI
 
   const current = candidates[currentIdx]
 
-  const handleSave = useCallback(async (interview: Partial<Interview>) => {
-    if (!current) return
+  const handleSave = useCallback(async (candidateName: string, interview: Partial<Interview>) => {
     setSaving(true)
     try {
-      const res = await fetch(`/api/interviews/${encodeURIComponent(current.name)}`, {
+      const res = await fetch(`/api/interviews/${encodeURIComponent(candidateName)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(interview),
       })
       if (res.ok) {
         const saved = await res.json()
-        setInterviews(prev => ({ ...prev, [current.name]: saved }))
+        setInterviews(prev => ({ ...prev, [candidateName]: saved }))
       }
     } finally {
       setSaving(false)
     }
-  }, [current])
+  }, [])
 
   const savedCount = Object.keys(interviews).filter(n => {
     const iv = interviews[n]
@@ -127,7 +126,7 @@ export default function InterviewDashboard({ candidates: rawCandidates, initialI
             key={current.name}
             candidate={{ ...current, ...(candOverrides[current.name] ?? {}) }}
             interview={interviews[current.name] ?? null}
-            onSave={handleSave}
+            onSave={(data) => handleSave(current.name, data)}
             onCandidateUpdate={handleCandidateUpdate}
             getEvalLetter={getEvalLetter}
           />
