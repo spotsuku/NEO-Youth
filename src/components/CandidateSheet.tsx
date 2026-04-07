@@ -21,6 +21,7 @@ const FIELD_LABELS: Record<string, string> = {
   score_thinking: '地頭力', score_honest: '素直さ',
   impression: '第一印象', checkpoints_memo: '確認ポイント回答',
   positives: '良かった点', negatives: '懸念点',
+  own_challenge: '自分の課題は何か',
   neo_connection: 'NEOとキャリアの接続ポイント',
   neo_strategy: 'NEO活用方針',
   final_comment: '総評', verdict: '最終判定',
@@ -50,7 +51,7 @@ const emptyForm = (): Partial<Interview> => ({
   score_smile: null, score_respect: null, score_premise: null,
   score_passion: null, score_thinking: null, score_honest: null,
   impression: '', checkpoints_memo: '', positives: '',
-  negatives: '', neo_connection: '', neo_strategy: '',
+  negatives: '', own_challenge: '', neo_connection: '', neo_strategy: '',
   final_comment: '', verdict: null, verdict_reason: '',
 })
 
@@ -313,6 +314,11 @@ export default function CandidateSheet({ candidate: c, interview, onSave, getEva
         <label className={styles.fieldLabel}>懸念が残る点・気になった点</label>
         <textarea className={styles.textarea} placeholder="回答の不明瞭さ、矛盾点、コミットメントへの疑問など..."
           value={form.negatives ?? ''} onChange={e => set('negatives', e.target.value)} />
+      </div>
+      <div className={styles.field}>
+        <label className={styles.fieldLabel}>自分の課題は何か</label>
+        <textarea className={styles.textarea} placeholder="候補者自身が認識している課題・弱点・改善したい点など..."
+          value={form.own_challenge ?? ''} onChange={e => set('own_challenge', e.target.value)} />
       </div>
 
       {/* ── NEO特有の2項目 ── */}
