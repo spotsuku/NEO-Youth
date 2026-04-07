@@ -97,3 +97,7 @@
 .bBorder { background: rgba(196,136,42,0.27); color: #f0b552; }
 .bFail   { background: rgba(192,57,43,0.27); color: #f07060; }
 .bNone   { background: rgba(130,130,130,0.12); color: rgba(255,255,255,0.3); }
+
+@media print {
+  .sb { display: none !important; }
+}
