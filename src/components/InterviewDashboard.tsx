@@ -11,7 +11,15 @@ interface Props {
   initialInterviews: Interview[]
 }
 
-export default function InterviewDashboard({ candidates, initialInterviews }: Props) {
+export default function InterviewDashboard({ candidates: rawCandidates, initialInterviews }: Props) {
+  // 50音順ソート（かなで並べ、かながない場合は漢字で）
+  const candidates = useMemo(() =>
+    [...rawCandidates].sort((a, b) => {
+      const ka = a.kana || a.name
+      const kb = b.kana || b.name
+      return ka.localeCompare(kb, 'ja')
+    }), [rawCandidates]
+  )
   const [currentIdx, setCurrentIdx] = useState(0)
   const [filter, setFilter] = useState<FilterType>('all')
   const [search, setSearch] = useState('')
@@ -88,13 +96,7 @@ export default function InterviewDashboard({ candidates, initialInterviews }: Pr
       />
       <div style={{ marginLeft: '252px', flex: 1, minHeight: '100vh', minWidth: 0, background: 'var(--bg)', width: 'calc(100% - 252px)' }}>
         <div className={styles.topbar}>
-          <div>
-            <div className={styles.topbarName}>{current?.name ?? '—'}</div>
-            <div className={styles.topbarSub}>
-              {current ? `${current.org ?? ''} · ${current.persona ?? ''} · ${current.final_date ?? '日程未定'}` : ''}
-            </div>
-          </div>
-          <div className={styles.topbarRight}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span className={styles.counter}>{currentIdx + 1} / {candidates.length}</span>
             <button className={styles.tbBtn} onClick={() => setCurrentIdx(i => Math.max(0, i - 1))}>← 前</button>
             <button className={styles.tbBtn} onClick={() => setCurrentIdx(i => Math.min(candidates.length - 1, i + 1))}>次 →</button>
