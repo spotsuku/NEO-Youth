@@ -55,3 +55,11 @@
 .tbBtn:hover { background: var(--bg); }
 
 .saving { font-size: 0.7rem; color: var(--gold); font-weight: 600; }
+
+@media print {
+  .topbar { display: none !important; }
+  .main {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+}
