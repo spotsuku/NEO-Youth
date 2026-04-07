@@ -38,6 +38,11 @@ export default function InterviewDashboard({ candidates: rawCandidates, initialI
     return map
   })
   const [saving, setSaving] = useState(false)
+  // 候補者データのローカル更新（編集保存後に即時反映）
+  const [candOverrides, setCandOverrides] = useState<Record<string, Partial<Candidate>>>({})
+  const handleCandidateUpdate = useCallback((name: string, data: Partial<Candidate>) => {
+    setCandOverrides(prev => ({ ...prev, [name]: { ...(prev[name] ?? {}), ...data } }))
+  }, [])
 
   const getEvalLetter = (ev: string | null): EvalLabel => {
     if (!ev) return '?'
@@ -120,9 +125,10 @@ export default function InterviewDashboard({ candidates: rawCandidates, initialI
         {current && (
           <CandidateSheet
             key={current.name}
-            candidate={current}
+            candidate={{ ...current, ...(candOverrides[current.name] ?? {}) }}
             interview={interviews[current.name] ?? null}
             onSave={handleSave}
+            onCandidateUpdate={handleCandidateUpdate}
             getEvalLetter={getEvalLetter}
           />
         )}
