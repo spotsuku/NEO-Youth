@@ -17,7 +17,7 @@ async function recordLogs(
     'score_smile','score_respect','score_premise',
     'score_passion','score_thinking','score_honest',
     'impression','checkpoints_memo','positives',
-    'negatives','neo_connection','neo_strategy',
+    'negatives','own_challenge','neo_connection','neo_strategy',
     'final_comment','verdict','verdict_reason',
   ]
   const logs = TRACKED
@@ -66,6 +66,7 @@ export async function PUT(
     checkpoints_memo: body.checkpoints_memo ?? null,
     positives:        body.positives        ?? null,
     negatives:        body.negatives        ?? null,
+    own_challenge:    body.own_challenge    ?? null,
     neo_connection:   body.neo_connection   ?? null,
     neo_strategy:     body.neo_strategy     ?? null,
     final_comment:    body.final_comment    ?? null,
