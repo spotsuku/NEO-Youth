@@ -214,6 +214,36 @@
 .verdictSel.vBorder { background: var(--gold) !important; color: #fff; box-shadow: 0 3px 8px rgba(196,136,42,0.25); }
 .verdictSel.vFail   { background: var(--red)  !important; color: #fff; box-shadow: 0 3px 8px rgba(192,57,43,0.25); }
 
+/* ── NEO特有の2項目 ── */
+.neoGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+  margin-bottom: 0.85rem;
+}
+
+.neoCard {
+  background: linear-gradient(135deg, rgba(192,57,43,0.04) 0%, rgba(196,136,42,0.04) 100%);
+  border: 1.5px solid rgba(192,57,43,0.2);
+  border-radius: 8px;
+  padding: 1rem 1.1rem;
+}
+
+.neoCardTitle {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--red);
+  margin-bottom: 0.22rem;
+  letter-spacing: 0.04em;
+}
+
+.neoCardSub {
+  font-size: 0.62rem;
+  color: var(--mu);
+  margin-bottom: 0.55rem;
+  line-height: 1.5;
+}
+
 /* ── Save Button ── */
 .saveBtn {
   width: 100%; padding: 0.82rem;
@@ -223,12 +253,57 @@
   font-size: 0.85rem; font-weight: 700;
   cursor: pointer; transition: all 0.12s;
 }
-.saveBtn:hover { background: #2a201a; transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,0.18); }
+.saveBtn:hover:not(:disabled) { background: #2a201a; transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,0.18); }
+.saveBtn:disabled { opacity: 0.6; cursor: not-allowed; }
 .saveBtnSaved  { background: var(--grn) !important; }
+.saveBtnError  { background: var(--red) !important; }
+
+/* ── Status Bar ── */
+.statusBar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.45rem 0.9rem; border-radius: 6px; margin-bottom: 0.85rem;
+  font-size: 0.75rem; font-weight: 500;
+  background: var(--sur); border: 1px solid var(--bd);
+  min-height: 36px;
+  transition: background 0.3s, border-color 0.3s;
+}
+.status_saving { background: rgba(196,136,42,0.07); border-color: rgba(196,136,42,0.3); color: var(--gold); }
+.status_saved  { background: rgba(46,125,82,0.07);  border-color: rgba(46,125,82,0.3);  color: var(--grn); }
+.status_error  { background: rgba(192,57,43,0.07);  border-color: rgba(192,57,43,0.3);  color: var(--red); }
+.status_idle   { color: var(--mu); }
+
+.logBtn {
+  font-size: 0.68rem; padding: 0.2rem 0.65rem;
+  border: 1px solid var(--bd2); border-radius: 4px;
+  background: var(--sur2); color: var(--ink2);
+  cursor: pointer; white-space: nowrap; flex-shrink: 0;
+}
+.logBtn:hover { background: var(--bg); }
+
+/* ── Change Log Panel ── */
+.logPanel {
+  background: var(--sur); border: 1px solid var(--bd);
+  border-radius: 7px; padding: 0.9rem 1rem;
+  margin-bottom: 0.85rem; max-height: 280px; overflow-y: auto;
+}
+.logTitle { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--mu); margin-bottom: 0.6rem; }
+.logEmpty { font-size: 0.78rem; color: var(--mu); text-align: center; padding: 0.5rem; }
+.logRow {
+  display: grid; grid-template-columns: 140px 80px 90px 1fr;
+  gap: 0.5rem; align-items: start;
+  padding: 0.38rem 0; border-bottom: 1px solid var(--bd);
+  font-size: 0.72rem;
+}
+.logRow:last-child { border-bottom: none; }
+.logTime  { color: var(--mu); white-space: nowrap; }
+.logWho   { color: var(--blu); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.logField { color: var(--gold); font-weight: 600; }
+.logVal   { color: var(--ink2); word-break: break-all; }
+.logOld   { color: var(--mu); text-decoration: line-through; }
 
 /* ── Print ── */
 @media print {
   .sheet { padding: 0.5rem; }
-  .saveBtn, .checkItem input { display: none; }
+  .saveBtn, .statusBar, .logPanel, .checkItem input { display: none; }
   .grid2 { grid-template-columns: 1fr; }
 }
