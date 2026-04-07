@@ -72,7 +72,7 @@ export default function InterviewDashboard({ candidates, initialInterviews }: Pr
   const passCount = Object.values(interviews).filter(iv => iv?.verdict === '合格').length
 
   return (
-    <div className={styles.layout}>
+    <div style={{ display: 'flex', minHeight: '100vh', width: '100%' }}>
       <Sidebar
         candidates={candidates}
         interviews={interviews}
@@ -86,7 +86,7 @@ export default function InterviewDashboard({ candidates, initialInterviews }: Pr
         onSearch={setSearch}
         getEvalLetter={getEvalLetter}
       />
-      <div className={styles.main}>
+      <div style={{ marginLeft: '252px', flex: 1, minHeight: '100vh', minWidth: 0, background: 'var(--bg)', width: 'calc(100% - 252px)' }}>
         <div className={styles.topbar}>
           <div>
             <div className={styles.topbarName}>{current?.name ?? '—'}</div>
