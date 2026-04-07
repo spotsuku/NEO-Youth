@@ -63,12 +63,33 @@ export default function CandidateSheet({ candidate: c, interview, onSave, onCand
   const [candSaved, setCandSaved] = useState(false)
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  const formRef = useRef<Partial<Interview>>(form)
+  formRef.current = form
+
   useEffect(() => {
-    setForm({ ...emptyForm(), ...(interview ?? {}) })
+    const next = { ...emptyForm(), ...(interview ?? {}) }
+    // 候補者切り替え前にタイマーが残っていれば即座に保存
+    if (autoSaveTimer.current) {
+      clearTimeout(autoSaveTimer.current)
+      autoSaveTimer.current = null
+    }
+    setForm(next)
     setSaveStatus('idle')
     setEditMode(false)
     setCandEdit({})
   }, [interview, c.name])
+
+  // ページ離脱前に未保存タイマーがあれば同期的に警告
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (autoSaveTimer.current) {
+        e.preventDefault()
+        e.returnValue = '保存中のデータがあります。ページを離れますか？'
+      }
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [])
 
   useEffect(() => {
     if (!showLogs) return
@@ -95,7 +116,7 @@ export default function CandidateSheet({ candidate: c, interview, onSave, onCand
       const next = { ...prev, [key]: val }
       if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
       setSaveStatus('saving')
-      autoSaveTimer.current = setTimeout(() => doSave(next), 1500)
+      autoSaveTimer.current = setTimeout(() => doSave(next), 800)
       return next
     })
   }, [doSave])
