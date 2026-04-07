@@ -21,6 +21,8 @@ const FIELD_LABELS: Record<string, string> = {
   score_thinking: '地頭力', score_honest: '素直さ',
   impression: '第一印象', checkpoints_memo: '確認ポイント回答',
   positives: '良かった点', negatives: '懸念点',
+  neo_connection: 'NEOとキャリアの接続ポイント',
+  neo_strategy: 'NEO活用方針',
   final_comment: '総評', verdict: '最終判定',
   verdict_reason: '判定理由',
 }
@@ -48,7 +50,8 @@ const emptyForm = (): Partial<Interview> => ({
   score_smile: null, score_respect: null, score_premise: null,
   score_passion: null, score_thinking: null, score_honest: null,
   impression: '', checkpoints_memo: '', positives: '',
-  negatives: '', final_comment: '', verdict: null, verdict_reason: '',
+  negatives: '', neo_connection: '', neo_strategy: '',
+  final_comment: '', verdict: null, verdict_reason: '',
 })
 
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
@@ -311,6 +314,25 @@ export default function CandidateSheet({ candidate: c, interview, onSave, getEva
         <textarea className={styles.textarea} placeholder="回答の不明瞭さ、矛盾点、コミットメントへの疑問など..."
           value={form.negatives ?? ''} onChange={e => set('negatives', e.target.value)} />
       </div>
+
+      {/* ── NEO特有の2項目 ── */}
+      <div className={styles.neoGrid}>
+        <div className={styles.neoCard}>
+          <div className={styles.neoCardTitle}>🔗 NEOとキャリアの接続ポイント</div>
+          <div className={styles.neoCardSub}>この候補者のキャリアビジョンとNEOのプログラムがどう接続しているか</div>
+          <textarea className={`${styles.textarea} ${styles.tall}`}
+            placeholder="例: 環境ビジネスの起業を目指しており、NEOのパートナー企業との実践PJが直接的な事業検証の場になる。1期生との人脈形成も将来の共同創業者探しに繋がる可能性がある。"
+            value={form.neo_connection ?? ''} onChange={e => set('neo_connection', e.target.value)} />
+        </div>
+        <div className={styles.neoCard}>
+          <div className={styles.neoCardTitle}>🎯 NEO活用方針</div>
+          <div className={styles.neoCardSub}>NEO入学後、この候補者をどう活かし・育てるか</div>
+          <textarea className={`${styles.textarea} ${styles.tall}`}
+            placeholder="例: 起業型PJのリーダーとして配置し、事業創出フェーズで中心的役割を担わせる。メンターには経営者視点の強い企業担当者をアサインする。"
+            value={form.neo_strategy ?? ''} onChange={e => set('neo_strategy', e.target.value)} />
+        </div>
+      </div>
+
       <div className={styles.field}>
         <label className={styles.fieldLabel}>総評コメント</label>
         <textarea className={`${styles.textarea} ${styles.tall}`} placeholder="総合的な評価、特記事項、他候補者との比較観点など..."
