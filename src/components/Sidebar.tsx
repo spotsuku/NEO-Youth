@@ -45,7 +45,7 @@ export default function Sidebar({
   savedCount, passCount, onSelect, onFilter, onSearch, getEvalLetter,
 }: Props) {
   return (
-    <aside className={styles.sb}>
+    <aside style={{ width: '252px', background: '#1a1510', color: '#f0ece4', flexShrink: 0, position: 'fixed', top: 0, left: 0, bottom: 0, overflowY: 'auto', zIndex: 10, display: 'flex', flexDirection: 'column' }}>
       <div className={styles.sbh}>
         <div className={styles.logo}>NEO ACADEMIA 2026</div>
         <div className={styles.title}>最終面接 選考シート</div>
