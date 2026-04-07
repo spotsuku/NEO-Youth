@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { Candidate, Interview, EvalLabel, SCORE_CRITERIA } from '@/types'
 import styles from './CandidateSheet.module.css'
 
@@ -14,6 +14,26 @@ function getColor(persona: string | null): string {
   return COLORS[5]
 }
 
+const FIELD_LABELS: Record<string, string> = {
+  interview_date: '面接日', interviewer: '面接官',
+  score_smile: '笑顔', score_respect: 'リスペクト',
+  score_premise: '前提超越', score_passion: '熱量',
+  score_thinking: '地頭力', score_honest: '素直さ',
+  impression: '第一印象', checkpoints_memo: '確認ポイント回答',
+  positives: '良かった点', negatives: '懸念点',
+  final_comment: '総評', verdict: '最終判定',
+  verdict_reason: '判定理由',
+}
+
+interface Log {
+  id: number
+  field_name: string
+  old_value: string
+  new_value: string
+  changed_by: string
+  changed_at: string
+}
+
 interface Props {
   candidate: Candidate
   interview: Interview | null
@@ -21,66 +41,122 @@ interface Props {
   getEvalLetter: (ev: string | null) => EvalLabel
 }
 
-type ScoreKey = 'score_smile' | 'score_respect' | 'score_premise' | 'score_passion' | 'score_thinking' | 'score_honest'
+type ScoreKey = 'score_smile'|'score_respect'|'score_premise'|'score_passion'|'score_thinking'|'score_honest'
 
-const emptyInterview = (): Partial<Interview> => ({
-  interview_date: '',
-  interviewer: '',
-  score_smile: null,
-  score_respect: null,
-  score_premise: null,
-  score_passion: null,
-  score_thinking: null,
-  score_honest: null,
-  impression: '',
-  checkpoints_memo: '',
-  positives: '',
-  negatives: '',
-  final_comment: '',
-  verdict: null,
-  verdict_reason: '',
+const emptyForm = (): Partial<Interview> => ({
+  interview_date: '', interviewer: '',
+  score_smile: null, score_respect: null, score_premise: null,
+  score_passion: null, score_thinking: null, score_honest: null,
+  impression: '', checkpoints_memo: '', positives: '',
+  negatives: '', final_comment: '', verdict: null, verdict_reason: '',
 })
 
+type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
+
 export default function CandidateSheet({ candidate: c, interview, onSave, getEvalLetter }: Props) {
-  const [form, setForm] = useState<Partial<Interview>>(() => ({
-    ...emptyInterview(),
-    ...(interview ?? {}),
-  }))
-  const [saved, setSaved] = useState(false)
+  const [form, setForm] = useState<Partial<Interview>>(() => ({ ...emptyForm(), ...(interview ?? {}) }))
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
+  const [logs, setLogs] = useState<Log[]>([])
+  const [showLogs, setShowLogs] = useState(false)
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const lastSaved = useRef<Partial<Interview>>(form)
 
   useEffect(() => {
-    setForm({ ...emptyInterview(), ...(interview ?? {}) })
-  }, [interview])
+    const next = { ...emptyForm(), ...(interview ?? {}) }
+    setForm(next)
+    lastSaved.current = next
+    setSaveStatus('idle')
+  }, [interview, c.name])
+
+  // 変更ログ取得
+  useEffect(() => {
+    if (!showLogs) return
+    fetch(`/api/interviews/${encodeURIComponent(c.name)}`)
+      .then(r => r.json())
+      .then(data => Array.isArray(data) && setLogs(data))
+      .catch(() => {})
+  }, [showLogs, c.name])
 
   const color = getColor(c.persona)
   const evL = getEvalLetter(c.sec2_eval)
-
-  const set = (key: keyof Interview, val: unknown) => {
-    setForm(prev => ({ ...prev, [key]: val }))
-  }
-
-  const handleSave = useCallback(async () => {
-    await onSave(form)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
-  }, [form, onSave])
-
-  const scoreTotal = SCORE_CRITERIA.reduce((sum, cr) => {
-    const v = form[cr.key as ScoreKey]
-    return sum + (v ?? 0)
-  }, 0)
-  const hasScore = SCORE_CRITERIA.some(cr => form[cr.key as ScoreKey] !== null)
-
-  const overallColor = c.overall === '採用' || c.overall === '合格' ? 'var(--grn)'
-    : c.overall === 'ボーダー' ? 'var(--gold)' : c.overall === '不採用' ? 'var(--red)' : 'var(--mu)'
-
   const evalClassMap: Record<string, string> = { A: styles.evA, B: styles.evB, C: styles.evC, D: styles.evD }
   const evalClass = evalClassMap[evL] ?? styles.evC
 
+  // 即時保存（ボタン押下）
+  const doSave = useCallback(async (data: Partial<Interview>) => {
+    setSaveStatus('saving')
+    try {
+      await onSave(data)
+      lastSaved.current = data
+      setSaveStatus('saved')
+      setTimeout(() => setSaveStatus('idle'), 3000)
+    } catch {
+      setSaveStatus('error')
+    }
+  }, [onSave])
+
+  // フィールド変更 → 1.5秒後に自動保存
+  const set = useCallback((key: keyof Interview, val: unknown) => {
+    setForm(prev => {
+      const next = { ...prev, [key]: val }
+      // 自動保存タイマーリセット
+      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
+      setSaveStatus('saving')
+      autoSaveTimer.current = setTimeout(() => {
+        doSave(next)
+      }, 1500)
+      return next
+    })
+  }, [doSave])
+
+  const scoreTotal = SCORE_CRITERIA.reduce((s, cr) => s + (form[cr.key as ScoreKey] ?? 0), 0)
+  const hasScore = SCORE_CRITERIA.some(cr => form[cr.key as ScoreKey] !== null)
+
+  const overallColor = c.overall === '採用' || c.overall === '合格' ? 'var(--grn)'
+    : c.overall === 'ボーダー' ? 'var(--gold)' : 'var(--red)'
   const checkPts = (c.check_points ?? '').split(/[。\n]/).filter(s => s.trim())
+
+  const saveLabel = saveStatus === 'saving' ? '保存中…'
+    : saveStatus === 'saved' ? '✓ 保存済み'
+    : saveStatus === 'error' ? '⚠ 保存失敗'
+    : '💾 保存する'
 
   return (
     <div className={styles.sheet}>
+      {/* ── 保存ステータスバー ── */}
+      <div className={`${styles.statusBar} ${styles['status_' + saveStatus]}`}>
+        <span>{saveStatus === 'saving' ? '⏳ 自動保存中…'
+          : saveStatus === 'saved' ? '✓ Supabaseに保存済み'
+          : saveStatus === 'error' ? '⚠ 保存に失敗しました。再度保存ボタンを押してください'
+          : '　'}</span>
+        <button className={styles.logBtn} onClick={() => setShowLogs(v => !v)}>
+          🕐 変更ログ {showLogs ? '▲' : '▼'}
+        </button>
+      </div>
+
+      {/* ── 変更ログパネル ── */}
+      {showLogs && (
+        <div className={styles.logPanel}>
+          <div className={styles.logTitle}>変更ログ（直近50件）</div>
+          {logs.length === 0
+            ? <div className={styles.logEmpty}>まだ変更ログはありません</div>
+            : logs.map(log => (
+              <div key={log.id} className={styles.logRow}>
+                <span className={styles.logTime}>
+                  {new Date(log.changed_at).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}
+                </span>
+                <span className={styles.logWho}>{log.changed_by}</span>
+                <span className={styles.logField}>{FIELD_LABELS[log.field_name] ?? log.field_name}</span>
+                <span className={styles.logVal}>
+                  {log.old_value ? <><s className={styles.logOld}>{log.old_value.substring(0, 30)}</s> → </> : ''}
+                  <strong>{log.new_value.substring(0, 40)}</strong>
+                </span>
+              </div>
+            ))
+          }
+        </div>
+      )}
+
       {/* ── プロフィールヘッダー ── */}
       <div className={styles.ph}>
         <div className={styles.avatar} style={{ background: color }}>{c.name[0]}</div>
@@ -109,7 +185,7 @@ export default function CandidateSheet({ candidate: c, interview, onSave, getEva
         </div>
       </div>
 
-      {/* ── 2次選考採点 + 応募書類サマリー ── */}
+      {/* ── 2次選考採点 + 応募書類 ── */}
       <div className={styles.grid2}>
         <div className={styles.card}>
           <div className={styles.cardTitle}>2次選考 採点</div>
@@ -129,7 +205,6 @@ export default function CandidateSheet({ candidate: c, interview, onSave, getEva
           </div>
           {c.sec2_comment && <div className={styles.sec2Comment}>{c.sec2_comment}</div>}
         </div>
-
         <div className={styles.card}>
           <div className={styles.cardTitle}>応募書類 サマリー</div>
           {c.motivation && <div className={styles.docBlock}><div className={styles.docLabel}>応募動機</div><div className={styles.docText}>{c.motivation}</div></div>}
@@ -138,23 +213,12 @@ export default function CandidateSheet({ candidate: c, interview, onSave, getEva
         </div>
       </div>
 
-      {/* ── 強み / 懸念点 ── */}
+      {/* ── 強み / 懸念 ── */}
       <div className={styles.grid2}>
-        {c.strengths && (
-          <div className={styles.highlightBox}>
-            <div className={styles.hlTitle}>💪 強み（1次選考評価）</div>
-            <div className={styles.hlText}>{c.strengths}</div>
-          </div>
-        )}
-        {c.concerns && (
-          <div className={styles.warningBox}>
-            <div className={styles.warnTitle}>⚠ 懸念点（1次選考評価）</div>
-            <div className={styles.warnText}>{c.concerns}</div>
-          </div>
-        )}
+        {c.strengths && <div className={styles.highlightBox}><div className={styles.hlTitle}>💪 強み（1次選考評価）</div><div className={styles.hlText}>{c.strengths}</div></div>}
+        {c.concerns && <div className={styles.warningBox}><div className={styles.warnTitle}>⚠ 懸念点（1次選考評価）</div><div className={styles.warnText}>{c.concerns}</div></div>}
       </div>
 
-      {/* ── 1次選考総評 ── */}
       {c.overall_comment && (
         <div className={styles.card} style={{ marginBottom: '0.85rem' }}>
           <div className={styles.cardTitle}>
@@ -165,7 +229,6 @@ export default function CandidateSheet({ candidate: c, interview, onSave, getEva
         </div>
       )}
 
-      {/* ── 確認ポイント ── */}
       {checkPts.length > 0 && (
         <div className={styles.checkCard}>
           <div className={styles.cardTitle}>🎯 最終面接での確認ポイント</div>
@@ -183,7 +246,6 @@ export default function CandidateSheet({ candidate: c, interview, onSave, getEva
       <hr className={styles.divider} />
       <div className={styles.sectionLabel}>▌ 最終面接 記入欄</div>
 
-      {/* ── 面接日・面接官 ── */}
       <div className={styles.rowGrid}>
         <div className={styles.field}>
           <label className={styles.fieldLabel}>面接日</label>
@@ -197,7 +259,7 @@ export default function CandidateSheet({ candidate: c, interview, onSave, getEva
         </div>
       </div>
 
-      {/* ── 面接採点 ── */}
+      {/* ── 採点 ── */}
       <div className={styles.card} style={{ marginBottom: '0.85rem' }}>
         <div className={styles.cardTitle}>最終面接 採点（各 /4点 合計 /24点）</div>
         <div className={styles.scoreInputGrid}>
@@ -207,9 +269,8 @@ export default function CandidateSheet({ candidate: c, interview, onSave, getEva
               <div key={cr.key} className={styles.scoreInputItem}>
                 <div className={styles.scoreInputLabel}>{cr.label}</div>
                 <div className={styles.scoreInputRow}>
-                  {[1, 2, 3, 4].map(n => (
-                    <button
-                      key={n}
+                  {[1,2,3,4].map(n => (
+                    <button key={n}
                       className={`${styles.scoreBtn} ${val === n ? styles.scoreBtnSel : ''}`}
                       onClick={() => set(cr.key as keyof Interview, val === n ? null : n)}
                     >{n}</button>
@@ -228,7 +289,6 @@ export default function CandidateSheet({ candidate: c, interview, onSave, getEva
         </div>
       </div>
 
-      {/* ── テキスト記入欄 ── */}
       <div className={styles.grid2}>
         <div className={styles.field}>
           <label className={styles.fieldLabel}>第一印象・雰囲気</label>
@@ -257,13 +317,12 @@ export default function CandidateSheet({ candidate: c, interview, onSave, getEva
           value={form.final_comment ?? ''} onChange={e => set('final_comment', e.target.value)} />
       </div>
 
-      {/* ── 最終判定 ── */}
+      {/* ── 判定 ── */}
       <div className={styles.card} style={{ marginBottom: '0.85rem' }}>
         <div className={styles.cardTitle}>最終判定</div>
         <div className={styles.verdictRow}>
-          {(['合格', 'ボーダー', '不合格'] as const).map(v => (
-            <button
-              key={v}
+          {(['合格','ボーダー','不合格'] as const).map(v => (
+            <button key={v}
               className={`${styles.verdictBtn} ${v === '合格' ? styles.vPass : v === 'ボーダー' ? styles.vBorder : styles.vFail} ${form.verdict === v ? styles.verdictSel : ''}`}
               onClick={() => set('verdict', form.verdict === v ? null : v)}
             >
@@ -278,8 +337,12 @@ export default function CandidateSheet({ candidate: c, interview, onSave, getEva
         </div>
       </div>
 
-      <button className={`${styles.saveBtn} ${saved ? styles.saveBtnSaved : ''}`} onClick={handleSave}>
-        {saved ? '✓ 保存しました' : '💾 このシートを保存する'}
+      <button
+        className={`${styles.saveBtn} ${saveStatus === 'saved' ? styles.saveBtnSaved : saveStatus === 'error' ? styles.saveBtnError : ''}`}
+        onClick={() => doSave(form)}
+        disabled={saveStatus === 'saving'}
+      >
+        {saveLabel}
       </button>
       <div style={{ height: '2.5rem' }} />
     </div>
