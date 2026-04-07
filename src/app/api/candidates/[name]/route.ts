@@ -25,19 +25,40 @@ export async function PATCH(
   }
 
   if (Object.keys(patch).length === 0) {
-    return NextResponse.json({ error: '更新フィールドなし', received: Object.keys(body) }, { status: 400 })
+    return NextResponse.json({ error: '更新フィールドなし' }, { status: 400 })
   }
 
-  const { data, error } = await supabase
+  // UPDATE実行（結果件数を確認）
+  const { error: updateError } = await supabase
     .from('candidates')
     .update(patch)
     .eq('name', name)
-    .select()
-    .single()
 
-  if (error) {
-    console.error('candidates update error:', error)
-    return NextResponse.json({ error: error.message, name, patch }, { status: 500 })
+  if (updateError) {
+    return NextResponse.json({ error: updateError.message }, { status: 500 })
   }
+
+  // ilike で念のため再確認（空白・全角半角の違いに対応）
+  const { error: updateError2 } = await supabase
+    .from('candidates')
+    .update(patch)
+    .ilike('name', name.trim())
+
+  // 更新後のデータを返す（single()不使用）
+  const { data: rows } = await supabase
+    .from('candidates')
+    .select('*')
+    .eq('name', name)
+
+  const data = rows?.[0] ?? { name, ...patch }
   return NextResponse.json(data)
+}
+
+// デバッグ用：候補者名の一覧を返す
+export async function GET() {
+  const { data } = await supabase
+    .from('candidates')
+    .select('name')
+    .order('name')
+  return NextResponse.json(data ?? [])
 }
