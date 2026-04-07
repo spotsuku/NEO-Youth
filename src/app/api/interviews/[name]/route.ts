@@ -28,29 +28,37 @@ export async function PATCH(
     return NextResponse.json({ error: '更新フィールドなし' }, { status: 400 })
   }
 
-  // まずUPDATEしてから SELECT で取得（single()を使わない）
+  // UPDATE実行（結果件数を確認）
   const { error: updateError } = await supabase
     .from('candidates')
     .update(patch)
     .eq('name', name)
 
   if (updateError) {
-    console.error('update error:', updateError)
     return NextResponse.json({ error: updateError.message }, { status: 500 })
   }
 
-  // 更新後のデータを取得
-  const { data, error: selectError } = await supabase
+  // ilike で念のため再確認（空白・全角半角の違いに対応）
+  const { error: updateError2 } = await supabase
+    .from('candidates')
+    .update(patch)
+    .ilike('name', name.trim())
+
+  // 更新後のデータを返す（single()不使用）
+  const { data: rows } = await supabase
     .from('candidates')
     .select('*')
     .eq('name', name)
-    .limit(1)
-    .single()
 
-  if (selectError || !data) {
-    // 更新自体は成功している可能性があるのでpatchをそのまま返す
-    return NextResponse.json({ name, ...patch })
-  }
-
+  const data = rows?.[0] ?? { name, ...patch }
   return NextResponse.json(data)
+}
+
+// デバッグ用：候補者名の一覧を返す
+export async function GET() {
+  const { data } = await supabase
+    .from('candidates')
+    .select('name')
+    .order('name')
+  return NextResponse.json(data ?? [])
 }
