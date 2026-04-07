@@ -28,37 +28,51 @@ export async function PATCH(
     return NextResponse.json({ error: '更新フィールドなし' }, { status: 400 })
   }
 
-  // UPDATE実行（結果件数を確認）
-  const { error: updateError } = await supabase
+  // まず id を取得（名前で検索）
+  const { data: found } = await supabase
     .from('candidates')
-    .update(patch)
+    .select('id, name')
     .eq('name', name)
 
-  if (updateError) {
-    return NextResponse.json({ error: updateError.message }, { status: 500 })
+  // 完全一致で見つからない場合はtrimして再検索
+  let targetId: number | null = null
+  if (found && found.length > 0) {
+    targetId = found[0].id
+  } else {
+    const { data: found2 } = await supabase
+      .from('candidates')
+      .select('id, name')
+      .ilike('name', name.trim())
+    if (found2 && found2.length > 0) {
+      targetId = found2[0].id
+    }
   }
 
-  // ilike で念のため再確認（空白・全角半角の違いに対応）
-  const { error: updateError2 } = await supabase
+  if (!targetId) {
+    return NextResponse.json({ 
+      error: `候補者「${name}」が見つかりません`,
+      searched: name,
+    }, { status: 404 })
+  }
+
+  // id で UPDATE（名前の不一致を回避）
+  const { data, error } = await supabase
     .from('candidates')
     .update(patch)
-    .ilike('name', name.trim())
+    .eq('id', targetId)
+    .select()
 
-  // 更新後のデータを返す（single()不使用）
-  const { data: rows } = await supabase
-    .from('candidates')
-    .select('*')
-    .eq('name', name)
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
 
-  const data = rows?.[0] ?? { name, ...patch }
-  return NextResponse.json(data)
+  return NextResponse.json(data?.[0] ?? { name, ...patch })
 }
 
-// デバッグ用：候補者名の一覧を返す
 export async function GET() {
   const { data } = await supabase
     .from('candidates')
-    .select('name')
+    .select('id, name')
     .order('name')
   return NextResponse.json(data ?? [])
 }
