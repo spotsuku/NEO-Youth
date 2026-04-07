@@ -1,0 +1,50 @@
+.layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.main {
+  margin-left: 252px;
+  flex: 1;
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.topbar {
+  background: var(--sur);
+  border-bottom: 1px solid var(--bd);
+  padding: 0 1.4rem;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.topbarName { font-size: 0.92rem; font-weight: 700; }
+.topbarSub  { font-size: 0.68rem; color: var(--mu); }
+
+.topbarRight {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.counter { font-size: 0.7rem; color: var(--mu); }
+
+.tbBtn {
+  padding: 0.35rem 0.78rem;
+  background: none;
+  border: 1.5px solid var(--bd2);
+  border-radius: 4px;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-size: 0.7rem;
+  color: var(--ink2);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.tbBtn:hover { background: var(--bg); }
+
+.saving { font-size: 0.7rem; color: var(--gold); font-weight: 600; }

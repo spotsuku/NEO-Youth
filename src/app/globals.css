@@ -1,0 +1,23 @@
+:root {
+  --bg: #f5f2ec;
+  --sur: #ffffff;
+  --sur2: #faf8f4;
+  --ink: #1a1510;
+  --ink2: #4a4035;
+  --mu: #8c7d6a;
+  --bd: #e0d9ce;
+  --bd2: #c8bfb0;
+  --red: #c0392b;
+  --gold: #c4882a;
+  --grn: #2e7d52;
+  --blu: #2563a8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  min-height: 100vh;
+}
