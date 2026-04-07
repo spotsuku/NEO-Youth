@@ -20,6 +20,15 @@ export default function InterviewDashboard({ candidates: rawCandidates, initialI
       return ka.localeCompare(kb, 'ja')
     }), [rawCandidates]
   )
+
+  // 印刷用グローバルCSS（インラインスタイルを上書き）
+  const printStyle = `
+    @media print {
+      [data-sidebar] { display: none !important; }
+      [data-topbar]  { display: none !important; }
+      [data-main]    { margin-left: 0 !important; width: 100% !important; }
+    }
+  `
   const [currentIdx, setCurrentIdx] = useState(0)
   const [filter, setFilter] = useState<FilterType>('all')
   const [search, setSearch] = useState('')
@@ -80,22 +89,26 @@ export default function InterviewDashboard({ candidates: rawCandidates, initialI
   const passCount = Object.values(interviews).filter(iv => iv?.verdict === '合格').length
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', width: '100%' }}>
-      <Sidebar
-        candidates={candidates}
-        interviews={interviews}
-        currentIdx={currentIdx}
-        filter={filter}
-        search={search}
-        savedCount={savedCount}
-        passCount={passCount}
-        onSelect={setCurrentIdx}
-        onFilter={setFilter}
-        onSearch={setSearch}
-        getEvalLetter={getEvalLetter}
-      />
-      <div style={{ marginLeft: '252px', flex: 1, minHeight: '100vh', minWidth: 0, background: 'var(--bg)', width: 'calc(100% - 252px)' }}>
-        <div className={styles.topbar}>
+    <>
+      <style>{printStyle}</style>
+      <div style={{ display: 'flex', minHeight: '100vh', width: '100%' }}>
+        <div data-sidebar>
+          <Sidebar
+            candidates={candidates}
+            interviews={interviews}
+            currentIdx={currentIdx}
+            filter={filter}
+            search={search}
+            savedCount={savedCount}
+            passCount={passCount}
+            onSelect={setCurrentIdx}
+            onFilter={setFilter}
+            onSearch={setSearch}
+            getEvalLetter={getEvalLetter}
+          />
+        </div>
+        <div data-main style={{ marginLeft: '252px', flex: 1, minHeight: '100vh', minWidth: 0, background: 'var(--bg)', width: 'calc(100% - 252px)' }}>
+          <div data-topbar className={styles.topbar}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span className={styles.counter}>{currentIdx + 1} / {candidates.length}</span>
             <button className={styles.tbBtn} onClick={() => setCurrentIdx(i => Math.max(0, i - 1))}>← 前</button>
@@ -113,7 +126,8 @@ export default function InterviewDashboard({ candidates: rawCandidates, initialI
             getEvalLetter={getEvalLetter}
           />
         )}
+        </div>
       </div>
-    </div>
+    </>
   )
 }
