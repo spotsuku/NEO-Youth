@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { Candidate, Interview, EvalLabel, SCORE_CRITERIA } from '@/types'
 import styles from './CandidateSheet.module.css'
 
@@ -35,13 +35,15 @@ interface Log {
 interface Props {
   candidate: Candidate
   interview: Interview | null
-  onSave: (data: Partial<Interview>) => Promise<void>
+  candidateName: string
+  onChange: (name: string, data: Partial<Interview>) => void
+  onSaveNow: (name: string, data: Partial<Interview>) => void
   onCandidateUpdate: (name: string, data: Partial<Candidate>) => void
   getEvalLetter: (ev: string | null) => EvalLabel
+  saveStatus: 'idle' | 'saving' | 'saved' | 'error'
 }
 
 type ScoreKey = 'score_smile'|'score_respect'|'score_premise'|'score_passion'|'score_thinking'|'score_honest'
-type SaveStatus = 'idle'|'saving'|'saved'|'error'
 
 const emptyForm = (): Partial<Interview> => ({
   interview_date: '', interviewer: '',
@@ -52,92 +54,61 @@ const emptyForm = (): Partial<Interview> => ({
   final_comment: '', verdict: null, verdict_reason: '',
 })
 
-export default function CandidateSheet({ candidate: c, interview, onSave, onCandidateUpdate, getEvalLetter }: Props) {
+export default function CandidateSheet({
+  candidate: c, interview, candidateName,
+  onChange, onSaveNow, onCandidateUpdate, getEvalLetter, saveStatus
+}: Props) {
   const [form, setForm] = useState<Partial<Interview>>(() => ({ ...emptyForm(), ...(interview ?? {}) }))
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
   const [logs, setLogs] = useState<Log[]>([])
   const [showLogs, setShowLogs] = useState(false)
   const [editMode, setEditMode] = useState(false)
   const [candEdit, setCandEdit] = useState<Partial<Candidate>>({})
   const [candSaving, setCandSaving] = useState(false)
   const [candSaved, setCandSaved] = useState(false)
-  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const formRef = useRef<Partial<Interview>>(form)
-  formRef.current = form
-
+  // 候補者切り替え時にフォームをリセット
   useEffect(() => {
-    const next = { ...emptyForm(), ...(interview ?? {}) }
-    // 候補者切り替え前にタイマーが残っていれば即座に保存
-    if (autoSaveTimer.current) {
-      clearTimeout(autoSaveTimer.current)
-      autoSaveTimer.current = null
-    }
-    setForm(next)
-    setSaveStatus('idle')
+    setForm({ ...emptyForm(), ...(interview ?? {}) })
     setEditMode(false)
     setCandEdit({})
-  }, [interview, c.name])
-
-  // ページ離脱前に未保存タイマーがあれば同期的に警告
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (autoSaveTimer.current) {
-        e.preventDefault()
-        e.returnValue = '保存中のデータがあります。ページを離れますか？'
-      }
-    }
-    window.addEventListener('beforeunload', handleBeforeUnload)
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [])
+    setShowLogs(false)
+  }, [candidateName, interview])
 
   useEffect(() => {
     if (!showLogs) return
-    fetch(`/api/interviews/${encodeURIComponent(c.name)}`)
+    fetch(`/api/interviews/${encodeURIComponent(candidateName)}`)
       .then(r => r.json()).then(d => Array.isArray(d) && setLogs(d)).catch(() => {})
-  }, [showLogs, c.name])
+  }, [showLogs, candidateName])
 
   const color = getColor(c.persona)
   const evL = getEvalLetter(c.sec2_eval)
   const evalClassMap: Record<string, string> = { A: styles.evA, B: styles.evB, C: styles.evC, D: styles.evD }
   const evalClass = evalClassMap[evL] ?? styles.evC
 
-  const doSave = useCallback(async (data: Partial<Interview>) => {
-    setSaveStatus('saving')
-    try {
-      await onSave(data)
-      setSaveStatus('saved')
-      setTimeout(() => setSaveStatus('idle'), 3000)
-    } catch { setSaveStatus('error') }
-  }, [onSave])
+  // フィールド変更 → 親に通知（親が自動保存タイマーを管理）
+  const set = (key: keyof Interview, val: unknown) => {
+    const next = { ...form, [key]: val }
+    setForm(next)
+    onChange(candidateName, next)
+  }
 
-  const set = useCallback((key: keyof Interview, val: unknown) => {
-    setForm(prev => {
-      const next = { ...prev, [key]: val }
-      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
-      setSaveStatus('saving')
-      autoSaveTimer.current = setTimeout(() => doSave(next), 800)
-      return next
-    })
-  }, [doSave])
-
-  const saveCandEdit = useCallback(async () => {
+  const saveCandEdit = async () => {
     if (Object.keys(candEdit).length === 0) { setEditMode(false); return }
     setCandSaving(true)
     try {
-      const res = await fetch(`/api/candidates/${encodeURIComponent(c.name)}`, {
+      const res = await fetch(`/api/candidates/${encodeURIComponent(candidateName)}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(candEdit),
       })
       if (res.ok) {
         const updated = await res.json()
-        onCandidateUpdate(c.name, updated)
+        onCandidateUpdate(candidateName, updated)
         setCandSaved(true)
         setTimeout(() => { setCandSaved(false); setEditMode(false); setCandEdit({}) }, 2000)
       }
     } finally { setCandSaving(false) }
-  }, [c.name, candEdit, onCandidateUpdate])
+  }
 
   const setCand = (key: keyof Candidate, val: string) => setCandEdit(prev => ({ ...prev, [key]: val }))
   const cv = (key: keyof Candidate) => (key in candEdit ? candEdit[key] : c[key]) as string ?? ''
@@ -147,15 +118,20 @@ export default function CandidateSheet({ candidate: c, interview, onSave, onCand
   const overallColor = c.overall === '採用' || c.overall === '合格' ? 'var(--grn)'
     : c.overall === 'ボーダー' ? 'var(--gold)' : 'var(--red)'
   const checkPts = (c.check_points ?? '').split(/[。\n]/).filter(s => s.trim())
-  const saveLabel = saveStatus === 'saving' ? '保存中…' : saveStatus === 'saved' ? '✓ 保存済み'
-    : saveStatus === 'error' ? '⚠ 保存失敗' : '💾 保存する'
+
+  const saveLabel = saveStatus === 'saving' ? '⏳ 保存中…'
+    : saveStatus === 'saved' ? '✓ 保存済み'
+    : saveStatus === 'error' ? '⚠ 保存失敗 - 再保存'
+    : '💾 保存する'
 
   return (
     <div className={styles.sheet}>
       {/* ── ステータスバー ── */}
       <div className={`${styles.statusBar} ${styles['status_' + saveStatus]}`}>
-        <span>{saveStatus === 'saving' ? '⏳ 自動保存中…' : saveStatus === 'saved' ? '✓ Supabaseに保存済み'
-          : saveStatus === 'error' ? '⚠ 保存に失敗しました。再度保存ボタンを押してください' : '　'}</span>
+        <span>{saveStatus === 'saving' ? '⏳ Supabaseに保存中…'
+          : saveStatus === 'saved' ? '✓ 保存完了（Supabase）'
+          : saveStatus === 'error' ? '⚠ 保存失敗 — 保存ボタンを押してください'
+          : '入力すると自動保存されます'}</span>
         <button className={styles.logBtn} onClick={() => setShowLogs(v => !v)}>🕐 変更ログ {showLogs ? '▲' : '▼'}</button>
       </div>
 
@@ -249,8 +225,7 @@ export default function CandidateSheet({ candidate: c, interview, onSave, onCand
                 <div className={styles.editCandLabel}>卒業後キャリア</div>
                 <textarea className={`${styles.editCandArea} ${styles.editCandShort}`} value={cv('career')} onChange={e => setCand('career', e.target.value)} />
               </div>
-              <button
-                className={`${styles.editCandSave} ${candSaved ? styles.editCandSaveDone : ''}`}
+              <button className={`${styles.editCandSave} ${candSaved ? styles.editCandSaveDone : ''}`}
                 onClick={saveCandEdit} disabled={candSaving}
               >{candSaving ? '保存中…' : candSaved ? '✓ 保存しました' : '💾 書類データを保存'}</button>
             </div>
@@ -280,7 +255,6 @@ export default function CandidateSheet({ candidate: c, interview, onSave, onCand
         </div>
       </div>
 
-      {/* ── 1次総評 ── */}
       {(c.overall_comment || editMode) && (
         <div className={styles.card} style={{ marginBottom: '0.85rem' }}>
           <div className={styles.cardTitle}>
@@ -294,25 +268,22 @@ export default function CandidateSheet({ candidate: c, interview, onSave, onCand
         </div>
       )}
 
-      {/* 編集モード中の保存ボタン（下部にも表示） */}
       {editMode && (
         <div style={{ marginBottom: '0.85rem', textAlign: 'right' }}>
-          <button
-            className={`${styles.editCandSave} ${candSaved ? styles.editCandSaveDone : ''}`}
+          <button className={`${styles.editCandSave} ${candSaved ? styles.editCandSaveDone : ''}`}
             onClick={saveCandEdit} disabled={candSaving}
           >{candSaving ? '保存中…' : candSaved ? '✓ 保存しました' : '💾 書類・評価データを保存'}</button>
         </div>
       )}
 
-      {/* ── 確認ポイント ── */}
       {checkPts.length > 0 && (
         <div className={styles.checkCard}>
           <div className={styles.cardTitle}>🎯 最終面接での確認ポイント</div>
           <div className={styles.checkList}>
             {checkPts.map((pt, i) => (
               <div key={i} className={styles.checkItem}>
-                <input type="checkbox" id={`chk-${c.name}-${i}`} />
-                <label htmlFor={`chk-${c.name}-${i}`}>{pt.trim()}</label>
+                <input type="checkbox" id={`chk-${candidateName}-${i}`} />
+                <label htmlFor={`chk-${candidateName}-${i}`}>{pt.trim()}</label>
               </div>
             ))}
           </div>
@@ -434,7 +405,8 @@ export default function CandidateSheet({ candidate: c, interview, onSave, onCand
 
       <button
         className={`${styles.saveBtn} ${saveStatus === 'saved' ? styles.saveBtnSaved : saveStatus === 'error' ? styles.saveBtnError : ''}`}
-        onClick={() => doSave(form)} disabled={saveStatus === 'saving'}
+        onClick={() => onSaveNow(candidateName, form)}
+        disabled={saveStatus === 'saving'}
       >{saveLabel}</button>
       <div style={{ height: '2.5rem' }} />
     </div>
