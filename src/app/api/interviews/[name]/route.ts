@@ -6,126 +6,51 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-async function recordLogs(
-  candidateName: string,
-  oldData: Record<string, unknown> | null,
-  newData: Record<string, unknown>,
-  changedBy: string | null
-) {
-  const TRACKED = [
-    'interview_date','interviewer',
-    'score_smile','score_respect','score_premise',
-    'score_passion','score_thinking','score_honest',
-    'impression','checkpoints_memo','positives',
-    'negatives','own_challenge','neo_connection','neo_strategy',
-    'final_comment','verdict','verdict_reason',
-  ]
-  const logs = TRACKED
-    .filter(f => {
-      const o = String(oldData?.[f] ?? '')
-      const n = String(newData[f] ?? '')
-      return o !== n && n !== '' && n !== 'null'
-    })
-    .map(f => ({
-      candidate_name: candidateName,
-      field_name: f,
-      old_value: String(oldData?.[f] ?? ''),
-      new_value: String(newData[f] ?? ''),
-      changed_by: changedBy || '不明',
-    }))
-  if (logs.length > 0) {
-    await supabase.from('interview_logs').insert(logs)
-  }
-}
-
-export async function PUT(
+export async function PATCH(
   req: NextRequest,
   { params }: { params: { name: string } }
 ) {
   const name = decodeURIComponent(params.name)
   const body = await req.json()
 
-  const { data: existing } = await supabase
-    .from('interviews').select('*').eq('candidate_name', name).single()
+  const ALLOWED_FIELDS = [
+    'motivation', 'pr', 'contribution', 'career',
+    'strengths', 'concerns', 'overall', 'overall_comment',
+    'check_points', 'final_date', 'email',
+  ]
 
-  const { data: cand } = await supabase
-    .from('candidates').select('id').eq('name', name).single()
-
-  // own_challenge・neo_connection・neo_strategyを含めたpayloadで試行
-  // カラムが存在しない場合はフォールバック
-
-  const payload: Record<string, unknown> = {
-    candidate_name:   name,
-    candidate_id:     cand?.id ?? null,
-    interview_date:   body.interview_date   ?? null,
-    interviewer:      body.interviewer      ?? null,
-    score_smile:      body.score_smile      ?? null,
-    score_respect:    body.score_respect    ?? null,
-    score_premise:    body.score_premise    ?? null,
-    score_passion:    body.score_passion    ?? null,
-    score_thinking:   body.score_thinking   ?? null,
-    score_honest:     body.score_honest     ?? null,
-    impression:       body.impression       ?? null,
-    checkpoints_memo: body.checkpoints_memo ?? null,
-    positives:        body.positives        ?? null,
-    negatives:        body.negatives        ?? null,
-    final_comment:    body.final_comment    ?? null,
-    verdict:          body.verdict          ?? null,
-    verdict_reason:   body.verdict_reason   ?? null,
+  const patch: Record<string, string> = {}
+  for (const field of ALLOWED_FIELDS) {
+    if (field in body) patch[field] = body[field]
   }
 
-  // 新カラムを追加（存在しない場合はupsertが失敗するため別途試行）
-  const payloadWithNew = {
-    ...payload,
-    own_challenge:  body.own_challenge  ?? null,
-    neo_connection: body.neo_connection ?? null,
-    neo_strategy:   body.neo_strategy   ?? null,
+  if (Object.keys(patch).length === 0) {
+    return NextResponse.json({ error: '更新フィールドなし' }, { status: 400 })
   }
 
-  // まず新カラム込みで試行
-  let result = await supabase
-    .from('interviews')
-    .upsert(payloadWithNew, { onConflict: 'candidate_name' })
-    .select().single()
+  // まずUPDATEしてから SELECT で取得（single()を使わない）
+  const { error: updateError } = await supabase
+    .from('candidates')
+    .update(patch)
+    .eq('name', name)
 
-  // 失敗した場合は新カラムなしで再試行
-  if (result.error) {
-    console.error('upsert with new cols failed:', result.error.message)
-    result = await supabase
-      .from('interviews')
-      .upsert(payload, { onConflict: 'candidate_name' })
-      .select().single()
+  if (updateError) {
+    console.error('update error:', updateError)
+    return NextResponse.json({ error: updateError.message }, { status: 500 })
   }
 
-  if (result.error) {
-    console.error('upsert failed:', result.error)
-    return NextResponse.json({ 
-      error: result.error.message,
-      hint: result.error.hint,
-      details: result.error.details,
-    }, { status: 500 })
-  }
-
-  try {
-    await recordLogs(name, existing, payloadWithNew, body.interviewer)
-  } catch (e) {
-    console.error('log error:', e)
-  }
-
-  return NextResponse.json(result.data)
-}
-
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { name: string } }
-) {
-  const name = decodeURIComponent(params.name)
-  const { data, error } = await supabase
-    .from('interview_logs')
+  // 更新後のデータを取得
+  const { data, error: selectError } = await supabase
+    .from('candidates')
     .select('*')
-    .eq('candidate_name', name)
-    .order('changed_at', { ascending: false })
-    .limit(50)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data ?? [])
+    .eq('name', name)
+    .limit(1)
+    .single()
+
+  if (selectError || !data) {
+    // 更新自体は成功している可能性があるのでpatchをそのまま返す
+    return NextResponse.json({ name, ...patch })
+  }
+
+  return NextResponse.json(data)
 }
