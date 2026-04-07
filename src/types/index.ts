@@ -56,6 +56,7 @@ export interface Interview {
   checkpoints_memo: string | null
   positives: string | null
   negatives: string | null
+  own_challenge: string | null      // 自分の課題は何か
   neo_connection: string | null    // NEOとキャリアの接続ポイント
   neo_strategy: string | null      // NEO活用方針
   final_comment: string | null
