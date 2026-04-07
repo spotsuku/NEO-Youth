@@ -92,9 +92,12 @@ export default function CandidateSheet({
     onChange(candidateName, next)
   }
 
+  const [candError, setCandError] = useState('')
+
   const saveCandEdit = async () => {
     if (Object.keys(candEdit).length === 0) { setEditMode(false); return }
     setCandSaving(true)
+    setCandError('')
     try {
       const res = await fetch(`/api/candidates/${encodeURIComponent(candidateName)}`, {
         method: 'PATCH',
@@ -104,9 +107,17 @@ export default function CandidateSheet({
       if (res.ok) {
         const updated = await res.json()
         onCandidateUpdate(candidateName, updated)
+        // 即座に編集モード終了
+        setEditMode(false)
+        setCandEdit({})
         setCandSaved(true)
-        setTimeout(() => { setCandSaved(false); setEditMode(false); setCandEdit({}) }, 2000)
+        setTimeout(() => setCandSaved(false), 2500)
+      } else {
+        const err = await res.json().catch(() => ({}))
+        setCandError(err.error ?? '保存に失敗しました。再度お試しください。')
       }
+    } catch {
+      setCandError('通信エラーが発生しました。')
     } finally { setCandSaving(false) }
   }
 
@@ -225,6 +236,7 @@ export default function CandidateSheet({
                 <div className={styles.editCandLabel}>卒業後キャリア</div>
                 <textarea className={`${styles.editCandArea} ${styles.editCandShort}`} value={cv('career')} onChange={e => setCand('career', e.target.value)} />
               </div>
+              {candError && <div style={{ fontSize: '0.75rem', color: 'var(--red)', padding: '0.3rem 0' }}>{candError}</div>}
               <button className={`${styles.editCandSave} ${candSaved ? styles.editCandSaveDone : ''}`}
                 onClick={saveCandEdit} disabled={candSaving}
               >{candSaving ? '保存中…' : candSaved ? '✓ 保存しました' : '💾 書類データを保存'}</button>
@@ -270,6 +282,7 @@ export default function CandidateSheet({
 
       {editMode && (
         <div style={{ marginBottom: '0.85rem', textAlign: 'right' }}>
+          {candError && <div style={{ fontSize: '0.75rem', color: 'var(--red)', marginBottom: '0.4rem' }}>{candError}</div>}
           <button className={`${styles.editCandSave} ${candSaved ? styles.editCandSaveDone : ''}`}
             onClick={saveCandEdit} disabled={candSaving}
           >{candSaving ? '保存中…' : candSaved ? '✓ 保存しました' : '💾 書類・評価データを保存'}</button>
