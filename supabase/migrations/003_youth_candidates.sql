@@ -51,7 +51,7 @@ create table if not exists youth_candidates (
   ob_profile          boolean default false,  -- プロフィール登録
   ob_motivation_written boolean default false, -- 動機記載
   ob_pledge           boolean default false,  -- 誓約書
-  ob_handbook         boolean default false,  -- 生徒手���
+  ob_handbook         boolean default false,  -- 生徒手帳
 
   created_at      timestamptz default now(),
   updated_at      timestamptz default now()
