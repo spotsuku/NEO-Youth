@@ -48,9 +48,7 @@ export default function OnboardingTab({ candidates, onUpdate }: Props) {
       <div className="progress-wrap">
         <div className="progress-label">
           <span>オンボーディング全体進捗</span>
-          <span>
-            {doneChecks} / {totalChecks}
-          </span>
+          <span>{doneChecks} / {totalChecks}</span>
         </div>
         <div className="progress-bar">
           <div
@@ -62,37 +60,59 @@ export default function OnboardingTab({ candidates, onUpdate }: Props) {
 
       <div className="section-title">候補者別チェックリスト</div>
 
-      <div className="ob-grid">
-        {candidates.map((c) => {
-          const done = OB_FIELDS.filter((f) => c[f]).length
-          const pct = OB_FIELDS.length > 0 ? Math.round((done / OB_FIELDS.length) * 100) : 0
-          return (
-            <div className="ob-card" key={c.id}>
-              <div className="ob-name">{c.name}</div>
-              <div className="ob-email">{c.email ?? '-'}</div>
-              <div className="ob-checks">
-                {OB_FIELDS.map((f) => (
-                  <button
-                    key={f}
-                    className={`ob-check ${c[f] ? 'ok' : ''}`}
-                    onClick={() => toggle(c, f)}
-                    type="button"
+      <div className="table-wrap">
+        <table className="ob-table">
+          <thead>
+            <tr>
+              <th style={{ position: 'sticky', left: 0, background: 'var(--sur2)', zIndex: 2 }}>氏名</th>
+              {OB_FIELDS.map((f) => (
+                <th key={f}>{OB_LABELS[f]}</th>
+              ))}
+              <th>進捗</th>
+            </tr>
+          </thead>
+          <tbody>
+            {candidates.map((c) => {
+              const done = OB_FIELDS.filter((f) => c[f]).length
+              const pct = OB_FIELDS.length > 0 ? Math.round((done / OB_FIELDS.length) * 100) : 0
+              return (
+                <tr key={c.id}>
+                  <td
+                    style={{
+                      position: 'sticky',
+                      left: 0,
+                      background: 'var(--sur)',
+                      zIndex: 1,
+                      fontWeight: 600,
+                      whiteSpace: 'nowrap',
+                    }}
                   >
-                    {c[f] ? '\u2713 ' : ''}{OB_LABELS[f]}
-                  </button>
-                ))}
-              </div>
-              <div className="ob-progress">
-                <div className="ob-progress-bar">
-                  <div className="ob-progress-fill" style={{ width: `${pct}%` }} />
-                </div>
-                <div className="ob-progress-text">
-                  {done}/{OB_FIELDS.length} ({pct}%)
-                </div>
-              </div>
-            </div>
-          )
-        })}
+                    {c.name}
+                  </td>
+                  {OB_FIELDS.map((f) => (
+                    <td key={f} style={{ textAlign: 'center' }}>
+                      <button
+                        className={`ob-cell ${c[f] ? 'checked' : ''}`}
+                        onClick={() => toggle(c, f)}
+                        type="button"
+                      >
+                        {c[f] ? '\u2713' : ''}
+                      </button>
+                    </td>
+                  ))}
+                  <td>
+                    <div className="ob-row-progress">
+                      <div className="ob-row-bar">
+                        <div className="ob-row-fill" style={{ width: `${pct}%` }} />
+                      </div>
+                      <span className="ob-row-pct">{done}/{OB_FIELDS.length}</span>
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
       </div>
     </>
   )

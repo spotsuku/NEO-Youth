@@ -738,18 +738,71 @@
   font-family: 'JetBrains Mono', monospace;
 }
 
-/* OB CHECK BUTTON (clickable) */
-.ob-check {
-  cursor: pointer;
-  transition: all 0.12s;
-  border: none;
-  background: none;
-  font-family: 'Zen Kaku Gothic New', sans-serif;
+/* OB TABLE LIST VIEW */
+.ob-table th {
+  font-size: 0.6rem;
+  padding: 0.55rem 0.4rem;
+  white-space: nowrap;
 }
 
-.ob-check:hover {
-  border-color: var(--red) !important;
-  color: var(--red) !important;
+.ob-table td {
+  padding: 0.45rem 0.4rem;
+}
+
+.ob-cell {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: 1.5px solid var(--bd);
+  background: var(--sur2);
+  cursor: pointer;
+  font-size: 0.82rem;
+  color: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.1s;
+  padding: 0;
+  font-family: sans-serif;
+}
+
+.ob-cell:hover {
+  border-color: var(--red);
+}
+
+.ob-cell.checked {
+  background: var(--grn);
+  border-color: var(--grn);
+  color: #fff;
+}
+
+.ob-row-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 80px;
+}
+
+.ob-row-bar {
+  flex: 1;
+  height: 4px;
+  background: var(--bg);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.ob-row-fill {
+  height: 100%;
+  background: var(--grn);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.ob-row-pct {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  color: var(--mu);
+  white-space: nowrap;
 }
 
 /* ── KANBAN BOARD (Drag & Drop) ── */
