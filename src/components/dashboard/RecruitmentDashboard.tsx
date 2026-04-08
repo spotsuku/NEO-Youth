@@ -48,6 +48,29 @@ export default function RecruitmentDashboard() {
             </button>
           ))}
         </nav>
+        <a
+          href="/"
+          style={{
+            fontSize: '0.7rem',
+            color: 'var(--mu)',
+            textDecoration: 'none',
+            border: '1px solid var(--bd)',
+            borderRadius: '4px',
+            padding: '0.3rem 0.7rem',
+            whiteSpace: 'nowrap',
+            transition: 'all 0.12s',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = 'var(--red)'
+            e.currentTarget.style.color = 'var(--red)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = 'var(--bd)'
+            e.currentTarget.style.color = 'var(--mu)'
+          }}
+        >
+          面接シート
+        </a>
       </header>
 
       <main className="db-main">
