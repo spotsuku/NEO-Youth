@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import type { YouthCandidate, YouthSession } from '@/types/dashboard'
 import OverviewTab from './OverviewTab'
 import ApplicantsTab from './ApplicantsTab'
@@ -26,12 +26,28 @@ interface Props {
   dbError: string | null
 }
 
-export default function RecruitmentDashboard({ candidates, sessions, dbError }: Props) {
+export default function RecruitmentDashboard({ candidates: initial, sessions, dbError }: Props) {
   const [tab, setTab] = useState<TabKey>('overview')
+  const [candidates, setCandidates] = useState<YouthCandidate[]>(initial)
 
-  // 応募完了者
+  const updateCandidate = useCallback(async (name: string, patch: Partial<YouthCandidate>) => {
+    // 楽観的更新
+    setCandidates((prev) =>
+      prev.map((c) => (c.name === name ? { ...c, ...patch } : c)),
+    )
+    // API保存
+    try {
+      await fetch(`/api/youth/candidates/${encodeURIComponent(name)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      })
+    } catch {
+      // サイレント（楽観的更新は維持）
+    }
+  }, [])
+
   const applicants = candidates.filter((c) => c.status === '応募完了')
-  // 面談実施者
   const interviewed = candidates.filter((c) => c.interview_date)
 
   return (
@@ -78,7 +94,7 @@ export default function RecruitmentDashboard({ candidates, sessions, dbError }: 
 
       {dbError && (
         <div style={{ padding: '0.8rem 2rem', fontSize: '0.78rem', color: 'var(--gold)', background: 'rgba(196,136,42,0.06)', borderBottom: '1px solid rgba(196,136,42,0.18)' }}>
-          DB接続エラー: {dbError}（シードデータなし）
+          DB接続エラー: {dbError}
         </div>
       )}
 
@@ -95,7 +111,7 @@ export default function RecruitmentDashboard({ candidates, sessions, dbError }: 
         )}
         {tab === 'applicants' && (
           <div className="db-page">
-            <ApplicantsTab applicants={applicants} />
+            <ApplicantsTab applicants={applicants} onUpdate={updateCandidate} />
           </div>
         )}
         {tab === 'interviews' && (
@@ -105,12 +121,12 @@ export default function RecruitmentDashboard({ candidates, sessions, dbError }: 
         )}
         {tab === 'flow' && (
           <div className="db-page">
-            <FlowTab candidates={candidates} />
+            <FlowTab candidates={candidates} onUpdate={updateCandidate} />
           </div>
         )}
         {tab === 'onboarding' && (
           <div className="db-page">
-            <OnboardingTab candidates={candidates} />
+            <OnboardingTab candidates={candidates} onUpdate={updateCandidate} />
           </div>
         )}
         {tab === 'sessions' && (

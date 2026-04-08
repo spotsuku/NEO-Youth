@@ -1,19 +1,21 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import type { YouthCandidate } from '@/types/dashboard'
 import Modal from './Modal'
 
 interface Props {
   applicants: YouthCandidate[]
+  onUpdate: (name: string, patch: Partial<YouthCandidate>) => Promise<void>
 }
 
 const TYPE_FILTERS = ['全て', '大学生・専門学生・大学院生', '社会人']
 
-export default function ApplicantsTab({ applicants }: Props) {
+export default function ApplicantsTab({ applicants, onUpdate }: Props) {
   const [query, setQuery] = useState('')
   const [typeFilter, setTypeFilter] = useState('全て')
   const [selected, setSelected] = useState<YouthCandidate | null>(null)
+  const [interviewTarget, setInterviewTarget] = useState<YouthCandidate | null>(null)
 
   const filtered = useMemo(() => {
     return applicants.filter((a) => {
@@ -27,6 +29,12 @@ export default function ApplicantsTab({ applicants }: Props) {
       return matchQuery && matchType
     })
   }, [applicants, query, typeFilter])
+
+  // 面談ビューを開く（選択中のモーダルから、またはテーブルから直接）
+  const openInterview = (c: YouthCandidate) => {
+    setSelected(null)
+    setInterviewTarget(c)
+  }
 
   return (
     <>
@@ -60,7 +68,7 @@ export default function ApplicantsTab({ applicants }: Props) {
               <th>区分</th>
               <th>所属</th>
               <th>応募日</th>
-              <th>紹介元</th>
+              <th>面談</th>
               <th></th>
             </tr>
           </thead>
@@ -79,11 +87,12 @@ export default function ApplicantsTab({ applicants }: Props) {
                   {a.applied_at ? a.applied_at.slice(0, 10) : '-'}
                 </td>
                 <td>
-                  {a.source ? (
-                    <span className="badge grn">{a.source}</span>
-                  ) : (
-                    <span style={{ color: 'var(--bd2)', fontSize: '0.75rem' }}>-</span>
-                  )}
+                  <button
+                    className={`detail-btn ${a.interview_notes ? 'has-notes' : ''}`}
+                    onClick={() => openInterview(a)}
+                  >
+                    {a.interview_notes ? '記録あり' : '面談記録'}
+                  </button>
                 </td>
                 <td>
                   <button className="detail-btn" onClick={() => setSelected(a)}>
@@ -103,6 +112,7 @@ export default function ApplicantsTab({ applicants }: Props) {
         </table>
       </div>
 
+      {/* 詳細モーダル */}
       <Modal open={!!selected} onClose={() => setSelected(null)} title={selected?.name ?? ''}>
         {selected && (
           <>
@@ -174,9 +184,143 @@ export default function ApplicantsTab({ applicants }: Props) {
                 <div className="field-value">{selected.interview3_dates ?? '-'}</div>
               </div>
             </div>
+            <div style={{ marginTop: '1rem' }}>
+              <button
+                className="detail-btn"
+                style={{ padding: '0.5rem 1rem', fontSize: '0.8rem' }}
+                onClick={() => openInterview(selected)}
+              >
+                面談記録を開く
+              </button>
+            </div>
           </>
         )}
       </Modal>
+
+      {/* 面談記録モーダル */}
+      {interviewTarget && (
+        <InterviewNoteModal
+          candidate={interviewTarget}
+          onClose={() => setInterviewTarget(null)}
+          onUpdate={onUpdate}
+        />
+      )}
     </>
+  )
+}
+
+/* ── 面談記録モーダル（議事録入力 → 自動保存） ── */
+
+function InterviewNoteModal({
+  candidate,
+  onClose,
+  onUpdate,
+}: {
+  candidate: YouthCandidate
+  onClose: () => void
+  onUpdate: (name: string, patch: Partial<YouthCandidate>) => Promise<void>
+}) {
+  const [handler, setHandler] = useState(candidate.interview_handler ?? '')
+  const [date, setDate] = useState(candidate.interview_date ?? '')
+  const [course, setCourse] = useState(candidate.interview_course ?? '')
+  const [result, setResult] = useState(candidate.interview_result ?? '')
+  const [notes, setNotes] = useState(candidate.interview_notes ?? '')
+  const [saved, setSaved] = useState(false)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const save = useCallback(() => {
+    onUpdate(candidate.name, {
+      interview_handler: handler || null,
+      interview_date: date || null,
+      interview_course: course || null,
+      interview_result: result || null,
+      interview_notes: notes || null,
+    })
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+  }, [candidate.name, handler, date, course, result, notes, onUpdate])
+
+  // 自動保存（1秒デバウンス）
+  const autoSave = useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(save, 1000)
+  }, [save])
+
+  // フィールド変更時に自動保存をトリガー
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [])
+
+  const handleChange = (setter: (v: string) => void) => (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
+  ) => {
+    setter(e.target.value)
+    autoSave()
+  }
+
+  return (
+    <Modal open onClose={onClose} title={`面談記録: ${candidate.name}`}>
+      <div className="interview-form">
+        <div className="field-row">
+          <div>
+            <div className="field-label">面談担当</div>
+            <input
+              className="iv-input"
+              value={handler}
+              onChange={handleChange(setHandler)}
+              placeholder="担当者名"
+            />
+          </div>
+          <div>
+            <div className="field-label">面談日</div>
+            <input
+              className="iv-input"
+              type="date"
+              value={date}
+              onChange={handleChange(setDate)}
+            />
+          </div>
+        </div>
+        <div className="field-row">
+          <div>
+            <div className="field-label">進路希望</div>
+            <select className="iv-input" value={course} onChange={handleChange(setCourse)}>
+              <option value="">選択してください</option>
+              <option value="起業">起業</option>
+              <option value="地元企業">地元企業</option>
+              <option value="大手企業">大手企業</option>
+              <option value="その他">その他</option>
+            </select>
+          </div>
+          <div>
+            <div className="field-label">結果</div>
+            <select className="iv-input" value={result} onChange={handleChange(setResult)}>
+              <option value="">選択してください</option>
+              <option value="特別選考枠付与">特別選考枠付与</option>
+              <option value="付与なし（一般応募）">付与なし（一般応募）</option>
+              <option value="保留">保留</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <div className="field-label">議事録・メモ</div>
+          <textarea
+            className="iv-textarea"
+            value={notes}
+            onChange={handleChange(setNotes)}
+            placeholder="面談の内容、印象、備考を入力..."
+            rows={8}
+          />
+        </div>
+        <div className="iv-footer">
+          <button className="iv-save-btn" onClick={save}>
+            保存
+          </button>
+          {saved && <span className="iv-saved">自動保存しました</span>}
+        </div>
+      </div>
+    </Modal>
   )
 }

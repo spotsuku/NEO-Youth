@@ -5,14 +5,19 @@ import { OB_LABELS, OB_FIELDS } from '@/types/dashboard'
 
 interface Props {
   candidates: YouthCandidate[]
+  onUpdate: (name: string, patch: Partial<YouthCandidate>) => Promise<void>
 }
 
-export default function OnboardingTab({ candidates }: Props) {
+export default function OnboardingTab({ candidates, onUpdate }: Props) {
   const totalChecks = candidates.length * OB_FIELDS.length
   const doneChecks = candidates.reduce(
     (sum, c) => sum + OB_FIELDS.filter((f) => c[f]).length,
     0,
   )
+
+  const toggle = (c: YouthCandidate, field: typeof OB_FIELDS[number]) => {
+    onUpdate(c.name, { [field]: !c[field] })
+  }
 
   return (
     <>
@@ -67,9 +72,14 @@ export default function OnboardingTab({ candidates }: Props) {
               <div className="ob-email">{c.email ?? '-'}</div>
               <div className="ob-checks">
                 {OB_FIELDS.map((f) => (
-                  <span key={f} className={`ob-check ${c[f] ? 'ok' : ''}`}>
-                    {OB_LABELS[f]}
-                  </span>
+                  <button
+                    key={f}
+                    className={`ob-check ${c[f] ? 'ok' : ''}`}
+                    onClick={() => toggle(c, f)}
+                    type="button"
+                  >
+                    {c[f] ? '\u2713 ' : ''}{OB_LABELS[f]}
+                  </button>
                 ))}
               </div>
               <div className="ob-progress">
