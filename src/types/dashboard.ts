@@ -16,6 +16,9 @@ export interface YouthCandidate {
   // 応募フォーム
   applied_at: string | null
   motivation: string | null
+  pr: string | null
+  contribution: string | null
+  career: string | null
   interview2_dates: string | null
   interview3_dates: string | null
 

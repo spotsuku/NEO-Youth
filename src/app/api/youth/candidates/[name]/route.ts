@@ -10,7 +10,8 @@ const supabase = createClient(
 const ALLOWED = new Set([
   'name', 'kana', 'email', 'type', 'school', 'grade',
   'status', 'yomi', 'source',
-  'applied_at', 'motivation', 'interview2_dates', 'interview3_dates',
+  'applied_at', 'motivation', 'pr', 'contribution', 'career',
+  'interview2_dates', 'interview3_dates',
   'referral', 'interview_handler', 'interview_date',
   'interview_course', 'interview_result', 'interview_notes',
   'ob_final_exam', 'ob_mail_sent', 'ob_payment', 'ob_training',

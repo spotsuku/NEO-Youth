@@ -144,6 +144,24 @@ export default function ApplicantsTab({ applicants }: Props) {
               <div className="field-label">志望動機</div>
               <div className="field-value long">{selected.motivation ?? '-'}</div>
             </div>
+            {selected.pr && (
+              <div style={{ marginBottom: '0.85rem' }}>
+                <div className="field-label">自己PR</div>
+                <div className="field-value long">{selected.pr}</div>
+              </div>
+            )}
+            {selected.contribution && (
+              <div style={{ marginBottom: '0.85rem' }}>
+                <div className="field-label">貢献・活動方針</div>
+                <div className="field-value long">{selected.contribution}</div>
+              </div>
+            )}
+            {selected.career && (
+              <div style={{ marginBottom: '0.85rem' }}>
+                <div className="field-label">キャリアプラン</div>
+                <div className="field-value long">{selected.career}</div>
+              </div>
+            )}
             <div className="field-row">
               <div>
                 <div className="field-label">2次面接希望日</div>
