@@ -38,7 +38,7 @@ const TIMELINE = [
 ]
 
 export default function OverviewTab({ candidates, applicantCount, interviewCount, sessionCount }: Props) {
-  const target = 20
+  const target = 36
   const confirmed = candidates.filter((c) => c.status === '参加確定').length
 
   // ステータス集計

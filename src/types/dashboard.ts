@@ -59,6 +59,29 @@ export interface YouthSession {
   created_at: string
 }
 
+// youth_ob_logs テーブル
+export interface YouthObLog {
+  id: number
+  candidate_name: string
+  field_name: string
+  field_label: string
+  new_value: boolean
+  changed_at: string
+}
+
+// youth_interviews テーブル（1候補者に複数回）
+export interface YouthInterview {
+  id: number
+  candidate_name: string
+  handler: string | null
+  interview_date: string | null
+  course: string | null
+  result: string | null
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
 // 概要タブ用の集計データ（クライアント算出）
 export interface StatusData {
   status: string

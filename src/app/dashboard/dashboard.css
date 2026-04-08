@@ -971,9 +971,51 @@
   font-weight: 600;
 }
 
-/* 面談記録ありボタンのスタイル */
-.detail-btn.has-notes {
-  border-color: rgba(46,125,82,0.3);
-  color: var(--grn);
-  background: rgba(46,125,82,0.05);
+/* ── OB LOG PANEL ── */
+.ob-log-panel {
+  background: var(--sur);
+  border: 1px solid var(--bd);
+  border-radius: 7px;
+  padding: 0.7rem;
+  margin-bottom: 1rem;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.ob-log-panel table { font-size: 0.75rem; }
+.ob-log-panel th { font-size: 0.62rem; }
+.ob-log-panel td { padding: 0.35rem 0.6rem; }
+
+/* ── INTERVIEW RECORDS ── */
+.iv-records {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.iv-record {
+  background: var(--sur2);
+  border: 1px solid var(--bd);
+  border-radius: 6px;
+  padding: 0.75rem 0.9rem;
+}
+
+.iv-record-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.35rem;
+}
+
+.iv-record-meta {
+  display: flex;
+  gap: 0.3rem;
+  margin-bottom: 0.4rem;
+}
+
+.iv-record-notes {
+  font-size: 0.78rem;
+  line-height: 1.6;
+  color: var(--ink2);
+  white-space: pre-wrap;
 }
