@@ -29,8 +29,8 @@ interface Props {
 export default function RecruitmentDashboard({ candidates, sessions, dbError }: Props) {
   const [tab, setTab] = useState<TabKey>('overview')
 
-  // 応募完了者（応募フォーム経由）
-  const applicants = candidates.filter((c) => c.applied_at)
+  // 応募完了者
+  const applicants = candidates.filter((c) => c.status === '応募完了')
   // 面談実施者
   const interviewed = candidates.filter((c) => c.interview_date)
 
