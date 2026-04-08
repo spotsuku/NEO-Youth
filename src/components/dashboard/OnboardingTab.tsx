@@ -1,16 +1,16 @@
 'use client'
 
-import type { OnboardingRecord } from '@/types/dashboard'
+import type { YouthCandidate } from '@/types/dashboard'
 import { OB_LABELS, OB_FIELDS } from '@/types/dashboard'
 
 interface Props {
-  records: OnboardingRecord[]
+  candidates: YouthCandidate[]
 }
 
-export default function OnboardingTab({ records }: Props) {
-  const totalChecks = records.length * OB_FIELDS.length
-  const doneChecks = records.reduce(
-    (sum, r) => sum + OB_FIELDS.filter((f) => r[f]).length,
+export default function OnboardingTab({ candidates }: Props) {
+  const totalChecks = candidates.length * OB_FIELDS.length
+  const doneChecks = candidates.reduce(
+    (sum, c) => sum + OB_FIELDS.filter((f) => c[f]).length,
     0,
   )
 
@@ -20,7 +20,7 @@ export default function OnboardingTab({ records }: Props) {
         <div className="kpi-card grn">
           <div className="kpi-label">対象者数</div>
           <div className="kpi-value">
-            {records.length}
+            {candidates.length}
             <span> 名</span>
           </div>
         </div>
@@ -58,16 +58,16 @@ export default function OnboardingTab({ records }: Props) {
       <div className="section-title">候補者別チェックリスト</div>
 
       <div className="ob-grid">
-        {records.map((r) => {
-          const done = OB_FIELDS.filter((f) => r[f]).length
-          const pct = Math.round((done / OB_FIELDS.length) * 100)
+        {candidates.map((c) => {
+          const done = OB_FIELDS.filter((f) => c[f]).length
+          const pct = OB_FIELDS.length > 0 ? Math.round((done / OB_FIELDS.length) * 100) : 0
           return (
-            <div className="ob-card" key={r.email}>
-              <div className="ob-name">{r.name}</div>
-              <div className="ob-email">{r.email}</div>
+            <div className="ob-card" key={c.id}>
+              <div className="ob-name">{c.name}</div>
+              <div className="ob-email">{c.email ?? '-'}</div>
               <div className="ob-checks">
                 {OB_FIELDS.map((f) => (
-                  <span key={f} className={`ob-check ${r[f] ? 'ok' : ''}`}>
+                  <span key={f} className={`ob-check ${c[f] ? 'ok' : ''}`}>
                     {OB_LABELS[f]}
                   </span>
                 ))}

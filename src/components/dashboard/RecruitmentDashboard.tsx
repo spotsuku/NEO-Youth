@@ -1,15 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import {
-  APPLICANTS,
-  INTERVIEWS,
-  ONBOARDING,
-  SESSIONS,
-  STATUS_DATA,
-  YOMI_DATA,
-  KANBAN_COLS,
-} from '@/data/dashboard-seed'
+import type { YouthCandidate, YouthSession } from '@/types/dashboard'
 import OverviewTab from './OverviewTab'
 import ApplicantsTab from './ApplicantsTab'
 import InterviewsTab from './InterviewsTab'
@@ -28,8 +20,19 @@ const TABS = [
 
 type TabKey = (typeof TABS)[number]['key']
 
-export default function RecruitmentDashboard() {
+interface Props {
+  candidates: YouthCandidate[]
+  sessions: YouthSession[]
+  dbError: string | null
+}
+
+export default function RecruitmentDashboard({ candidates, sessions, dbError }: Props) {
   const [tab, setTab] = useState<TabKey>('overview')
+
+  // 応募完了者（応募フォーム経由）
+  const applicants = candidates.filter((c) => c.applied_at)
+  // 面談実施者
+  const interviewed = candidates.filter((c) => c.interview_date)
 
   return (
     <>
@@ -73,41 +76,46 @@ export default function RecruitmentDashboard() {
         </a>
       </header>
 
+      {dbError && (
+        <div style={{ padding: '0.8rem 2rem', fontSize: '0.78rem', color: 'var(--gold)', background: 'rgba(196,136,42,0.06)', borderBottom: '1px solid rgba(196,136,42,0.18)' }}>
+          DB接続エラー: {dbError}（シードデータなし）
+        </div>
+      )}
+
       <main className="db-main">
         {tab === 'overview' && (
           <div className="db-page">
             <OverviewTab
-              statusData={STATUS_DATA}
-              yomiData={YOMI_DATA}
-              applicantCount={APPLICANTS.length}
-              interviewCount={INTERVIEWS.length}
-              sessionCount={SESSIONS.length}
+              candidates={candidates}
+              applicantCount={applicants.length}
+              interviewCount={interviewed.length}
+              sessionCount={sessions.length}
             />
           </div>
         )}
         {tab === 'applicants' && (
           <div className="db-page">
-            <ApplicantsTab applicants={APPLICANTS} />
+            <ApplicantsTab applicants={applicants} />
           </div>
         )}
         {tab === 'interviews' && (
           <div className="db-page">
-            <InterviewsTab interviews={INTERVIEWS} />
+            <InterviewsTab candidates={interviewed} />
           </div>
         )}
         {tab === 'flow' && (
           <div className="db-page">
-            <FlowTab columns={KANBAN_COLS} />
+            <FlowTab candidates={candidates} />
           </div>
         )}
         {tab === 'onboarding' && (
           <div className="db-page">
-            <OnboardingTab records={ONBOARDING} />
+            <OnboardingTab candidates={candidates} />
           </div>
         )}
         {tab === 'sessions' && (
           <div className="db-page">
-            <SessionsTab sessions={SESSIONS} />
+            <SessionsTab sessions={sessions} />
           </div>
         )}
       </main>
