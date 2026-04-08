@@ -469,9 +469,9 @@
   border: 1px solid var(--bd);
   border-radius: 9px;
   padding: 1.8rem;
-  max-width: 700px;
-  width: 90%;
-  max-height: 85vh;
+  max-width: 750px;
+  width: 92%;
+  max-height: 90vh;
   overflow-y: auto;
   position: relative;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
@@ -532,6 +532,8 @@
   line-height: 1.6;
   color: var(--ink2);
   grid-column: 1 / -1;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 /* CHART BARS */
