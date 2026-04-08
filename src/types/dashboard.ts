@@ -43,6 +43,8 @@ export interface YouthCandidate {
   ob_pledge: boolean
   ob_handbook: boolean
 
+  attended_session: boolean
+
   created_at: string
   updated_at: string
 }

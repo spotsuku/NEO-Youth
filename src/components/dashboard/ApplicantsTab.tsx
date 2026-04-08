@@ -11,6 +11,16 @@ interface Props {
 
 const TYPE_FILTERS = ['全て', '大学生・専門学生・大学院生', '社会人']
 
+const STATUS_BADGE: Record<string, { cls: string }> = {
+  '応募完了':     { cls: 'grn' },
+  'アプローチ中': { cls: 'gold' },
+  '説明会参加済': { cls: 'blu' },
+  '参加確定':     { cls: 'grn' },
+  '特別選考付与': { cls: 'gold' },
+  '3期生候補':    { cls: 'purple' },
+  '対応不要':     { cls: 'gray' },
+}
+
 export default function ApplicantsTab({ applicants, onUpdate }: Props) {
   const [query, setQuery] = useState('')
   const [typeFilter, setTypeFilter] = useState('全て')
@@ -33,6 +43,10 @@ export default function ApplicantsTab({ applicants, onUpdate }: Props) {
   const openInterview = (c: YouthCandidate) => {
     setSelected(null)
     setInterviewTarget(c)
+  }
+
+  const toggleSession = (c: YouthCandidate) => {
+    onUpdate(c.name, { attended_session: !c.attended_session })
   }
 
   return (
@@ -63,43 +77,59 @@ export default function ApplicantsTab({ applicants, onUpdate }: Props) {
           <thead>
             <tr>
               <th>氏名</th>
-              <th>ふりがな</th>
+              <th>ステータス</th>
               <th>区分</th>
               <th>所属</th>
               <th>応募日</th>
+              <th>説明会</th>
               <th>面談</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((a) => (
-              <tr key={a.id}>
-                <td style={{ fontWeight: 600 }}>{a.name}</td>
-                <td style={{ fontSize: '0.75rem', color: 'var(--mu)' }}>{a.kana ?? '-'}</td>
-                <td>
-                  <span className={`badge ${(a.type ?? '').includes('大学') ? 'blu' : 'gold'}`}>
-                    {(a.type ?? '').includes('大学') ? '学生' : '社会人'}
-                  </span>
-                </td>
-                <td>{a.school || '-'}</td>
-                <td style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.75rem' }}>
-                  {a.applied_at ? a.applied_at.slice(0, 10) : '-'}
-                </td>
-                <td>
-                  <button className="detail-btn" onClick={() => openInterview(a)}>
-                    面談記録
-                  </button>
-                </td>
-                <td>
-                  <button className="detail-btn" onClick={() => setSelected(a)}>
-                    詳細
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {filtered.map((a) => {
+              const sb = STATUS_BADGE[a.status] ?? { cls: 'gray' }
+              return (
+                <tr key={a.id}>
+                  <td style={{ fontWeight: 600 }}>{a.name}</td>
+                  <td>
+                    <span className={`badge ${sb.cls}`}>{a.status}</span>
+                  </td>
+                  <td>
+                    <span className={`badge ${(a.type ?? '').includes('大学') ? 'blu' : 'gold'}`}>
+                      {(a.type ?? '').includes('大学') ? '学生' : '社会人'}
+                    </span>
+                  </td>
+                  <td style={{ fontSize: '0.78rem' }}>{a.school || '-'}</td>
+                  <td style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.72rem' }}>
+                    {a.applied_at ? a.applied_at.slice(0, 10) : '-'}
+                  </td>
+                  <td style={{ textAlign: 'center' }}>
+                    <button
+                      className={`ob-cell ${a.attended_session ? 'checked' : ''}`}
+                      onClick={() => toggleSession(a)}
+                      type="button"
+                      title="説明会参加"
+                    >
+                      {a.attended_session ? '\u2713' : ''}
+                    </button>
+                  </td>
+                  <td>
+                    <button className="detail-btn" onClick={() => openInterview(a)}>
+                      面談記録
+                    </button>
+                  </td>
+                  <td>
+                    <button className="detail-btn" onClick={() => setSelected(a)}>
+                      詳細
+                    </button>
+                  </td>
+                </tr>
+              )
+            })}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={7} style={{ textAlign: 'center', color: 'var(--mu)', padding: '2rem' }}>
+                <td colSpan={8} style={{ textAlign: 'center', color: 'var(--mu)', padding: '2rem' }}>
                   該当する応募者がいません
                 </td>
               </tr>
@@ -195,7 +225,7 @@ export default function ApplicantsTab({ applicants, onUpdate }: Props) {
         )}
       </Modal>
 
-      {/* 面談記録モーダル（複数記録対応） */}
+      {/* 面談記録モーダル */}
       {interviewTarget && (
         <InterviewListModal
           candidate={interviewTarget}
@@ -236,7 +266,6 @@ function InterviewListModal({
 
   return (
     <Modal open onClose={onClose} title={`面談記録: ${candidate.name}`}>
-      {/* 既存記録 */}
       {loading ? (
         <div style={{ color: 'var(--mu)', textAlign: 'center', padding: '1rem' }}>読み込み中...</div>
       ) : records.length === 0 && !adding ? (
@@ -257,9 +286,7 @@ function InterviewListModal({
                 {r.course && <span className="badge blu">{r.course}</span>}
                 {r.result && <span className={`badge ${(r.result ?? '').includes('特別') ? 'grn' : 'gray'}`}>{r.result}</span>}
               </div>
-              {r.notes && (
-                <div className="iv-record-notes">{r.notes}</div>
-              )}
+              {r.notes && <div className="iv-record-notes">{r.notes}</div>}
               <div style={{ fontSize: '0.62rem', color: 'var(--bd2)', marginTop: '0.3rem' }}>
                 {new Date(r.created_at).toLocaleString('ja-JP')}
               </div>
@@ -268,7 +295,6 @@ function InterviewListModal({
         </div>
       )}
 
-      {/* 新規追加フォーム */}
       {adding ? (
         <InterviewForm
           candidateName={candidate.name}
@@ -277,10 +303,7 @@ function InterviewListModal({
         />
       ) : (
         <div style={{ marginTop: '1rem' }}>
-          <button
-            className="iv-save-btn"
-            onClick={() => setAdding(true)}
-          >
+          <button className="iv-save-btn" onClick={() => setAdding(true)}>
             + 新しい面談記録を追加
           </button>
         </div>

@@ -17,6 +17,7 @@ const ALLOWED = new Set([
   'ob_final_exam', 'ob_mail_sent', 'ob_payment', 'ob_training',
   'ob_photo', 'ob_portal', 'ob_slack', 'ob_profile',
   'ob_motivation_written', 'ob_pledge', 'ob_handbook',
+  'attended_session',
 ])
 
 export async function PATCH(
