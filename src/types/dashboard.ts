@@ -12,6 +12,8 @@ export interface YouthCandidate {
   status: string
   yomi: string | null
   source: string | null
+  rejected_at: string | null
+  rejected_reason: string | null
 
   // 応募フォーム
   applied_at: string | null

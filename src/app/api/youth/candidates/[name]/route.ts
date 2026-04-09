@@ -9,7 +9,7 @@ const supabase = createClient(
 // 許可フィールド（SQL injection 防止）
 const ALLOWED = new Set([
   'name', 'kana', 'email', 'type', 'school', 'grade',
-  'status', 'yomi', 'source',
+  'status', 'yomi', 'source', 'rejected_at', 'rejected_reason',
   'applied_at', 'motivation', 'pr', 'contribution', 'career',
   'interview2_dates', 'interview3_dates',
   'referral', 'interview_handler', 'interview_date',

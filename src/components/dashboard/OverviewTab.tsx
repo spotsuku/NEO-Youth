@@ -12,10 +12,15 @@ interface Props {
 
 const STATUS_COLORS: Record<string, string> = {
   '応募完了': 'var(--grn)',
+  '書類選考': 'var(--blu)',
+  'グループ面接': 'var(--gold)',
+  '最終面接': 'var(--red)',
+  '参加確定': 'var(--grn)',
+  '保留': 'var(--mu)',
+  '不合格': 'var(--bd2)',
   '説明会参加済': 'var(--blu)',
   'アプローチ中': 'var(--gold)',
   '特別選考付与': 'var(--grn)',
-  '参加確定': 'var(--grn)',
   '3期生候補': '#7b2d8e',
   '対応不要': 'var(--bd2)',
   '未接触': 'var(--bd)',

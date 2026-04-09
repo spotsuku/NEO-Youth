@@ -895,6 +895,47 @@
   color: var(--bd2);
 }
 
+.kc-rejected {
+  font-size: 0.6rem;
+  color: var(--red);
+  margin-top: 0.2rem;
+  font-weight: 500;
+}
+
+/* FUNNEL SUMMARY */
+.funnel-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1.5rem;
+}
+
+.funnel-step {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.funnel-step-bar {
+  height: 18px;
+  border-radius: 3px;
+  transition: width 0.6s ease;
+  min-width: 16px;
+}
+
+.funnel-step-label {
+  font-size: 0.7rem;
+  color: var(--mu);
+  white-space: nowrap;
+}
+
+/* BADGE red */
+.badge.red {
+  background: rgba(192,57,43,0.08);
+  color: var(--red);
+  border: 1px solid rgba(192,57,43,0.2);
+}
+
 /* ── INTERVIEW FORM ── */
 .interview-form {
   display: flex;
