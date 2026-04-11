@@ -20,7 +20,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const { name, kana, email, type, school, grade, status, source } = body
+  const { name, kana, email, type, school, grade, status, yomi, source } = body
 
   if (!name) {
     return NextResponse.json({ error: '氏名は必須です' }, { status: 400 })
@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
       school: school || null,
       grade: grade || null,
       status: status || '応募完了',
+      yomi: yomi || null,
       source: source || null,
     })
     .select()
