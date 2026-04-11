@@ -469,9 +469,9 @@
   border: 1px solid var(--bd);
   border-radius: 9px;
   padding: 1.8rem;
-  max-width: 700px;
-  width: 90%;
-  max-height: 85vh;
+  max-width: 750px;
+  width: 92%;
+  max-height: 90vh;
   overflow-y: auto;
   position: relative;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
@@ -532,6 +532,8 @@
   line-height: 1.6;
   color: var(--ink2);
   grid-column: 1 / -1;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 /* CHART BARS */
@@ -736,4 +738,447 @@
   color: var(--mu);
   margin-top: 0.2rem;
   font-family: 'JetBrains Mono', monospace;
+}
+
+/* OB TABLE LIST VIEW */
+.ob-table th {
+  font-size: 0.6rem;
+  padding: 0.55rem 0.4rem;
+  white-space: nowrap;
+}
+
+.ob-table td {
+  padding: 0.45rem 0.4rem;
+}
+
+.ob-cell {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: 1.5px solid var(--bd);
+  background: var(--sur2);
+  cursor: pointer;
+  font-size: 0.82rem;
+  color: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.1s;
+  padding: 0;
+  font-family: sans-serif;
+}
+
+.ob-cell:hover {
+  border-color: var(--red);
+}
+
+.ob-cell.checked {
+  background: var(--grn);
+  border-color: var(--grn);
+  color: #fff;
+}
+
+.ob-row-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 80px;
+}
+
+.ob-row-bar {
+  flex: 1;
+  height: 4px;
+  background: var(--bg);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.ob-row-fill {
+  height: 100%;
+  background: var(--grn);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.ob-row-pct {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  color: var(--mu);
+  white-space: nowrap;
+}
+
+/* ── INLINE EDITABLE CELLS ── */
+.editable-table td { padding: 0.4rem 0.5rem; }
+.editable-table th { padding: 0.5rem 0.5rem; }
+
+.cell-text {
+  cursor: text;
+  padding: 0.25rem 0.35rem;
+  border-radius: 3px;
+  font-size: 0.78rem;
+  min-height: 26px;
+  display: flex;
+  align-items: center;
+  transition: background 0.1s;
+}
+
+.cell-text:hover {
+  background: var(--bg);
+}
+
+.cell-input {
+  width: 100%;
+  padding: 0.25rem 0.35rem;
+  border: 1.5px solid var(--red);
+  border-radius: 3px;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-size: 0.78rem;
+  color: var(--ink);
+  background: #fff;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(192,57,43,0.07);
+}
+
+.cell-select {
+  padding: 0.2rem 0.3rem;
+  border: 1.5px solid var(--red);
+  border-radius: 3px;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-size: 0.72rem;
+  color: var(--ink);
+  background: #fff;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(192,57,43,0.07);
+  cursor: pointer;
+}
+
+.cell-badge {
+  cursor: pointer;
+  transition: opacity 0.1s;
+}
+
+.cell-badge:hover {
+  opacity: 0.75;
+}
+
+/* DELETE BUTTON */
+.delete-btn {
+  color: var(--mu) !important;
+  border-color: transparent !important;
+}
+
+.delete-btn:hover {
+  color: var(--red) !important;
+  border-color: rgba(192,57,43,0.3) !important;
+  background: rgba(192,57,43,0.04) !important;
+}
+
+/* ── SUMMARY TABLE ── */
+.summary-table-wrap {
+  background: var(--sur);
+  border: 1px solid var(--bd);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+  max-width: 380px;
+}
+
+.summary-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.summary-section-row td {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mu);
+  padding: 0.55rem 1rem 0.25rem;
+  border-top: 1px solid var(--bd);
+  background: var(--sur2);
+}
+
+.summary-section-row:first-child td {
+  border-top: none;
+}
+
+.summary-label {
+  font-size: 0.78rem;
+  padding: 0.35rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.summary-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.summary-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-align: right;
+  padding: 0.35rem 1rem;
+  color: var(--ink);
+}
+
+/* ── KANBAN BOARD (Drag & Drop) ── */
+.kanban-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.7rem;
+  align-items: start;
+}
+
+.kanban-column {
+  background: var(--sur2);
+  border-radius: 8px;
+  min-height: 200px;
+  border: 2px solid transparent;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.kanban-column.drag-over {
+  border-color: var(--red);
+  background: rgba(192,57,43,0.03);
+}
+
+.kanban-col-head {
+  padding: 0.7rem 0.8rem 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 2px solid var(--bd);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.kanban-col-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.kanban-col-body {
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.kanban-card {
+  background: var(--sur);
+  border: 1px solid var(--bd);
+  border-radius: 5px;
+  padding: 0.5rem 0.65rem;
+  cursor: grab;
+  transition: box-shadow 0.12s, opacity 0.12s;
+}
+
+.kanban-card:active { cursor: grabbing; }
+
+.kanban-card.dragging {
+  opacity: 0.4;
+}
+
+.kanban-card:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.kc-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.kc-sub {
+  font-size: 0.65rem;
+  color: var(--mu);
+  margin-top: 0.1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kanban-empty {
+  text-align: center;
+  padding: 1.5rem 0.5rem;
+  font-size: 0.72rem;
+  color: var(--bd2);
+}
+
+.kc-rejected {
+  font-size: 0.6rem;
+  color: var(--red);
+  margin-top: 0.2rem;
+  font-weight: 500;
+}
+
+/* FUNNEL SUMMARY */
+.funnel-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1.5rem;
+}
+
+.funnel-step {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.funnel-step-bar {
+  height: 18px;
+  border-radius: 3px;
+  transition: width 0.6s ease;
+  min-width: 16px;
+}
+
+.funnel-step-label {
+  font-size: 0.7rem;
+  color: var(--mu);
+  white-space: nowrap;
+}
+
+/* BADGE red */
+.badge.red {
+  background: rgba(192,57,43,0.08);
+  color: var(--red);
+  border: 1px solid rgba(192,57,43,0.2);
+}
+
+/* ── INTERVIEW FORM ── */
+.interview-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.iv-input {
+  width: 100%;
+  padding: 0.5rem 0.7rem;
+  border: 1.5px solid var(--bd);
+  border-radius: 5px;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-size: 0.8rem;
+  color: var(--ink);
+  background: var(--sur2);
+  outline: none;
+  transition: border-color 0.12s;
+}
+
+.iv-input:focus {
+  border-color: var(--red);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(192,57,43,0.07);
+}
+
+.iv-textarea {
+  width: 100%;
+  padding: 0.6rem 0.7rem;
+  border: 1.5px solid var(--bd);
+  border-radius: 5px;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-size: 0.8rem;
+  color: var(--ink);
+  background: var(--sur2);
+  outline: none;
+  resize: vertical;
+  min-height: 140px;
+  line-height: 1.6;
+  transition: border-color 0.12s;
+}
+
+.iv-textarea:focus {
+  border-color: var(--red);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(192,57,43,0.07);
+}
+
+.iv-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.iv-save-btn {
+  padding: 0.55rem 1.2rem;
+  background: var(--ink);
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.iv-save-btn:hover {
+  background: #2a201a;
+  transform: translateY(-1px);
+}
+
+.iv-saved {
+  font-size: 0.72rem;
+  color: var(--grn);
+  font-weight: 600;
+}
+
+/* ── OB LOG PANEL ── */
+.ob-log-panel {
+  background: var(--sur);
+  border: 1px solid var(--bd);
+  border-radius: 7px;
+  padding: 0.7rem;
+  margin-bottom: 1rem;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.ob-log-panel table { font-size: 0.75rem; }
+.ob-log-panel th { font-size: 0.62rem; }
+.ob-log-panel td { padding: 0.35rem 0.6rem; }
+
+/* ── INTERVIEW RECORDS ── */
+.iv-records {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.iv-record {
+  background: var(--sur2);
+  border: 1px solid var(--bd);
+  border-radius: 6px;
+  padding: 0.75rem 0.9rem;
+}
+
+.iv-record-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.35rem;
+}
+
+.iv-record-meta {
+  display: flex;
+  gap: 0.3rem;
+  margin-bottom: 0.4rem;
+}
+
+.iv-record-notes {
+  font-size: 0.78rem;
+  line-height: 1.6;
+  color: var(--ink2);
+  white-space: pre-wrap;
 }
