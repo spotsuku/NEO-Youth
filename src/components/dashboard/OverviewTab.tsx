@@ -107,7 +107,7 @@ export default function OverviewTab({ candidates, applicantCount, interviewCount
 
   return (
     <>
-      {/* 最上段: 参加承諾 / 合格 / 合格基準 */}
+      {/* 最上段: 参加承諾 / 合格 / 合格基準 / 保留 / 不合格 */}
       <div className="kpi-row">
         <div className="kpi-card" style={{ borderLeft: '4px solid var(--grn)', background: 'rgba(46,125,82,0.04)' }}>
           <div className="kpi-label">参加承諾</div>
@@ -121,18 +121,25 @@ export default function OverviewTab({ candidates, applicantCount, interviewCount
           <div className="kpi-label">合格基準</div>
           <div className="kpi-value" style={{ color: 'var(--blu)' }}>{passCount}</div>
         </div>
+        <div className="kpi-card" style={{ borderLeft: '4px solid var(--gold)' }}>
+          <div className="kpi-label">保留</div>
+          <div className="kpi-value" style={{ color: 'var(--gold)' }}>{candidates.filter((c) => c.status === '保留').length}</div>
+        </div>
+        <div className="kpi-card" style={{ borderLeft: '4px solid var(--bd2)' }}>
+          <div className="kpi-label">不合格</div>
+          <div className="kpi-value">{candidates.filter((c) => c.status === '不合格').length}</div>
+        </div>
       </div>
 
-      {/* ステータス別フロー順 */}
+      {/* ステータス別フロー順（合格系は上段にあるので除外） */}
       <div className="kpi-row">
         {[
           { key: '応募完了', color: 'var(--grn)' },
           { key: '書類選考', color: 'var(--blu)' },
           { key: 'グループ面接', color: 'var(--gold)' },
           { key: '最終面接', color: 'var(--red)' },
-          { key: '合格', color: 'var(--grn)' },
-          { key: '補欠合格', color: 'var(--gold)' },
           { key: '承諾書提出', color: 'var(--grn)' },
+          { key: '辞退', color: 'var(--red)' },
         ].map(({ key, color }) => (
           <div className="kpi-card" key={key} style={{ borderLeft: `3px solid ${color}` }}>
             <div className="kpi-label">{key}</div>
