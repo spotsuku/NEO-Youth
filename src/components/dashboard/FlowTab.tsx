@@ -18,6 +18,7 @@ const STATUSES = [
   { key: '合格', color: 'var(--grn)', group: 'flow' },
   { key: '補欠合格', color: 'var(--gold)', group: 'flow' },
   { key: '承諾書提出', color: 'var(--grn)', group: 'flow' },
+  { key: '不合格', color: 'var(--bd2)', group: 'result' },
   { key: '辞退', color: 'var(--red)', group: 'result' },
 ]
 
