@@ -807,6 +807,60 @@
   white-space: nowrap;
 }
 
+/* ── INLINE EDITABLE CELLS ── */
+.editable-table td { padding: 0.4rem 0.5rem; }
+.editable-table th { padding: 0.5rem 0.5rem; }
+
+.cell-text {
+  cursor: text;
+  padding: 0.25rem 0.35rem;
+  border-radius: 3px;
+  font-size: 0.78rem;
+  min-height: 26px;
+  display: flex;
+  align-items: center;
+  transition: background 0.1s;
+}
+
+.cell-text:hover {
+  background: var(--bg);
+}
+
+.cell-input {
+  width: 100%;
+  padding: 0.25rem 0.35rem;
+  border: 1.5px solid var(--red);
+  border-radius: 3px;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-size: 0.78rem;
+  color: var(--ink);
+  background: #fff;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(192,57,43,0.07);
+}
+
+.cell-select {
+  padding: 0.2rem 0.3rem;
+  border: 1.5px solid var(--red);
+  border-radius: 3px;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-size: 0.72rem;
+  color: var(--ink);
+  background: #fff;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(192,57,43,0.07);
+  cursor: pointer;
+}
+
+.cell-badge {
+  cursor: pointer;
+  transition: opacity 0.1s;
+}
+
+.cell-badge:hover {
+  opacity: 0.75;
+}
+
 /* ── KANBAN BOARD (Drag & Drop) ── */
 .kanban-board {
   display: grid;

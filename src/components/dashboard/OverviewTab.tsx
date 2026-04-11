@@ -2,12 +2,14 @@
 
 import { useMemo } from 'react'
 import type { YouthCandidate } from '@/types/dashboard'
+import type { VerdictRecord } from '@/app/dashboard/page'
 
 interface Props {
   candidates: YouthCandidate[]
   applicantCount: number
   interviewCount: number
   sessionCount: number
+  verdictMap: Record<string, VerdictRecord>
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -42,9 +44,29 @@ const TIMELINE = [
   { date: '2026-05-01', title: '事前研修・オンボーディング', sub: '写真撮影・Slack・ポータル' },
 ]
 
-export default function OverviewTab({ candidates, applicantCount, interviewCount, sessionCount }: Props) {
+export default function OverviewTab({ candidates, applicantCount, interviewCount, sessionCount, verdictMap }: Props) {
   const target = 36
   const confirmed = candidates.filter((c) => c.status === '参加確定').length
+
+  // 最終面接結果の集計
+  const verdictCounts = useMemo(() => {
+    const counts = { pass: 0, border: 0, fail: 0 }
+    for (const v of Object.values(verdictMap)) {
+      if (v.verdict === '合格') counts.pass++
+      else if (v.verdict === 'ボーダー') counts.border++
+      else if (v.verdict === '不合格') counts.fail++
+    }
+    return counts
+  }, [verdictMap])
+
+  // ヨミ別集計
+  const yomiSummary = useMemo(() => {
+    const map: Record<string, number> = {}
+    for (const c of candidates) {
+      if (c.yomi) map[c.yomi] = (map[c.yomi] ?? 0) + 1
+    }
+    return map
+  }, [candidates])
 
   // ステータス集計
   const statusData = useMemo(() => {
@@ -76,14 +98,45 @@ export default function OverviewTab({ candidates, applicantCount, interviewCount
 
   return (
     <>
+      {/* サマリーKPI（ユーザー要望の一覧数値） */}
+      <div className="kpi-row">
+        <div className="kpi-card grn">
+          <div className="kpi-label">合格</div>
+          <div className="kpi-value">{verdictCounts.pass}</div>
+        </div>
+        <div className="kpi-card gold">
+          <div className="kpi-label">通過予定（ボーダー）</div>
+          <div className="kpi-value">{verdictCounts.border}</div>
+        </div>
+        <div className="kpi-card blu">
+          <div className="kpi-label">参加確定</div>
+          <div className="kpi-value">{confirmed}<span> / {target}</span></div>
+        </div>
+        <div className="kpi-card grn">
+          <div className="kpi-label">応募見込み80%</div>
+          <div className="kpi-value">{yomiSummary['応募見込み80%'] ?? 0}</div>
+        </div>
+        <div className="kpi-card blu">
+          <div className="kpi-label">応募見込み50%</div>
+          <div className="kpi-value">{yomiSummary['応募見込み50%'] ?? 0}</div>
+        </div>
+        <div className="kpi-card gold">
+          <div className="kpi-label">応募見込み20%</div>
+          <div className="kpi-value">{yomiSummary['応募見込み20%'] ?? 0}</div>
+        </div>
+        <div className="kpi-card red">
+          <div className="kpi-label">応募対象外</div>
+          <div className="kpi-value">{yomiSummary['応募対象外'] ?? 0}</div>
+        </div>
+      </div>
+
       <div className="kpi-row">
         <div className="kpi-card red">
-          <div className="kpi-label">応募者数</div>
+          <div className="kpi-label">候補者数</div>
           <div className="kpi-value">
             {applicantCount}
             <span> 名</span>
           </div>
-          <div className="kpi-sub">フォーム経由</div>
         </div>
         <div className="kpi-card gold">
           <div className="kpi-label">面談実施数</div>
@@ -91,15 +144,6 @@ export default function OverviewTab({ candidates, applicantCount, interviewCount
             {interviewCount}
             <span> 件</span>
           </div>
-          <div className="kpi-sub">1次ヒアリング</div>
-        </div>
-        <div className="kpi-card grn">
-          <div className="kpi-label">参加確定</div>
-          <div className="kpi-value">
-            {confirmed}
-            <span> / {target}</span>
-          </div>
-          <div className="kpi-sub">目標 {target} 名</div>
         </div>
         <div className="kpi-card blu">
           <div className="kpi-label">説明会参加</div>

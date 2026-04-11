@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import type { YouthCandidate, YouthSession } from '@/types/dashboard'
+import type { VerdictRecord } from '@/app/dashboard/page'
 import OverviewTab from './OverviewTab'
 import ApplicantsTab from './ApplicantsTab'
 import InterviewsTab from './InterviewsTab'
@@ -11,7 +12,7 @@ import SessionsTab from './SessionsTab'
 
 const TABS = [
   { key: 'overview', label: '概要' },
-  { key: 'applicants', label: '応募者' },
+  { key: 'applicants', label: '候補者' },
   { key: 'interviews', label: '面談記録' },
   { key: 'flow', label: '選考フロー' },
   { key: 'onboarding', label: 'オンボーディング' },
@@ -23,31 +24,27 @@ type TabKey = (typeof TABS)[number]['key']
 interface Props {
   candidates: YouthCandidate[]
   sessions: YouthSession[]
+  verdictMap: Record<string, VerdictRecord>
   dbError: string | null
 }
 
-export default function RecruitmentDashboard({ candidates: initial, sessions, dbError }: Props) {
+export default function RecruitmentDashboard({ candidates: initial, sessions, verdictMap, dbError }: Props) {
   const [tab, setTab] = useState<TabKey>('overview')
   const [candidates, setCandidates] = useState<YouthCandidate[]>(initial)
 
   const updateCandidate = useCallback(async (name: string, patch: Partial<YouthCandidate>) => {
-    // 楽観的更新
     setCandidates((prev) =>
       prev.map((c) => (c.name === name ? { ...c, ...patch } : c)),
     )
-    // API保存
     try {
       await fetch(`/api/youth/candidates/${encodeURIComponent(name)}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(patch),
       })
-    } catch {
-      // サイレント（楽観的更新は維持）
-    }
+    } catch {}
   }, [])
 
-  const applicants = candidates.filter((c) => c.status === '応募完了')
   const interviewed = candidates.filter((c) => c.interview_date)
 
   return (
@@ -103,15 +100,16 @@ export default function RecruitmentDashboard({ candidates: initial, sessions, db
           <div className="db-page">
             <OverviewTab
               candidates={candidates}
-              applicantCount={applicants.length}
+              applicantCount={candidates.length}
               interviewCount={interviewed.length}
               sessionCount={sessions.length}
+              verdictMap={verdictMap}
             />
           </div>
         )}
         {tab === 'applicants' && (
           <div className="db-page">
-            <ApplicantsTab applicants={applicants} onUpdate={updateCandidate} />
+            <ApplicantsTab candidates={candidates} onUpdate={updateCandidate} verdictMap={verdictMap} />
           </div>
         )}
         {tab === 'interviews' && (
