@@ -873,6 +873,60 @@
   background: rgba(192,57,43,0.04) !important;
 }
 
+/* ── SUMMARY TABLE ── */
+.summary-table-wrap {
+  background: var(--sur);
+  border: 1px solid var(--bd);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+  max-width: 380px;
+}
+
+.summary-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.summary-section-row td {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mu);
+  padding: 0.55rem 1rem 0.25rem;
+  border-top: 1px solid var(--bd);
+  background: var(--sur2);
+}
+
+.summary-section-row:first-child td {
+  border-top: none;
+}
+
+.summary-label {
+  font-size: 0.78rem;
+  padding: 0.35rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.summary-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.summary-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-align: right;
+  padding: 0.35rem 1rem;
+  color: var(--ink);
+}
+
 /* ── KANBAN BOARD (Drag & Drop) ── */
 .kanban-board {
   display: grid;

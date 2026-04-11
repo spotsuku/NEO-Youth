@@ -107,61 +107,52 @@ export default function OverviewTab({ candidates, applicantCount, interviewCount
 
   return (
     <>
-      {/* 最上段: 参加承諾 / 合格 / 合格基準 / 保留 / 不合格 */}
-      <div className="kpi-row">
-        <div className="kpi-card" style={{ borderLeft: '4px solid var(--grn)', background: 'rgba(46,125,82,0.04)' }}>
-          <div className="kpi-label">参加承諾</div>
-          <div className="kpi-value" style={{ color: 'var(--grn)' }}>{acceptCount}<span> / {target}</span></div>
-        </div>
-        <div className="kpi-card" style={{ borderLeft: '4px solid var(--grn)' }}>
-          <div className="kpi-label">合格</div>
-          <div className="kpi-value" style={{ color: 'var(--grn)' }}>{goukakuCount}</div>
-        </div>
-        <div className="kpi-card" style={{ borderLeft: '4px solid var(--blu)' }}>
-          <div className="kpi-label">合格基準</div>
-          <div className="kpi-value" style={{ color: 'var(--blu)' }}>{passCount}</div>
-        </div>
-        <div className="kpi-card" style={{ borderLeft: '4px solid var(--gold)' }}>
-          <div className="kpi-label">保留</div>
-          <div className="kpi-value" style={{ color: 'var(--gold)' }}>{candidates.filter((c) => c.status === '保留').length}</div>
-        </div>
-        <div className="kpi-card" style={{ borderLeft: '4px solid var(--bd2)' }}>
-          <div className="kpi-label">不合格</div>
-          <div className="kpi-value">{candidates.filter((c) => c.status === '不合格').length}</div>
-        </div>
-      </div>
-
-      {/* ステータス別フロー順（合格系は上段にあるので除外） */}
-      <div className="kpi-row">
-        {[
-          { key: '応募完了', color: 'var(--grn)' },
-          { key: '書類選考', color: 'var(--blu)' },
-          { key: 'グループ面接', color: 'var(--gold)' },
-          { key: '最終面接', color: 'var(--red)' },
-          { key: '承諾書提出', color: 'var(--grn)' },
-          { key: '辞退', color: 'var(--red)' },
-        ].map(({ key, color }) => (
-          <div className="kpi-card" key={key} style={{ borderLeft: `3px solid ${color}` }}>
-            <div className="kpi-label">{key}</div>
-            <div className="kpi-value">{candidates.filter((c) => c.status === key).length}<span> 名</span></div>
-          </div>
-        ))}
-      </div>
-
-      {/* 下段: ヨミ（主観） */}
-      <div className="kpi-row">
-        {[
-          { key: '応募見込み80%', color: 'grn' },
-          { key: '応募見込み50%', color: 'blu' },
-          { key: '応募見込み20%', color: 'gold' },
-          { key: '応募対象外', color: 'gray' },
-          { key: '3期生候補', color: 'purple' },
-        ].map(({ key, color }) => (
-          <div className={`kpi-card ${color}`} key={key}>
-            <div className="kpi-label">{key}</div>
-            <div className="kpi-value">{yomiSummary[key] ?? 0}</div>
-          </div>
-        ))}
+      {/* サマリーテーブル */}
+      <div className="summary-table-wrap">
+        <table className="summary-table">
+          <tbody>
+            <tr className="summary-section-row"><td colSpan={2}>最終結果</td></tr>
+            {[
+              { label: '参加承諾', value: `${acceptCount} / ${target}`, color: 'var(--grn)' },
+              { label: '合格', value: goukakuCount, color: 'var(--grn)' },
+              { label: '合格基準', value: passCount, color: 'var(--blu)' },
+              { label: '不合格', value: candidates.filter((c) => c.status === '不合格').length, color: 'var(--bd2)' },
+              { label: '辞退', value: candidates.filter((c) => c.status === '辞退').length, color: 'var(--red)' },
+              { label: '保留', value: candidates.filter((c) => c.status === '保留').length, color: 'var(--gold)' },
+            ].map((r) => (
+              <tr key={r.label}>
+                <td className="summary-label"><span className="summary-dot" style={{ background: r.color }} />{r.label}</td>
+                <td className="summary-num">{r.value}</td>
+              </tr>
+            ))}
+            <tr className="summary-section-row"><td colSpan={2}>選考中</td></tr>
+            {[
+              { label: '応募完了', value: candidates.filter((c) => c.status === '応募完了').length, color: 'var(--grn)' },
+              { label: '書類選考', value: candidates.filter((c) => c.status === '書類選考').length, color: 'var(--blu)' },
+              { label: 'グループ面接', value: candidates.filter((c) => c.status === 'グループ面接').length, color: 'var(--gold)' },
+              { label: '最終面接', value: candidates.filter((c) => c.status === '最終面接').length, color: 'var(--red)' },
+              { label: '承諾書提出', value: candidates.filter((c) => c.status === '承諾書提出').length, color: 'var(--grn)' },
+            ].map((r) => (
+              <tr key={r.label}>
+                <td className="summary-label"><span className="summary-dot" style={{ background: r.color }} />{r.label}</td>
+                <td className="summary-num">{r.value}</td>
+              </tr>
+            ))}
+            <tr className="summary-section-row"><td colSpan={2}>応募前（ヨミ）</td></tr>
+            {[
+              { label: '応募見込み80%', value: yomiSummary['応募見込み80%'] ?? 0, color: 'var(--grn)' },
+              { label: '応募見込み50%', value: yomiSummary['応募見込み50%'] ?? 0, color: 'var(--blu)' },
+              { label: '応募見込み20%', value: yomiSummary['応募見込み20%'] ?? 0, color: 'var(--gold)' },
+              { label: '応募対象外', value: yomiSummary['応募対象外'] ?? 0, color: 'var(--bd2)' },
+              { label: '3期生候補', value: yomiSummary['3期生候補'] ?? 0, color: '#7b2d8e' },
+            ].map((r) => (
+              <tr key={r.label}>
+                <td className="summary-label"><span className="summary-dot" style={{ background: r.color }} />{r.label}</td>
+                <td className="summary-num">{r.value}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       <div className="progress-wrap">
