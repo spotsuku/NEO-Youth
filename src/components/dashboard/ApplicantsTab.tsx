@@ -12,32 +12,25 @@ interface Props {
   verdictMap: Record<string, VerdictRecord>
 }
 
-// 選考ステータス（パイプラインのステージ）
+// ステータス（事実に基づく状態）
 const ALL_STATUSES = [
-  '未接触', 'アプローチ中', '説明会参加済',
-  '応募完了', '書類選考', 'グループ面接', '最終面接',
-  '参加確定', '保留', '不合格', '辞退', '3期生候補',
+  '承諾書提出', '合格', '合格予定', '補欠合格',
+  '最終面接', 'グループ面接', '書類選考', '応募', '辞退',
 ]
 
 const STATUS_COLORS: Record<string, string> = {
-  '未接触': 'gray', 'アプローチ中': 'gold', '説明会参加済': 'blu',
-  '応募完了': 'grn', '書類選考': 'blu', 'グループ面接': 'gold', '最終面接': 'red',
-  '参加確定': 'grn', '保留': 'gray', '不合格': 'gray', '辞退': 'red',
-  '3期生候補': 'purple',
+  '承諾書提出': 'grn', '合格': 'grn', '合格予定': 'blu', '補欠合格': 'gold',
+  '最終面接': 'red', 'グループ面接': 'gold', '書類選考': 'blu',
+  '応募': 'grn', '辞退': 'red',
 }
 
-// 確度（ヨミ）
+// ヨミ（主観的な見込み）
 const YOMI_OPTIONS = [
   { value: '', label: '—', color: '' },
-  { value: '承諾書提出', label: '承諾書提出', color: 'grn' },
-  { value: '合格', label: '合格', color: 'grn' },
-  { value: '通過予定', label: '通過予定', color: 'blu' },
-  { value: '補欠合格', label: '補欠合格', color: 'gold' },
   { value: '応募見込み80%', label: '80%', color: 'grn' },
   { value: '応募見込み50%', label: '50%', color: 'blu' },
   { value: '応募見込み20%', label: '20%', color: 'gold' },
   { value: '応募対象外', label: '対象外', color: 'gray' },
-  { value: '辞退', label: '辞退', color: 'red' },
   { value: '3期生候補', label: '3期生候補', color: 'purple' },
 ]
 
@@ -45,7 +38,7 @@ const VERDICT_BADGE: Record<string, string> = {
   '合格': 'grn', 'ボーダー': 'gold', '不合格': 'red',
 }
 
-const STATUS_FILTERS = ['全て', '未接触', 'アプローチ中', '説明会参加済', '応募完了', '書類選考', 'グループ面接', '最終面接', '参加確定', '不合格', '辞退']
+const STATUS_FILTERS = ['全て', '応募', '書類選考', 'グループ面接', '最終面接', '合格予定', '合格', '補欠合格', '承諾書提出', '辞退']
 
 export default function ApplicantsTab({ candidates, onUpdate, onAdd, verdictMap }: Props) {
   const [query, setQuery] = useState('')
@@ -55,15 +48,21 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, verdictMap 
   const [showAddForm, setShowAddForm] = useState(false)
 
   const filtered = useMemo(() => {
-    return candidates.filter((c) => {
-      const q = query.toLowerCase()
-      const matchQuery = !q ||
-        c.name.toLowerCase().includes(q) ||
-        (c.kana ?? '').toLowerCase().includes(q) ||
-        (c.school ?? '').toLowerCase().includes(q)
-      const matchStatus = statusFilter === '全て' || c.status === statusFilter
-      return matchQuery && matchStatus
-    })
+    return candidates
+      .filter((c) => {
+        const q = query.toLowerCase()
+        const matchQuery = !q ||
+          c.name.toLowerCase().includes(q) ||
+          (c.kana ?? '').toLowerCase().includes(q) ||
+          (c.school ?? '').toLowerCase().includes(q)
+        const matchStatus = statusFilter === '全て' || c.status === statusFilter
+        return matchQuery && matchStatus
+      })
+      .sort((a, b) => {
+        const ka = a.kana || a.name
+        const kb = b.kana || b.name
+        return ka.localeCompare(kb, 'ja')
+      })
   }, [candidates, query, statusFilter])
 
   const openInterview = (c: YouthCandidate) => {

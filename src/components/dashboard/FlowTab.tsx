@@ -2,29 +2,23 @@
 
 import { useState, useMemo, useRef } from 'react'
 import type { YouthCandidate } from '@/types/dashboard'
-import Modal from './Modal'
 
 interface Props {
   candidates: YouthCandidate[]
   onUpdate: (name: string, patch: Partial<YouthCandidate>) => Promise<void>
 }
 
+// ステータス（事実に基づく状態）フロー順
 const STATUSES = [
-  // 引き上げフロー（応募前）
-  { key: '未接触', color: 'var(--bd)', group: 'pre' },
-  { key: 'アプローチ中', color: 'var(--gold)', group: 'pre' },
-  { key: '説明会参加済', color: 'var(--blu)', group: 'pre' },
-  // 選考フロー（応募後）
-  { key: '応募完了', color: 'var(--grn)', group: 'selection' },
-  { key: '書類選考', color: 'var(--blu)', group: 'selection' },
-  { key: 'グループ面接', color: 'var(--gold)', group: 'selection' },
-  { key: '最終面接', color: 'var(--red)', group: 'selection' },
-  // 結果
-  { key: '参加確定', color: 'var(--grn)', group: 'result' },
-  { key: '保留', color: 'var(--mu)', group: 'result' },
-  { key: '不合格', color: 'var(--bd2)', group: 'result' },
+  { key: '応募', color: 'var(--grn)', group: 'flow' },
+  { key: '書類選考', color: 'var(--blu)', group: 'flow' },
+  { key: 'グループ面接', color: 'var(--gold)', group: 'flow' },
+  { key: '最終面接', color: 'var(--red)', group: 'flow' },
+  { key: '合格予定', color: 'var(--blu)', group: 'flow' },
+  { key: '合格', color: 'var(--grn)', group: 'flow' },
+  { key: '補欠合格', color: 'var(--gold)', group: 'flow' },
+  { key: '承諾書提出', color: 'var(--grn)', group: 'flow' },
   { key: '辞退', color: 'var(--red)', group: 'result' },
-  { key: '3期生候補', color: '#7b2d8e', group: 'result' },
 ]
 
 // KPIカードの順: フロー順（応募後を上段）
@@ -35,9 +29,6 @@ export default function FlowTab({ candidates, onUpdate }: Props) {
   const [dragName, setDragName] = useState<string | null>(null)
   const [overCol, setOverCol] = useState<string | null>(null)
   const dragRef = useRef<string | null>(null)
-  const [rejectTarget, setRejectTarget] = useState<{ name: string; fromStatus: string } | null>(null)
-  const [rejectReason, setRejectReason] = useState('')
-
   const columns = useMemo(() => {
     const map = new Map<string, YouthCandidate[]>()
     for (const s of STATUSES) map.set(s.key, [])
@@ -66,20 +57,7 @@ export default function FlowTab({ candidates, onUpdate }: Props) {
     if (!name) { resetDrag(); return }
     const c = candidates.find((x) => x.name === name)
     if (!c || c.status === colKey) { resetDrag(); return }
-
-    if (colKey === '不合格') {
-      setRejectTarget({ name, fromStatus: c.status })
-      setRejectReason('')
-      resetDrag()
-      return
-    }
-
-    const patch: Partial<YouthCandidate> = { status: colKey }
-    if (c.rejected_at) {
-      patch.rejected_at = null
-      patch.rejected_reason = null
-    }
-    onUpdate(name, patch)
+    onUpdate(name, { status: colKey })
     resetDrag()
   }
 
@@ -89,127 +67,47 @@ export default function FlowTab({ candidates, onUpdate }: Props) {
     dragRef.current = null
   }
 
-  const confirmReject = () => {
-    if (!rejectTarget) return
-    onUpdate(rejectTarget.name, {
-      status: '不合格',
-      rejected_at: rejectTarget.fromStatus,
-      rejected_reason: rejectReason || null,
-    })
-    setRejectTarget(null)
-    setRejectReason('')
-  }
-
   const total = candidates.length
   const count = (key: string) => candidates.filter((c) => c.status === key).length
-
-  const preGroup = columns.filter((c) => c.group === 'pre')
-  const selGroup = columns.filter((c) => c.group === 'selection')
-  const resGroup = columns.filter((c) => c.group === 'result')
+  const flowGroup = columns.filter((c) => c.group === 'flow')
+  const resultGroup = columns.filter((c) => c.group === 'result')
 
   return (
     <>
-      {/* KPI上段: 応募後フロー順 */}
+      {/* KPI: ステータス別 */}
       <div className="kpi-row">
-        {['応募完了', '書類選考', 'グループ面接', '最終面接', '参加確定'].map((key) => {
-          const n = count(key)
-          const s = STATUSES.find((x) => x.key === key)
+        {STATUSES.map((s) => {
+          const n = count(s.key)
           return (
-            <div className="kpi-card" key={key} style={{ borderLeft: `3px solid ${s?.color ?? 'var(--mu)'}` }}>
-              <div className="kpi-label">{key}</div>
+            <div className="kpi-card" key={s.key} style={{ borderLeft: `3px solid ${s.color}` }}>
+              <div className="kpi-label">{s.key}</div>
               <div className="kpi-value">{n}<span> 名</span></div>
             </div>
           )
         })}
       </div>
 
-      {/* KPI下段: 応募前フロー順 */}
-      <div className="kpi-row">
-        {['未接触', 'アプローチ中', '説明会参加済', '保留', '不合格', '対応不要'].map((key) => {
-          const n = count(key)
-          if (n === 0 && !['未接触', 'アプローチ中', '説明会参加済'].includes(key)) return null
-          const s = STATUSES.find((x) => x.key === key)
-          return (
-            <div className="kpi-card" key={key} style={{ borderLeft: `3px solid ${s?.color ?? 'var(--mu)'}` }}>
-              <div className="kpi-label">{key}</div>
-              <div className="kpi-value">{n}<span> 名</span></div>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* ファネル: 応募後 → 応募前 */}
+      {/* ファネル */}
       <div className="funnel-summary">
-        <div style={{ fontSize: '0.62rem', fontWeight: 700, color: 'var(--mu)', letterSpacing: '0.1em', marginBottom: '0.2rem' }}>選考フロー</div>
-        {['応募完了', '書類選考', 'グループ面接', '最終面接', '参加確定'].map((key) => {
-          const n = count(key)
-          const s = STATUSES.find((x) => x.key === key)
+        {STATUSES.map((s) => {
+          const n = count(s.key)
           return (
-            <div className="funnel-step" key={key}>
-              <div className="funnel-step-bar" style={{ width: `${total > 0 ? Math.max((n / total) * 100, 3) : 3}%`, background: s?.color }} />
-              <div className="funnel-step-label">{key} ({n})</div>
-            </div>
-          )
-        })}
-        <div style={{ fontSize: '0.62rem', fontWeight: 700, color: 'var(--mu)', letterSpacing: '0.1em', marginTop: '0.5rem', marginBottom: '0.2rem' }}>引き上げフロー（応募前）</div>
-        {['未接触', 'アプローチ中', '説明会参加済'].map((key) => {
-          const n = count(key)
-          const s = STATUSES.find((x) => x.key === key)
-          return (
-            <div className="funnel-step" key={key}>
-              <div className="funnel-step-bar" style={{ width: `${total > 0 ? Math.max((n / total) * 100, 3) : 3}%`, background: s?.color }} />
-              <div className="funnel-step-label">{key} ({n})</div>
+            <div className="funnel-step" key={s.key}>
+              <div className="funnel-step-bar" style={{ width: `${total > 0 ? Math.max((n / total) * 100, 3) : 3}%`, background: s.color }} />
+              <div className="funnel-step-label">{s.key} ({n})</div>
             </div>
           )
         })}
       </div>
 
-      {/* カンバン: 選考フロー（応募後） */}
-      <div className="section-title">選考フロー（ドラッグで移動）</div>
-      <div className="kanban-board" style={{ marginBottom: '1.5rem' }}>
-        {selGroup.map((col) => (
-          <KanbanCol key={col.key} col={col} dragName={dragName} overCol={overCol}
-            onDragStart={handleDragStart} onDragOver={handleDragOver} onDrop={handleDrop} onDragEnd={resetDrag} setOverCol={setOverCol} />
-        ))}
-        {resGroup.map((col) => (
-          <KanbanCol key={col.key} col={col} dragName={dragName} overCol={overCol}
-            onDragStart={handleDragStart} onDragOver={handleDragOver} onDrop={handleDrop} onDragEnd={resetDrag} setOverCol={setOverCol} />
-        ))}
-      </div>
-
-      {/* カンバン: 引き上げフロー（応募前） */}
-      <div className="section-title">引き上げフロー（応募前 → 応募完了）</div>
+      {/* カンバンボード */}
+      <div className="section-title">ステータス管理（ドラッグで移動）</div>
       <div className="kanban-board">
-        {preGroup.map((col) => (
+        {[...flowGroup, ...resultGroup].map((col) => (
           <KanbanCol key={col.key} col={col} dragName={dragName} overCol={overCol}
             onDragStart={handleDragStart} onDragOver={handleDragOver} onDrop={handleDrop} onDragEnd={resetDrag} setOverCol={setOverCol} />
         ))}
       </div>
-
-      {/* 不合格理由入力モーダル */}
-      <Modal open={!!rejectTarget} onClose={() => setRejectTarget(null)} title="不合格記録">
-        {rejectTarget && (
-          <div className="interview-form">
-            <div style={{ marginBottom: '0.8rem', fontSize: '0.85rem' }}>
-              <strong>{rejectTarget.name}</strong> を不合格にします
-            </div>
-            <div className="field-row">
-              <div>
-                <div className="field-label">不合格ステージ</div>
-                <div className="field-value"><span className="badge red">{rejectTarget.fromStatus}</span></div>
-              </div>
-            </div>
-            <div>
-              <div className="field-label">不合格理由・メモ</div>
-              <textarea className="iv-textarea" value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} placeholder="不合格の理由や備考を入力..." rows={4} />
-            </div>
-            <div className="iv-footer">
-              <button className="iv-save-btn" style={{ background: 'var(--red)' }} onClick={confirmReject}>不合格を確定</button>
-              <button className="detail-btn" onClick={() => setRejectTarget(null)}>キャンセル</button>
-            </div>
-          </div>
-        )}
-      </Modal>
     </>
   )
 }
