@@ -114,6 +114,7 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, v
               <th>所属</th>
               <th>応募日</th>
               <th>合格基準</th>
+              <th>不合格</th>
               <th>説明会</th>
               <th>面談済</th>
               <th>最終面接</th>
@@ -184,6 +185,16 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, v
                       {c.ob_pass_criteria ? '\u2713' : ''}
                     </button>
                   </td>
+                  {/* 不合格 */}
+                  <td style={{ textAlign: 'center' }}>
+                    <button
+                      className={`ob-cell ${c.status === '不合格' ? 'checked reject' : ''}`}
+                      onClick={() => onUpdate(c.name, { status: c.status === '不合格' ? '応募完了' : '不合格' })}
+                      type="button"
+                    >
+                      {c.status === '不合格' ? '\u2713' : ''}
+                    </button>
+                  </td>
                   {/* 説明会 */}
                   <td style={{ textAlign: 'center' }}>
                     <button
@@ -241,7 +252,7 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, v
               )
             })}
             {filtered.length === 0 && (
-              <tr><td colSpan={14} style={{ textAlign: 'center', color: 'var(--mu)', padding: '2rem' }}>該当する候補者がいません</td></tr>
+              <tr><td colSpan={15} style={{ textAlign: 'center', color: 'var(--mu)', padding: '2rem' }}>該当する候補者がいません</td></tr>
             )}
           </tbody>
         </table>
