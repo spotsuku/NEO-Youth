@@ -116,10 +116,10 @@ export default function OverviewTab({ candidates, applicantCount, interviewCount
               { label: '参加承諾', value: acceptCount, target, color: 'var(--grn)' },
               { label: '合格', value: goukakuCount, color: 'var(--grn)' },
               { label: '合格基準', value: passCount, color: 'var(--blu)' },
-              { label: '不合格', value: candidates.filter((c) => c.status === '不合格').length, color: 'var(--bd2)' },
+              { label: '不合格', value: candidates.filter((c) => !!c.rejected_at).length, color: 'var(--bd2)' },
               { label: '辞退', value: candidates.filter((c) => c.status === '辞退').length, color: 'var(--red)' },
             ].map((r) => {
-              const max = Math.max(acceptCount, goukakuCount, passCount, candidates.filter((c) => c.status === '不合格').length, candidates.filter((c) => c.status === '辞退').length, 1)
+              const max = Math.max(acceptCount, goukakuCount, passCount, candidates.filter((c) => !!c.rejected_at).length, candidates.filter((c) => c.status === '辞退').length, 1)
               return (
                 <div className="summary-bar-item" key={r.label}>
                   <div className="summary-bar-label">{r.label}</div>

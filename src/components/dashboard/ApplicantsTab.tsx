@@ -57,7 +57,7 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, v
           c.name.toLowerCase().includes(q) ||
           (c.kana ?? '').toLowerCase().includes(q) ||
           (c.school ?? '').toLowerCase().includes(q)
-        const matchStatus = statusFilter === '全て' || c.status === statusFilter
+        const matchStatus = statusFilter === '全て' || (statusFilter === '不合格' ? !!c.rejected_at : c.status === statusFilter)
         return matchQuery && matchStatus
       })
       .sort((a, b) => {
@@ -97,7 +97,7 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, v
             className={`filter-btn ${statusFilter === f ? 'active' : ''}`}
             onClick={() => setStatusFilter(f)}
           >
-            {f === '全て' ? `全て (${candidates.length})` : `${f} (${candidates.filter((c) => c.status === f).length})`}
+            {f === '全て' ? `全て (${candidates.length})` : f === '不合格' ? `不合格 (${candidates.filter((c) => !!c.rejected_at).length})` : `${f} (${candidates.filter((c) => c.status === f).length})`}
           </button>
         ))}
       </div>
@@ -188,11 +188,11 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, v
                   {/* 不合格 */}
                   <td style={{ textAlign: 'center' }}>
                     <button
-                      className={`ob-cell ${c.status === '不合格' ? 'checked reject' : ''}`}
-                      onClick={() => onUpdate(c.name, { status: c.status === '不合格' ? '応募完了' : '不合格' })}
+                      className={`ob-cell ${c.rejected_at ? 'checked reject' : ''}`}
+                      onClick={() => onUpdate(c.name, { rejected_at: c.rejected_at ? null : new Date().toISOString() })}
                       type="button"
                     >
-                      {c.status === '不合格' ? '\u2713' : ''}
+                      {c.rejected_at ? '\u2713' : ''}
                     </button>
                   </td>
                   {/* 説明会 */}

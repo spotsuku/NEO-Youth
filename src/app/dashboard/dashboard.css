@@ -964,18 +964,25 @@
   color: var(--bd2);
 }
 
-/* ── KANBAN BOARD (Drag & Drop) ── */
-.kanban-board {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+/* ── KANBAN BOARD (Drag & Drop, 横スクロール) ── */
+.kanban-scroll {
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+
+.kanban-board-row {
+  display: flex;
   gap: 0.7rem;
-  align-items: start;
+  align-items: stretch;
+  min-width: min-content;
 }
 
 .kanban-column {
   background: var(--sur2);
   border-radius: 8px;
   min-height: 200px;
+  min-width: 200px;
+  flex: 0 0 200px;
   border: 2px solid transparent;
   transition: border-color 0.15s, background 0.15s;
 }
@@ -1099,50 +1106,6 @@
   background: var(--red);
   border-color: var(--red);
   color: #fff;
-}
-
-/* カードアクションボタン群 */
-.kc-actions {
-  display: flex;
-  gap: 0.2rem;
-  flex-shrink: 0;
-}
-
-/* 保留ボタン */
-.kc-hold-btn {
-  width: 18px;
-  height: 18px;
-  border-radius: 3px;
-  border: 1px solid var(--bd);
-  background: none;
-  color: var(--bd2);
-  font-size: 0.65rem;
-  font-weight: 700;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: all 0.12s;
-  padding: 0;
-  line-height: 1;
-}
-
-.kc-hold-btn:hover {
-  border-color: var(--gold);
-  color: var(--gold);
-}
-
-.kc-hold-btn.active {
-  background: var(--gold);
-  border-color: var(--gold);
-  color: #fff;
-}
-
-/* 保留カード スタイル */
-.kanban-card.on-hold {
-  border-color: var(--gold);
-  background: rgba(196,136,42,0.06);
 }
 
 /* 不合格チェックボックス（候補者リスト） */

@@ -10,27 +10,23 @@ interface Props {
 
 // ステータス（事実に基づく状態）フロー順
 const STATUSES = [
-  { key: '応募完了', color: 'var(--grn)', group: 'flow' },
-  { key: '書類選考', color: 'var(--blu)', group: 'flow' },
-  { key: 'グループ面接', color: 'var(--gold)', group: 'flow' },
-  { key: '最終面接', color: 'var(--red)', group: 'flow' },
-  { key: '合格予定', color: 'var(--blu)', group: 'flow' },
-  { key: '合格', color: 'var(--grn)', group: 'flow' },
-  { key: '補欠合格', color: 'var(--gold)', group: 'flow' },
-  { key: '承諾書提出', color: 'var(--grn)', group: 'flow' },
-  { key: '保留', color: 'var(--gold)', group: 'flow' },
-  { key: '不合格', color: 'var(--bd2)', group: 'flow' },
-  { key: '辞退', color: 'var(--red)', group: 'flow' },
+  { key: '応募完了', color: 'var(--grn)' },
+  { key: '書類選考', color: 'var(--blu)' },
+  { key: 'グループ面接', color: 'var(--gold)' },
+  { key: '最終面接', color: 'var(--red)' },
+  { key: '合格予定', color: 'var(--blu)' },
+  { key: '合格', color: 'var(--grn)' },
+  { key: '補欠合格', color: 'var(--gold)' },
+  { key: '承諾書提出', color: 'var(--grn)' },
+  { key: '保留', color: 'var(--gold)' },
+  { key: '辞退', color: 'var(--red)' },
 ]
-
-// KPIカードの順: フロー順（応募後を上段）
-const KPI_TOP = ['応募完了', '書類選考', 'グループ面接', '最終面接', '合格', '参加確定']
-const KPI_BOTTOM = ['未接触', 'アプローチ中', '説明会参加済', '応募見込み80%', '応募見込み50%']
 
 export default function FlowTab({ candidates, onUpdate }: Props) {
   const [dragName, setDragName] = useState<string | null>(null)
   const [overCol, setOverCol] = useState<string | null>(null)
   const dragRef = useRef<string | null>(null)
+
   const columns = useMemo(() => {
     const map = new Map<string, YouthCandidate[]>()
     for (const s of STATUSES) map.set(s.key, [])
@@ -72,33 +68,15 @@ export default function FlowTab({ candidates, onUpdate }: Props) {
   const total = candidates.length
   const count = (key: string) => candidates.filter((c) => c.status === key).length
 
+  // 不合格: ステータスは変えず rejected_at をトグル（その場でグレーアウト）
   const handleReject = (name: string) => {
     const c = candidates.find((x) => x.name === name)
     if (!c) return
-    onUpdate(name, { status: c.status === '不合格' ? '応募完了' : '不合格' })
-  }
-
-  const handleHold = (name: string) => {
-    const c = candidates.find((x) => x.name === name)
-    if (!c) return
-    onUpdate(name, { status: c.status === '保留' ? '応募完了' : '保留' })
+    onUpdate(name, { rejected_at: c.rejected_at ? null : new Date().toISOString() })
   }
 
   return (
     <>
-      {/* KPI: ステータス別 */}
-      <div className="kpi-row">
-        {STATUSES.map((s) => {
-          const n = count(s.key)
-          return (
-            <div className="kpi-card" key={s.key} style={{ borderLeft: `3px solid ${s.color}` }}>
-              <div className="kpi-label">{s.key}</div>
-              <div className="kpi-value">{n}<span> 名</span></div>
-            </div>
-          )
-        })}
-      </div>
-
       {/* ファネル */}
       <div className="funnel-summary">
         {STATUSES.map((s) => {
@@ -112,20 +90,23 @@ export default function FlowTab({ candidates, onUpdate }: Props) {
         })}
       </div>
 
-      {/* カンバンボード */}
+      {/* カンバンボード（横スクロール） */}
       <div className="section-title">ステータス管理（ドラッグで移動）</div>
-      <div className="kanban-board">
-        {columns.map((col) => (
-          <KanbanCol key={col.key} col={col} dragName={dragName} overCol={overCol}
-            onDragStart={handleDragStart} onDragOver={handleDragOver} onDrop={handleDrop} onDragEnd={resetDrag} setOverCol={setOverCol} onReject={handleReject} onHold={handleHold} />
-        ))}
+      <div className="kanban-scroll">
+        <div className="kanban-board-row">
+          {columns.map((col) => (
+            <KanbanCol key={col.key} col={col} dragName={dragName} overCol={overCol}
+              onDragStart={handleDragStart} onDragOver={handleDragOver} onDrop={handleDrop}
+              onDragEnd={resetDrag} setOverCol={setOverCol} onReject={handleReject} />
+          ))}
+        </div>
       </div>
     </>
   )
 }
 
 /* ── カンバン列コンポーネント ── */
-function KanbanCol({ col, dragName, overCol, onDragStart, onDragOver, onDrop, onDragEnd, setOverCol, onReject, onHold }: {
+function KanbanCol({ col, dragName, overCol, onDragStart, onDragOver, onDrop, onDragEnd, setOverCol, onReject }: {
   col: { key: string; color: string; candidates: YouthCandidate[] }
   dragName: string | null
   overCol: string | null
@@ -135,7 +116,6 @@ function KanbanCol({ col, dragName, overCol, onDragStart, onDragOver, onDrop, on
   onDragEnd: () => void
   setOverCol: (v: string | null) => void
   onReject: (name: string) => void
-  onHold: (name: string) => void
 }) {
   return (
     <div
@@ -152,31 +132,21 @@ function KanbanCol({ col, dragName, overCol, onDragStart, onDragOver, onDrop, on
         {col.candidates.map((c) => (
           <div
             key={c.name}
-            className={`kanban-card ${dragName === c.name ? 'dragging' : ''} ${c.status === '不合格' ? 'rejected' : ''} ${c.status === '保留' ? 'on-hold' : ''}`}
+            className={`kanban-card ${dragName === c.name ? 'dragging' : ''} ${c.rejected_at ? 'rejected' : ''}`}
             draggable
             onDragStart={() => onDragStart(c.name)}
             onDragEnd={onDragEnd}
           >
             <div className="kc-top">
               <div className="kc-name">{c.name}</div>
-              <div className="kc-actions">
-                <button
-                  className={`kc-hold-btn ${c.status === '保留' ? 'active' : ''}`}
-                  onClick={(e) => { e.stopPropagation(); onHold(c.name) }}
-                  title="保留"
-                  type="button"
-                >
-                  !
-                </button>
-                <button
-                  className={`kc-reject-btn ${c.status === '不合格' ? 'active' : ''}`}
-                  onClick={(e) => { e.stopPropagation(); onReject(c.name) }}
-                  title="不合格"
-                  type="button"
-                >
-                  ✕
-                </button>
-              </div>
+              <button
+                className={`kc-reject-btn ${c.rejected_at ? 'active' : ''}`}
+                onClick={(e) => { e.stopPropagation(); onReject(c.name) }}
+                title={c.rejected_at ? '不合格を取消' : '不合格にする'}
+                type="button"
+              >
+                ✕
+              </button>
             </div>
             <div className="kc-sub">{c.school || c.type || '-'}</div>
           </div>
