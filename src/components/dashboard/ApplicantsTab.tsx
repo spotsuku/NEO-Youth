@@ -16,13 +16,14 @@ interface Props {
 // ステータス（事実に基づく状態）
 const ALL_STATUSES = [
   '承諾書提出', '合格', '合格予定', '補欠合格',
-  '最終面接', 'グループ面接', '書類選考', '応募完了', '不合格', '辞退',
+  '最終面接', 'グループ面接', '書類選考', '応募完了',
+  '保留', '不合格', '辞退',
 ]
 
 const STATUS_COLORS: Record<string, string> = {
   '承諾書提出': 'grn', '合格': 'grn', '合格予定': 'blu', '補欠合格': 'gold',
   '最終面接': 'red', 'グループ面接': 'gold', '書類選考': 'blu',
-  '応募完了': 'grn', '不合格': 'gray', '辞退': 'red',
+  '応募完了': 'grn', '保留': 'gold', '不合格': 'gray', '辞退': 'red',
 }
 
 // ヨミ（主観的な見込み）
@@ -39,7 +40,7 @@ const VERDICT_BADGE: Record<string, string> = {
   '合格': 'grn', 'ボーダー': 'gold', '不合格': 'red',
 }
 
-const STATUS_FILTERS = ['全て', '応募完了', '書類選考', 'グループ面接', '最終面接', '合格予定', '合格', '補欠合格', '承諾書提出', '不合格', '辞退']
+const STATUS_FILTERS = ['全て', '応募完了', '書類選考', 'グループ面接', '最終面接', '合格予定', '合格', '補欠合格', '承諾書提出', '保留', '不合格', '辞退']
 
 export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, verdictMap }: Props) {
   const [query, setQuery] = useState('')
