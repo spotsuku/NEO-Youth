@@ -9,6 +9,7 @@ interface Props {
   candidates: YouthCandidate[]
   onUpdate: (name: string, patch: Partial<YouthCandidate>) => Promise<void>
   onAdd: (data: Partial<YouthCandidate>) => Promise<boolean>
+  onDelete: (name: string) => Promise<void>
   verdictMap: Record<string, VerdictRecord>
 }
 
@@ -40,7 +41,7 @@ const VERDICT_BADGE: Record<string, string> = {
 
 const STATUS_FILTERS = ['全て', '応募完了', '書類選考', 'グループ面接', '最終面接', '合格予定', '合格', '補欠合格', '承諾書提出', '辞退']
 
-export default function ApplicantsTab({ candidates, onUpdate, onAdd, verdictMap }: Props) {
+export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, verdictMap }: Props) {
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('全て')
   const [selected, setSelected] = useState<YouthCandidate | null>(null)
@@ -114,6 +115,7 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, verdictMap 
               <th>説明会</th>
               <th>面談済</th>
               <th>最終面接</th>
+              <th></th>
               <th></th>
               <th></th>
             </tr>
@@ -210,11 +212,24 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, verdictMap 
                   <td>
                     <button className="detail-btn" onClick={() => setSelected(c)}>詳細</button>
                   </td>
+                  {/* 削除 */}
+                  <td>
+                    <button
+                      className="detail-btn delete-btn"
+                      onClick={() => {
+                        if (confirm(`${c.name} を削除しますか？この操作は元に戻せません。`)) {
+                          onDelete(c.name)
+                        }
+                      }}
+                    >
+                      削除
+                    </button>
+                  </td>
                 </tr>
               )
             })}
             {filtered.length === 0 && (
-              <tr><td colSpan={12} style={{ textAlign: 'center', color: 'var(--mu)', padding: '2rem' }}>該当する候補者がいません</td></tr>
+              <tr><td colSpan={13} style={{ textAlign: 'center', color: 'var(--mu)', padding: '2rem' }}>該当する候補者がいません</td></tr>
             )}
           </tbody>
         </table>

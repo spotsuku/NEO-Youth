@@ -63,6 +63,13 @@ export default function RecruitmentDashboard({ candidates: initial, sessions, ve
     }
   }, [])
 
+  const deleteCandidate = useCallback(async (name: string) => {
+    setCandidates((prev) => prev.filter((c) => c.name !== name))
+    try {
+      await fetch(`/api/youth/candidates/${encodeURIComponent(name)}`, { method: 'DELETE' })
+    } catch {}
+  }, [])
+
   const interviewed = candidates.filter((c) => c.interview_date)
 
   return (
@@ -127,7 +134,7 @@ export default function RecruitmentDashboard({ candidates: initial, sessions, ve
         )}
         {tab === 'applicants' && (
           <div className="db-page">
-            <ApplicantsTab candidates={candidates} onUpdate={updateCandidate} onAdd={addCandidate} verdictMap={verdictMap} />
+            <ApplicantsTab candidates={candidates} onUpdate={updateCandidate} onAdd={addCandidate} onDelete={deleteCandidate} verdictMap={verdictMap} />
           </div>
         )}
         {tab === 'interviews' && (

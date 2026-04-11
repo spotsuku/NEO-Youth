@@ -861,6 +861,18 @@
   opacity: 0.75;
 }
 
+/* DELETE BUTTON */
+.delete-btn {
+  color: var(--mu) !important;
+  border-color: transparent !important;
+}
+
+.delete-btn:hover {
+  color: var(--red) !important;
+  border-color: rgba(192,57,43,0.3) !important;
+  background: rgba(192,57,43,0.04) !important;
+}
+
 /* ── KANBAN BOARD (Drag & Drop) ── */
 .kanban-board {
   display: grid;

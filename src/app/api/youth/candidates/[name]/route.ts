@@ -70,3 +70,19 @@ export async function GET(
   }
   return NextResponse.json(data[0])
 }
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: { name: string } },
+) {
+  const name = decodeURIComponent(params.name)
+  const { error } = await supabase
+    .from('youth_candidates')
+    .delete()
+    .eq('name', name)
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+  return NextResponse.json({ deleted: name })
+}
