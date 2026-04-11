@@ -112,6 +112,7 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, v
               <th>区分</th>
               <th>所属</th>
               <th>応募日</th>
+              <th>合格基準</th>
               <th>説明会</th>
               <th>面談済</th>
               <th>最終面接</th>
@@ -172,6 +173,16 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, v
                   <td style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.72rem', color: 'var(--mu)' }}>
                     {c.applied_at ? c.applied_at.slice(0, 10) : '-'}
                   </td>
+                  {/* 合格基準 */}
+                  <td style={{ textAlign: 'center' }}>
+                    <button
+                      className={`ob-cell ${c.ob_pass_criteria ? 'checked' : ''}`}
+                      onClick={() => onUpdate(c.name, { ob_pass_criteria: !c.ob_pass_criteria })}
+                      type="button"
+                    >
+                      {c.ob_pass_criteria ? '\u2713' : ''}
+                    </button>
+                  </td>
                   {/* 説明会 */}
                   <td style={{ textAlign: 'center' }}>
                     <button
@@ -229,7 +240,7 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, v
               )
             })}
             {filtered.length === 0 && (
-              <tr><td colSpan={13} style={{ textAlign: 'center', color: 'var(--mu)', padding: '2rem' }}>該当する候補者がいません</td></tr>
+              <tr><td colSpan={14} style={{ textAlign: 'center', color: 'var(--mu)', padding: '2rem' }}>該当する候補者がいません</td></tr>
             )}
           </tbody>
         </table>
