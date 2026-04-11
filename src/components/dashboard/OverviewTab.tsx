@@ -13,6 +13,9 @@ interface Props {
 }
 
 const STATUS_COLORS: Record<string, string> = {
+  '未接触': 'var(--bd)',
+  'アプローチ中': 'var(--gold)',
+  '説明会参加済': 'var(--blu)',
   '応募完了': 'var(--grn)',
   '書類選考': 'var(--blu)',
   'グループ面接': 'var(--gold)',
@@ -20,19 +23,21 @@ const STATUS_COLORS: Record<string, string> = {
   '参加確定': 'var(--grn)',
   '保留': 'var(--mu)',
   '不合格': 'var(--bd2)',
-  '説明会参加済': 'var(--blu)',
-  'アプローチ中': 'var(--gold)',
-  '特別選考付与': 'var(--grn)',
+  '辞退': 'var(--red)',
   '3期生候補': '#7b2d8e',
-  '対応不要': 'var(--bd2)',
-  '未接触': 'var(--bd)',
 }
 
 const YOMI_COLORS: Record<string, string> = {
-  SS: 'var(--grn)',
-  S: 'var(--blu)',
-  AA: 'var(--gold)',
-  A: 'var(--mu)',
+  '承諾書提出': 'var(--grn)',
+  '合格': 'var(--grn)',
+  '通過予定': 'var(--blu)',
+  '補欠合格': 'var(--gold)',
+  '応募見込み80%': 'var(--grn)',
+  '応募見込み50%': 'var(--blu)',
+  '応募見込み20%': 'var(--gold)',
+  '応募対象外': 'var(--bd2)',
+  '辞退': 'var(--red)',
+  '3期生候補': '#7b2d8e',
 }
 
 const TIMELINE = [
@@ -130,40 +135,22 @@ export default function OverviewTab({ candidates, applicantCount, interviewCount
         </div>
       </div>
 
-      {/* 下段: 応募前フロー + 見込み */}
+      {/* 下段: 確度（ヨミ）+ 応募前 */}
       <div className="kpi-row">
-        <div className="kpi-card" style={{ borderLeft: '3px solid var(--bd)' }}>
-          <div className="kpi-label">未接触</div>
-          <div className="kpi-value">{candidates.filter((c) => c.status === '未接触').length}<span> 名</span></div>
-        </div>
-        <div className="kpi-card" style={{ borderLeft: '3px solid var(--gold)' }}>
-          <div className="kpi-label">アプローチ中</div>
-          <div className="kpi-value">{candidates.filter((c) => c.status === 'アプローチ中').length}<span> 名</span></div>
-        </div>
-        <div className="kpi-card" style={{ borderLeft: '3px solid var(--blu)' }}>
-          <div className="kpi-label">説明会参加済</div>
-          <div className="kpi-value">{candidates.filter((c) => c.status === '説明会参加済').length}<span> 名</span></div>
-        </div>
-        <div className="kpi-card grn">
-          <div className="kpi-label">応募見込み80%</div>
-          <div className="kpi-value">{yomiSummary['応募見込み80%'] ?? 0}</div>
-        </div>
-        <div className="kpi-card blu">
-          <div className="kpi-label">応募見込み50%</div>
-          <div className="kpi-value">{yomiSummary['応募見込み50%'] ?? 0}</div>
-        </div>
-        <div className="kpi-card gold">
-          <div className="kpi-label">応募見込み20%</div>
-          <div className="kpi-value">{yomiSummary['応募見込み20%'] ?? 0}</div>
-        </div>
-        <div className="kpi-card red">
-          <div className="kpi-label">コンタクト総数</div>
-          <div className="kpi-value">
-            {candidates.length}
-            <span> 名</span>
+        {[
+          { key: '承諾書提出', color: 'grn' },
+          { key: '応募見込み80%', color: 'grn' },
+          { key: '応募見込み50%', color: 'blu' },
+          { key: '応募見込み20%', color: 'gold' },
+          { key: '応募対象外', color: 'gray' },
+          { key: '辞退', color: 'red' },
+          { key: '3期生候補', color: 'purple' },
+        ].map(({ key, color }) => (
+          <div className={`kpi-card ${color}`} key={key}>
+            <div className="kpi-label">{key}</div>
+            <div className="kpi-value">{yomiSummary[key] ?? 0}</div>
           </div>
-          <div className="kpi-sub">全ステータス合計</div>
-        </div>
+        ))}
       </div>
 
       <div className="progress-wrap">

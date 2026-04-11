@@ -12,31 +12,40 @@ interface Props {
   verdictMap: Record<string, VerdictRecord>
 }
 
+// 選考ステータス（パイプラインのステージ）
 const ALL_STATUSES = [
+  '未接触', 'アプローチ中', '説明会参加済',
   '応募完了', '書類選考', 'グループ面接', '最終面接',
-  '参加確定', '保留', '不合格', 'アプローチ中',
-  '説明会参加済', '特別選考付与', '3期生候補', '対応不要',
+  '参加確定', '保留', '不合格', '辞退', '3期生候補',
 ]
 
 const STATUS_COLORS: Record<string, string> = {
+  '未接触': 'gray', 'アプローチ中': 'gold', '説明会参加済': 'blu',
   '応募完了': 'grn', '書類選考': 'blu', 'グループ面接': 'gold', '最終面接': 'red',
-  '参加確定': 'grn', '保留': 'gray', '不合格': 'gray', 'アプローチ中': 'gold',
-  '説明会参加済': 'blu', '特別選考付与': 'gold', '3期生候補': 'purple', '対応不要': 'gray',
+  '参加確定': 'grn', '保留': 'gray', '不合格': 'gray', '辞退': 'red',
+  '3期生候補': 'purple',
 }
 
+// 確度（ヨミ）
 const YOMI_OPTIONS = [
   { value: '', label: '—', color: '' },
+  { value: '承諾書提出', label: '承諾書提出', color: 'grn' },
+  { value: '合格', label: '合格', color: 'grn' },
+  { value: '通過予定', label: '通過予定', color: 'blu' },
+  { value: '補欠合格', label: '補欠合格', color: 'gold' },
   { value: '応募見込み80%', label: '80%', color: 'grn' },
   { value: '応募見込み50%', label: '50%', color: 'blu' },
   { value: '応募見込み20%', label: '20%', color: 'gold' },
   { value: '応募対象外', label: '対象外', color: 'gray' },
+  { value: '辞退', label: '辞退', color: 'red' },
+  { value: '3期生候補', label: '3期生候補', color: 'purple' },
 ]
 
 const VERDICT_BADGE: Record<string, string> = {
   '合格': 'grn', 'ボーダー': 'gold', '不合格': 'red',
 }
 
-const STATUS_FILTERS = ['全て', '応募完了', '書類選考', 'グループ面接', '最終面接', '参加確定', '不合格', 'アプローチ中']
+const STATUS_FILTERS = ['全て', '未接触', 'アプローチ中', '説明会参加済', '応募完了', '書類選考', 'グループ面接', '最終面接', '参加確定', '不合格', '辞退']
 
 export default function ApplicantsTab({ candidates, onUpdate, onAdd, verdictMap }: Props) {
   const [query, setQuery] = useState('')

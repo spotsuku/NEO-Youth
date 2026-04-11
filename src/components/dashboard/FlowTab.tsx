@@ -9,21 +9,22 @@ interface Props {
   onUpdate: (name: string, patch: Partial<YouthCandidate>) => Promise<void>
 }
 
-// プレ応募（引き上げフロー） → 選考フロー → 結果
 const STATUSES = [
+  // 引き上げフロー（応募前）
   { key: '未接触', color: 'var(--bd)', group: 'pre' },
   { key: 'アプローチ中', color: 'var(--gold)', group: 'pre' },
   { key: '説明会参加済', color: 'var(--blu)', group: 'pre' },
+  // 選考フロー（応募後）
   { key: '応募完了', color: 'var(--grn)', group: 'selection' },
   { key: '書類選考', color: 'var(--blu)', group: 'selection' },
   { key: 'グループ面接', color: 'var(--gold)', group: 'selection' },
   { key: '最終面接', color: 'var(--red)', group: 'selection' },
+  // 結果
   { key: '参加確定', color: 'var(--grn)', group: 'result' },
   { key: '保留', color: 'var(--mu)', group: 'result' },
   { key: '不合格', color: 'var(--bd2)', group: 'result' },
-  { key: '特別選考付与', color: 'var(--gold)', group: 'result' },
+  { key: '辞退', color: 'var(--red)', group: 'result' },
   { key: '3期生候補', color: '#7b2d8e', group: 'result' },
-  { key: '対応不要', color: 'var(--bd2)', group: 'result' },
 ]
 
 // KPIカードの順: フロー順（応募後を上段）
