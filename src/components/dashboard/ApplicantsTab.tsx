@@ -17,13 +17,13 @@ interface Props {
 const ALL_STATUSES = [
   '承諾書提出', '合格', '合格予定', '補欠合格',
   '最終面接', 'グループ面接', '書類選考', '応募完了',
-  '保留', '不合格', '辞退',
+  '応募前', '保留', '辞退',
 ]
 
 const STATUS_COLORS: Record<string, string> = {
   '承諾書提出': 'grn', '合格': 'grn', '合格予定': 'blu', '補欠合格': 'gold',
   '最終面接': 'red', 'グループ面接': 'gold', '書類選考': 'blu',
-  '応募完了': 'grn', '保留': 'gold', '不合格': 'gray', '辞退': 'red',
+  '応募完了': 'grn', '応募前': 'gray', '保留': 'gold', '辞退': 'red',
 }
 
 // ヨミ（主観的な見込み）
@@ -40,7 +40,7 @@ const VERDICT_BADGE: Record<string, string> = {
   '合格': 'grn', 'ボーダー': 'gold', '不合格': 'red',
 }
 
-const STATUS_FILTERS = ['全て', '応募完了', '書類選考', 'グループ面接', '最終面接', '合格予定', '合格', '補欠合格', '承諾書提出', '保留', '不合格', '辞退']
+const STATUS_FILTERS = ['全て', '応募前', '応募完了', '書類選考', 'グループ面接', '最終面接', '合格予定', '合格', '補欠合格', '承諾書提出', '保留', '不合格', '辞退']
 
 export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, verdictMap }: Props) {
   const [query, setQuery] = useState('')
@@ -108,7 +108,7 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, v
             <tr>
               <th>#</th>
               <th>氏名</th>
-              <th>確度</th>
+              <th>応募確度</th>
               <th>ステータス</th>
               <th>区分</th>
               <th>所属</th>
@@ -139,7 +139,7 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, v
                       bold
                     />
                   </td>
-                  {/* 確度（ヨミ） */}
+                  {/* 応募確度（ヨミ） */}
                   <td>
                     <InlineSelect
                       value={c.yomi ?? ''}
@@ -554,7 +554,8 @@ function AddCandidateForm({ onSaved, onAdd }: { onSaved: () => void; onAdd: (dat
   const [type, setType] = useState('大学生・専門学生・大学院生')
   const [school, setSchool] = useState('')
   const [grade, setGrade] = useState('')
-  const [status, setStatus] = useState('未接触')
+  const [status, setStatus] = useState('応募前')
+  const [yomi, setYomi] = useState('')
   const [source, setSource] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -571,6 +572,7 @@ function AddCandidateForm({ onSaved, onAdd }: { onSaved: () => void; onAdd: (dat
       school: school || null,
       grade: grade || null,
       status,
+      yomi: yomi || null,
       source: source || null,
     } as Partial<YouthCandidate>)
     setSaving(false)
@@ -602,7 +604,15 @@ function AddCandidateForm({ onSaved, onAdd }: { onSaved: () => void; onAdd: (dat
             {ALL_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
+        <div><div className="field-label">応募確度</div>
+          <select className="iv-input" value={yomi} onChange={(e) => setYomi(e.target.value)}>
+            {YOMI_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.value || '—（未設定）'}</option>)}
+          </select>
+        </div>
+      </div>
+      <div className="field-row">
         <div><div className="field-label">紹介元</div><input className="iv-input" value={source} onChange={(e) => setSource(e.target.value)} placeholder="Instagram, 知人紹介 等" /></div>
+        <div />
       </div>
       {error && <div style={{ color: 'var(--red)', fontSize: '0.78rem' }}>{error}</div>}
       <div className="iv-footer">

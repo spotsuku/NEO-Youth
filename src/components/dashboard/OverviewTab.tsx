@@ -145,6 +145,7 @@ export default function OverviewTab({ candidates, applicantCount, interviewCount
           <div className="summary-card-title">選考中</div>
           <div className="summary-bars">
             {[
+              { label: '応募前', value: candidates.filter((c) => c.status === '応募前').length, color: 'var(--bd2)' },
               { label: '応募完了', value: candidates.filter((c) => c.status === '応募完了').length, color: 'var(--grn)' },
               { label: '書類選考', value: candidates.filter((c) => c.status === '書類選考').length, color: 'var(--blu)' },
               { label: 'グループ面接', value: candidates.filter((c) => c.status === 'グループ面接').length, color: 'var(--gold)' },
@@ -152,6 +153,7 @@ export default function OverviewTab({ candidates, applicantCount, interviewCount
               { label: '保留', value: candidates.filter((c) => c.status === '保留').length, color: 'var(--gold)' },
             ].map((r) => {
               const max = Math.max(
+                candidates.filter((c) => c.status === '応募前').length,
                 candidates.filter((c) => c.status === '応募完了').length,
                 candidates.filter((c) => c.status === '書類選考').length,
                 candidates.filter((c) => c.status === 'グループ面接').length,
