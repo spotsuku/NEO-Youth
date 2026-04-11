@@ -16,7 +16,7 @@ const ALLOWED = new Set([
   'interview_course', 'interview_result', 'interview_notes',
   'ob_final_exam', 'ob_mail_sent', 'ob_payment', 'ob_training',
   'ob_photo', 'ob_portal', 'ob_slack', 'ob_profile',
-  'ob_motivation_written', 'ob_pledge', 'ob_handbook',
+  'ob_motivation_written', 'ob_pledge', 'ob_handbook', 'ob_pass_criteria',
   'attended_session',
 ])
 

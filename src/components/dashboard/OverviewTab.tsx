@@ -101,9 +101,29 @@ export default function OverviewTab({ candidates, applicantCount, interviewCount
 
   const totalYomi = yomiData.reduce((s, d) => s + d.count, 0)
 
+  const passCount = candidates.filter((c) => c.ob_pass_criteria).length
+  const acceptCount = candidates.filter((c) => c.status === '承諾書提出').length
+  const goukakuCount = candidates.filter((c) => c.status === '合格' || c.status === '合格予定').length
+
   return (
     <>
-      {/* 上段: ステータス（事実）フロー順 */}
+      {/* 最上段: 参加承諾 / 合格 / 合格基準 */}
+      <div className="kpi-row">
+        <div className="kpi-card" style={{ borderLeft: '4px solid var(--grn)', background: 'rgba(46,125,82,0.04)' }}>
+          <div className="kpi-label">参加承諾</div>
+          <div className="kpi-value" style={{ color: 'var(--grn)' }}>{acceptCount}<span> / {target}</span></div>
+        </div>
+        <div className="kpi-card" style={{ borderLeft: '4px solid var(--grn)' }}>
+          <div className="kpi-label">合格</div>
+          <div className="kpi-value" style={{ color: 'var(--grn)' }}>{goukakuCount}</div>
+        </div>
+        <div className="kpi-card" style={{ borderLeft: '4px solid var(--blu)' }}>
+          <div className="kpi-label">合格基準</div>
+          <div className="kpi-value" style={{ color: 'var(--blu)' }}>{passCount}</div>
+        </div>
+      </div>
+
+      {/* ステータス別フロー順 */}
       <div className="kpi-row">
         {[
           { key: '応募完了', color: 'var(--grn)' },

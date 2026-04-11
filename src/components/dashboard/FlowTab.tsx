@@ -39,7 +39,7 @@ export default function FlowTab({ candidates, onUpdate }: Props) {
     return STATUSES.map((s) => ({
       ...s,
       candidates: map.get(s.key) ?? [],
-    })).filter((col) => col.candidates.length > 0 || ['pre', 'selection'].includes(col.group))
+    }))
   }, [candidates])
 
   const handleDragStart = (name: string) => {

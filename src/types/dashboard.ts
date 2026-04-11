@@ -44,6 +44,7 @@ export interface YouthCandidate {
   ob_motivation_written: boolean
   ob_pledge: boolean
   ob_handbook: boolean
+  ob_pass_criteria: boolean
 
   attended_session: boolean
 
@@ -112,11 +113,12 @@ export const OB_LABELS: Record<string, string> = {
   ob_motivation_written: '動機記載',
   ob_pledge: '誓約書',
   ob_handbook: '生徒手帳',
+  ob_pass_criteria: '合格基準',
 }
 
 export const OB_FIELDS = Object.keys(OB_LABELS) as (keyof Pick<
   YouthCandidate,
   'ob_final_exam' | 'ob_mail_sent' | 'ob_payment' | 'ob_training' |
   'ob_photo' | 'ob_portal' | 'ob_slack' | 'ob_profile' |
-  'ob_motivation_written' | 'ob_pledge' | 'ob_handbook'
+  'ob_motivation_written' | 'ob_pledge' | 'ob_handbook' | 'ob_pass_criteria'
 >)[]
