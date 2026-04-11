@@ -106,7 +106,7 @@ export default function OverviewTab({ candidates, applicantCount, interviewCount
       {/* 上段: ステータス（事実）フロー順 */}
       <div className="kpi-row">
         {[
-          { key: '応募', color: 'var(--grn)' },
+          { key: '応募完了', color: 'var(--grn)' },
           { key: '書類選考', color: 'var(--blu)' },
           { key: 'グループ面接', color: 'var(--gold)' },
           { key: '最終面接', color: 'var(--red)' },

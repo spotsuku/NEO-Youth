@@ -15,13 +15,13 @@ interface Props {
 // ステータス（事実に基づく状態）
 const ALL_STATUSES = [
   '承諾書提出', '合格', '合格予定', '補欠合格',
-  '最終面接', 'グループ面接', '書類選考', '応募', '辞退',
+  '最終面接', 'グループ面接', '書類選考', '応募完了', '辞退',
 ]
 
 const STATUS_COLORS: Record<string, string> = {
   '承諾書提出': 'grn', '合格': 'grn', '合格予定': 'blu', '補欠合格': 'gold',
   '最終面接': 'red', 'グループ面接': 'gold', '書類選考': 'blu',
-  '応募': 'grn', '辞退': 'red',
+  '応募完了': 'grn', '辞退': 'red',
 }
 
 // ヨミ（主観的な見込み）
@@ -38,7 +38,7 @@ const VERDICT_BADGE: Record<string, string> = {
   '合格': 'grn', 'ボーダー': 'gold', '不合格': 'red',
 }
 
-const STATUS_FILTERS = ['全て', '応募', '書類選考', 'グループ面接', '最終面接', '合格予定', '合格', '補欠合格', '承諾書提出', '辞退']
+const STATUS_FILTERS = ['全て', '応募完了', '書類選考', 'グループ面接', '最終面接', '合格予定', '合格', '補欠合格', '承諾書提出', '辞退']
 
 export default function ApplicantsTab({ candidates, onUpdate, onAdd, verdictMap }: Props) {
   const [query, setQuery] = useState('')
@@ -104,6 +104,7 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, verdictMap 
         <table className="editable-table">
           <thead>
             <tr>
+              <th>#</th>
               <th>氏名</th>
               <th>確度</th>
               <th>ステータス</th>
@@ -118,10 +119,13 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, verdictMap 
             </tr>
           </thead>
           <tbody>
-            {filtered.map((c) => {
+            {filtered.map((c, idx) => {
               const v = verdictMap[c.name]
               return (
                 <tr key={c.id}>
+                  <td style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.68rem', color: 'var(--mu)', textAlign: 'center', width: '32px' }}>
+                    {idx + 1}
+                  </td>
                   {/* 氏名: インライン編集 */}
                   <td>
                     <EditableText
@@ -210,7 +214,7 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, verdictMap 
               )
             })}
             {filtered.length === 0 && (
-              <tr><td colSpan={11} style={{ textAlign: 'center', color: 'var(--mu)', padding: '2rem' }}>該当する候補者がいません</td></tr>
+              <tr><td colSpan={12} style={{ textAlign: 'center', color: 'var(--mu)', padding: '2rem' }}>該当する候補者がいません</td></tr>
             )}
           </tbody>
         </table>
@@ -218,7 +222,7 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, verdictMap 
 
       {/* 詳細モーダル */}
       <Modal open={!!selected} onClose={() => setSelected(null)} title={selected?.name ?? ''}>
-        {selected && <CandidateDetail candidate={selected} onOpenInterview={() => openInterview(selected)} />}
+        {selected && <CandidateDetail candidate={selected} onOpenInterview={() => openInterview(selected)} onUpdate={onUpdate} />}
       </Modal>
 
       {/* 面談記録モーダル */}
@@ -318,25 +322,45 @@ function InlineSelect({ value, options, onSave, badgeClass }: {
 }
 
 /* ── 候補者詳細表示 ── */
-function CandidateDetail({ candidate: c, onOpenInterview }: { candidate: YouthCandidate; onOpenInterview: () => void }) {
+function CandidateDetail({ candidate: c, onOpenInterview, onUpdate }: {
+  candidate: YouthCandidate
+  onOpenInterview: () => void
+  onUpdate: (name: string, patch: Partial<YouthCandidate>) => Promise<void>
+}) {
+  const save = (field: string) => (val: string) => {
+    onUpdate(c.name, { [field]: val || null } as Partial<YouthCandidate>)
+  }
+
   return (
     <>
       <div className="field-row">
-        <div><div className="field-label">ふりがな</div><div className="field-value">{c.kana ?? '-'}</div></div>
-        <div><div className="field-label">メール</div><div className="field-value" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.78rem' }}>{c.email ?? '-'}</div></div>
+        <div><div className="field-label">ふりがな</div><EditableField value={c.kana ?? ''} onSave={save('kana')} /></div>
+        <div><div className="field-label">メール</div><EditableField value={c.email ?? ''} onSave={save('email')} mono /></div>
       </div>
       <div className="field-row">
         <div><div className="field-label">区分</div><div className="field-value">{c.type ?? '-'}</div></div>
-        <div><div className="field-label">所属・学年</div><div className="field-value">{c.school ?? ''} {c.grade ?? ''}</div></div>
+        <div><div className="field-label">所属</div><EditableField value={c.school ?? ''} onSave={save('school')} /></div>
       </div>
       <div className="field-row">
-        <div><div className="field-label">応募日</div><div className="field-value">{c.applied_at ? c.applied_at.slice(0, 10) : '-'}</div></div>
-        <div><div className="field-label">紹介元</div><div className="field-value">{c.source ?? '-'}</div></div>
+        <div><div className="field-label">学年・役職</div><EditableField value={c.grade ?? ''} onSave={save('grade')} /></div>
+        <div><div className="field-label">紹介元</div><EditableField value={c.source ?? ''} onSave={save('source')} /></div>
       </div>
-      {c.motivation && <div style={{ marginBottom: '0.85rem' }}><div className="field-label">志望動機</div><div className="field-value long">{c.motivation}</div></div>}
-      {c.pr && <div style={{ marginBottom: '0.85rem' }}><div className="field-label">自己PR</div><div className="field-value long">{c.pr}</div></div>}
-      {c.contribution && <div style={{ marginBottom: '0.85rem' }}><div className="field-label">貢献・活動方針</div><div className="field-value long">{c.contribution}</div></div>}
-      {c.career && <div style={{ marginBottom: '0.85rem' }}><div className="field-label">キャリアプラン</div><div className="field-value long">{c.career}</div></div>}
+      <div style={{ marginBottom: '0.85rem' }}>
+        <div className="field-label">志望動機</div>
+        <EditableArea value={c.motivation ?? ''} onSave={save('motivation')} />
+      </div>
+      <div style={{ marginBottom: '0.85rem' }}>
+        <div className="field-label">自己PR</div>
+        <EditableArea value={c.pr ?? ''} onSave={save('pr')} />
+      </div>
+      <div style={{ marginBottom: '0.85rem' }}>
+        <div className="field-label">貢献・活動方針</div>
+        <EditableArea value={c.contribution ?? ''} onSave={save('contribution')} />
+      </div>
+      <div style={{ marginBottom: '0.85rem' }}>
+        <div className="field-label">キャリアプラン</div>
+        <EditableField value={c.career ?? ''} onSave={save('career')} />
+      </div>
       <div className="field-row">
         <div><div className="field-label">2次面接希望日</div><div className="field-value" style={{ fontSize: '0.78rem' }}>{c.interview2_dates ?? '-'}</div></div>
         <div><div className="field-label">3次面接</div><div className="field-value">{c.interview3_dates ?? '-'}</div></div>
@@ -345,6 +369,48 @@ function CandidateDetail({ candidate: c, onOpenInterview }: { candidate: YouthCa
         <button className="detail-btn" style={{ padding: '0.5rem 1rem', fontSize: '0.8rem' }} onClick={onOpenInterview}>面談記録を開く</button>
       </div>
     </>
+  )
+}
+
+/* ── 編集可能フィールド（モーダル内、1行） ── */
+function EditableField({ value, onSave, mono }: { value: string; onSave: (v: string) => void; mono?: boolean }) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(value)
+  const ref = useRef<HTMLInputElement>(null)
+  useEffect(() => { if (editing) ref.current?.focus() }, [editing])
+  useEffect(() => { setDraft(value) }, [value])
+  const commit = () => { setEditing(false); if (draft !== value) onSave(draft) }
+
+  if (editing) {
+    return <input ref={ref} className="iv-input" value={draft} onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit} onKeyDown={(e) => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') { setDraft(value); setEditing(false) } }} />
+  }
+  return (
+    <div className="field-value" style={{ cursor: 'text', fontFamily: mono ? "'JetBrains Mono', monospace" : undefined, fontSize: mono ? '0.78rem' : undefined }}
+      onClick={() => setEditing(true)}>
+      {value || <span style={{ color: 'var(--bd2)' }}>クリックして入力</span>}
+    </div>
+  )
+}
+
+/* ── 編集可能フィールド（モーダル内、複数行） ── */
+function EditableArea({ value, onSave }: { value: string; onSave: (v: string) => void }) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(value)
+  const ref = useRef<HTMLTextAreaElement>(null)
+  useEffect(() => { if (editing) ref.current?.focus() }, [editing])
+  useEffect(() => { setDraft(value) }, [value])
+  const commit = () => { setEditing(false); if (draft !== value) onSave(draft) }
+
+  if (editing) {
+    return <textarea ref={ref} className="iv-textarea" value={draft} onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit} rows={6} />
+  }
+  return (
+    <div className="field-value long" style={{ cursor: 'text', minHeight: '2rem' }}
+      onClick={() => setEditing(true)}>
+      {value || <span style={{ color: 'var(--bd2)' }}>クリックして入力</span>}
+    </div>
   )
 }
 

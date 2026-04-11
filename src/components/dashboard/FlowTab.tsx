@@ -10,7 +10,7 @@ interface Props {
 
 // ステータス（事実に基づく状態）フロー順
 const STATUSES = [
-  { key: '応募', color: 'var(--grn)', group: 'flow' },
+  { key: '応募完了', color: 'var(--grn)', group: 'flow' },
   { key: '書類選考', color: 'var(--blu)', group: 'flow' },
   { key: 'グループ面接', color: 'var(--gold)', group: 'flow' },
   { key: '最終面接', color: 'var(--red)', group: 'flow' },
