@@ -18,9 +18,9 @@ const STATUSES = [
   { key: '合格', color: 'var(--grn)', group: 'flow' },
   { key: '補欠合格', color: 'var(--gold)', group: 'flow' },
   { key: '承諾書提出', color: 'var(--grn)', group: 'flow' },
-  { key: '保留', color: 'var(--gold)', group: 'result' },
-  { key: '不合格', color: 'var(--bd2)', group: 'result' },
-  { key: '辞退', color: 'var(--red)', group: 'result' },
+  { key: '保留', color: 'var(--gold)', group: 'flow' },
+  { key: '不合格', color: 'var(--bd2)', group: 'flow' },
+  { key: '辞退', color: 'var(--red)', group: 'flow' },
 ]
 
 // KPIカードの順: フロー順（応募後を上段）
@@ -71,8 +71,7 @@ export default function FlowTab({ candidates, onUpdate }: Props) {
 
   const total = candidates.length
   const count = (key: string) => candidates.filter((c) => c.status === key).length
-  const flowGroup = columns.filter((c) => c.group === 'flow')
-  const resultGroup = columns.filter((c) => c.group === 'result')
+  // unused filter removed - all statuses are in single board
 
   return (
     <>
@@ -105,7 +104,7 @@ export default function FlowTab({ candidates, onUpdate }: Props) {
       {/* カンバンボード */}
       <div className="section-title">ステータス管理（ドラッグで移動）</div>
       <div className="kanban-board">
-        {[...flowGroup, ...resultGroup].map((col) => (
+        {columns.map((col) => (
           <KanbanCol key={col.key} col={col} dragName={dragName} overCol={overCol}
             onDragStart={handleDragStart} onDragOver={handleDragOver} onDrop={handleDrop} onDragEnd={resetDrag} setOverCol={setOverCol} />
         ))}
