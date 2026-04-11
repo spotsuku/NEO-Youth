@@ -98,19 +98,51 @@ export default function OverviewTab({ candidates, applicantCount, interviewCount
 
   return (
     <>
-      {/* サマリーKPI（ユーザー要望の一覧数値） */}
+      {/* 上段: 応募後フロー順（応募完了→...→参加確定） */}
       <div className="kpi-row">
+        <div className="kpi-card" style={{ borderLeft: '3px solid var(--grn)' }}>
+          <div className="kpi-label">応募完了</div>
+          <div className="kpi-value">{candidates.filter((c) => c.status === '応募完了').length}<span> 名</span></div>
+        </div>
+        <div className="kpi-card" style={{ borderLeft: '3px solid var(--blu)' }}>
+          <div className="kpi-label">書類選考</div>
+          <div className="kpi-value">{candidates.filter((c) => c.status === '書類選考').length}<span> 名</span></div>
+        </div>
+        <div className="kpi-card" style={{ borderLeft: '3px solid var(--gold)' }}>
+          <div className="kpi-label">グループ面接</div>
+          <div className="kpi-value">{candidates.filter((c) => c.status === 'グループ面接').length}<span> 名</span></div>
+        </div>
+        <div className="kpi-card" style={{ borderLeft: '3px solid var(--red)' }}>
+          <div className="kpi-label">最終面接</div>
+          <div className="kpi-value">{candidates.filter((c) => c.status === '最終面接').length}<span> 名</span></div>
+        </div>
         <div className="kpi-card grn">
           <div className="kpi-label">合格</div>
           <div className="kpi-value">{verdictCounts.pass}</div>
         </div>
         <div className="kpi-card gold">
-          <div className="kpi-label">通過予定（ボーダー）</div>
+          <div className="kpi-label">補欠（ボーダー）</div>
           <div className="kpi-value">{verdictCounts.border}</div>
         </div>
-        <div className="kpi-card blu">
+        <div className="kpi-card grn">
           <div className="kpi-label">参加確定</div>
           <div className="kpi-value">{confirmed}<span> / {target}</span></div>
+        </div>
+      </div>
+
+      {/* 下段: 応募前フロー + 見込み */}
+      <div className="kpi-row">
+        <div className="kpi-card" style={{ borderLeft: '3px solid var(--bd)' }}>
+          <div className="kpi-label">未接触</div>
+          <div className="kpi-value">{candidates.filter((c) => c.status === '未接触').length}<span> 名</span></div>
+        </div>
+        <div className="kpi-card" style={{ borderLeft: '3px solid var(--gold)' }}>
+          <div className="kpi-label">アプローチ中</div>
+          <div className="kpi-value">{candidates.filter((c) => c.status === 'アプローチ中').length}<span> 名</span></div>
+        </div>
+        <div className="kpi-card" style={{ borderLeft: '3px solid var(--blu)' }}>
+          <div className="kpi-label">説明会参加済</div>
+          <div className="kpi-value">{candidates.filter((c) => c.status === '説明会参加済').length}<span> 名</span></div>
         </div>
         <div className="kpi-card grn">
           <div className="kpi-label">応募見込み80%</div>
@@ -123,35 +155,6 @@ export default function OverviewTab({ candidates, applicantCount, interviewCount
         <div className="kpi-card gold">
           <div className="kpi-label">応募見込み20%</div>
           <div className="kpi-value">{yomiSummary['応募見込み20%'] ?? 0}</div>
-        </div>
-        <div className="kpi-card red">
-          <div className="kpi-label">応募対象外</div>
-          <div className="kpi-value">{yomiSummary['応募対象外'] ?? 0}</div>
-        </div>
-      </div>
-
-      <div className="kpi-row">
-        <div className="kpi-card red">
-          <div className="kpi-label">候補者数</div>
-          <div className="kpi-value">
-            {applicantCount}
-            <span> 名</span>
-          </div>
-        </div>
-        <div className="kpi-card gold">
-          <div className="kpi-label">面談実施数</div>
-          <div className="kpi-value">
-            {interviewCount}
-            <span> 件</span>
-          </div>
-        </div>
-        <div className="kpi-card blu">
-          <div className="kpi-label">説明会参加</div>
-          <div className="kpi-value">
-            {sessionCount}
-            <span> 名</span>
-          </div>
-          <div className="kpi-sub">計5回開催</div>
         </div>
         <div className="kpi-card red">
           <div className="kpi-label">コンタクト総数</div>

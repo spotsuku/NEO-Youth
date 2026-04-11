@@ -8,6 +8,7 @@ import Modal from './Modal'
 interface Props {
   candidates: YouthCandidate[]
   onUpdate: (name: string, patch: Partial<YouthCandidate>) => Promise<void>
+  onAdd: (data: Partial<YouthCandidate>) => Promise<boolean>
   verdictMap: Record<string, VerdictRecord>
 }
 
@@ -37,11 +38,12 @@ const VERDICT_BADGE: Record<string, string> = {
 
 const STATUS_FILTERS = ['全て', '応募完了', '書類選考', 'グループ面接', '最終面接', '参加確定', '不合格', 'アプローチ中']
 
-export default function ApplicantsTab({ candidates, onUpdate, verdictMap }: Props) {
+export default function ApplicantsTab({ candidates, onUpdate, onAdd, verdictMap }: Props) {
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('全て')
   const [selected, setSelected] = useState<YouthCandidate | null>(null)
   const [interviewTarget, setInterviewTarget] = useState<YouthCandidate | null>(null)
+  const [showAddForm, setShowAddForm] = useState(false)
 
   const filtered = useMemo(() => {
     return candidates.filter((c) => {
@@ -62,7 +64,12 @@ export default function ApplicantsTab({ candidates, onUpdate, verdictMap }: Prop
 
   return (
     <>
-      <div className="section-title">候補者管理</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '1rem' }}>
+        <div className="section-title" style={{ marginBottom: 0 }}>候補者管理</div>
+        <button className="iv-save-btn" style={{ fontSize: '0.72rem', padding: '0.35rem 0.8rem' }} onClick={() => setShowAddForm(true)}>
+          + 候補者を追加
+        </button>
+      </div>
 
       <div className="search-row">
         <input
@@ -210,6 +217,14 @@ export default function ApplicantsTab({ candidates, onUpdate, verdictMap }: Prop
       {interviewTarget && (
         <InterviewListModal candidate={interviewTarget} onClose={() => setInterviewTarget(null)} />
       )}
+
+      {/* 候補者追加モーダル */}
+      <Modal open={showAddForm} onClose={() => setShowAddForm(false)} title="候補者を追加">
+        <AddCandidateForm
+          onSaved={() => setShowAddForm(false)}
+          onAdd={onAdd}
+        />
+      </Modal>
     </>
   )
 }
@@ -414,6 +429,72 @@ function InterviewForm({ candidateName, onSaved, onCancel }: { candidateName: st
       <div className="iv-footer">
         <button className="iv-save-btn" onClick={save} disabled={saving}>{saving ? '保存中...' : '保存'}</button>
         <button className="detail-btn" onClick={onCancel}>キャンセル</button>
+      </div>
+    </div>
+  )
+}
+
+/* ── 候補者追加フォーム ── */
+function AddCandidateForm({ onSaved, onAdd }: { onSaved: () => void; onAdd: (data: Partial<YouthCandidate>) => Promise<boolean> }) {
+  const [name, setName] = useState('')
+  const [kana, setKana] = useState('')
+  const [email, setEmail] = useState('')
+  const [type, setType] = useState('大学生・専門学生・大学院生')
+  const [school, setSchool] = useState('')
+  const [grade, setGrade] = useState('')
+  const [status, setStatus] = useState('未接触')
+  const [source, setSource] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  const save = async () => {
+    if (!name.trim()) { setError('氏名は必須です'); return }
+    setSaving(true)
+    setError('')
+    const ok = await onAdd({
+      name: name.trim(),
+      kana: kana || null,
+      email: email || null,
+      type,
+      school: school || null,
+      grade: grade || null,
+      status,
+      source: source || null,
+    } as Partial<YouthCandidate>)
+    setSaving(false)
+    if (ok) { onSaved() } else { setError('追加に失敗しました（同名の候補者が存在する可能性があります）') }
+  }
+
+  return (
+    <div className="interview-form">
+      <div className="field-row">
+        <div><div className="field-label">氏名 *</div><input className="iv-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="山田 太郎" /></div>
+        <div><div className="field-label">ふりがな</div><input className="iv-input" value={kana} onChange={(e) => setKana(e.target.value)} placeholder="やまだ たろう" /></div>
+      </div>
+      <div className="field-row">
+        <div><div className="field-label">メール</div><input className="iv-input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@example.com" /></div>
+        <div><div className="field-label">区分</div>
+          <select className="iv-input" value={type} onChange={(e) => setType(e.target.value)}>
+            <option value="大学生・専門学生・大学院生">大学生・専門学生・大学院生</option>
+            <option value="社会人">社会人</option>
+          </select>
+        </div>
+      </div>
+      <div className="field-row">
+        <div><div className="field-label">所属</div><input className="iv-input" value={school} onChange={(e) => setSchool(e.target.value)} placeholder="九州大学" /></div>
+        <div><div className="field-label">学年・役職</div><input className="iv-input" value={grade} onChange={(e) => setGrade(e.target.value)} placeholder="工学部2年" /></div>
+      </div>
+      <div className="field-row">
+        <div><div className="field-label">ステータス</div>
+          <select className="iv-input" value={status} onChange={(e) => setStatus(e.target.value)}>
+            {ALL_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
+        <div><div className="field-label">紹介元</div><input className="iv-input" value={source} onChange={(e) => setSource(e.target.value)} placeholder="Instagram, 知人紹介 等" /></div>
+      </div>
+      {error && <div style={{ color: 'var(--red)', fontSize: '0.78rem' }}>{error}</div>}
+      <div className="iv-footer">
+        <button className="iv-save-btn" onClick={save} disabled={saving}>{saving ? '追加中...' : '追加'}</button>
       </div>
     </div>
   )
