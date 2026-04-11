@@ -78,6 +78,12 @@ export default function FlowTab({ candidates, onUpdate }: Props) {
     onUpdate(name, { status: c.status === '不合格' ? '応募完了' : '不合格' })
   }
 
+  const handleHold = (name: string) => {
+    const c = candidates.find((x) => x.name === name)
+    if (!c) return
+    onUpdate(name, { status: c.status === '保留' ? '応募完了' : '保留' })
+  }
+
   return (
     <>
       {/* KPI: ステータス別 */}
@@ -111,7 +117,7 @@ export default function FlowTab({ candidates, onUpdate }: Props) {
       <div className="kanban-board">
         {columns.map((col) => (
           <KanbanCol key={col.key} col={col} dragName={dragName} overCol={overCol}
-            onDragStart={handleDragStart} onDragOver={handleDragOver} onDrop={handleDrop} onDragEnd={resetDrag} setOverCol={setOverCol} onReject={handleReject} />
+            onDragStart={handleDragStart} onDragOver={handleDragOver} onDrop={handleDrop} onDragEnd={resetDrag} setOverCol={setOverCol} onReject={handleReject} onHold={handleHold} />
         ))}
       </div>
     </>
@@ -119,7 +125,7 @@ export default function FlowTab({ candidates, onUpdate }: Props) {
 }
 
 /* ── カンバン列コンポーネント ── */
-function KanbanCol({ col, dragName, overCol, onDragStart, onDragOver, onDrop, onDragEnd, setOverCol, onReject }: {
+function KanbanCol({ col, dragName, overCol, onDragStart, onDragOver, onDrop, onDragEnd, setOverCol, onReject, onHold }: {
   col: { key: string; color: string; candidates: YouthCandidate[] }
   dragName: string | null
   overCol: string | null
@@ -129,6 +135,7 @@ function KanbanCol({ col, dragName, overCol, onDragStart, onDragOver, onDrop, on
   onDragEnd: () => void
   setOverCol: (v: string | null) => void
   onReject: (name: string) => void
+  onHold: (name: string) => void
 }) {
   return (
     <div
@@ -145,21 +152,31 @@ function KanbanCol({ col, dragName, overCol, onDragStart, onDragOver, onDrop, on
         {col.candidates.map((c) => (
           <div
             key={c.name}
-            className={`kanban-card ${dragName === c.name ? 'dragging' : ''} ${c.status === '不合格' ? 'rejected' : ''}`}
+            className={`kanban-card ${dragName === c.name ? 'dragging' : ''} ${c.status === '不合格' ? 'rejected' : ''} ${c.status === '保留' ? 'on-hold' : ''}`}
             draggable
             onDragStart={() => onDragStart(c.name)}
             onDragEnd={onDragEnd}
           >
             <div className="kc-top">
               <div className="kc-name">{c.name}</div>
-              <button
-                className={`kc-reject-btn ${c.status === '不合格' ? 'active' : ''}`}
-                onClick={(e) => { e.stopPropagation(); onReject(c.name) }}
-                title="不合格"
-                type="button"
-              >
-                ✕
-              </button>
+              <div className="kc-actions">
+                <button
+                  className={`kc-hold-btn ${c.status === '保留' ? 'active' : ''}`}
+                  onClick={(e) => { e.stopPropagation(); onHold(c.name) }}
+                  title="保留"
+                  type="button"
+                >
+                  !
+                </button>
+                <button
+                  className={`kc-reject-btn ${c.status === '不合格' ? 'active' : ''}`}
+                  onClick={(e) => { e.stopPropagation(); onReject(c.name) }}
+                  title="不合格"
+                  type="button"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
             <div className="kc-sub">{c.school || c.type || '-'}</div>
           </div>

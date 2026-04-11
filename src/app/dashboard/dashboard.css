@@ -1101,6 +1101,50 @@
   color: #fff;
 }
 
+/* カードアクションボタン群 */
+.kc-actions {
+  display: flex;
+  gap: 0.2rem;
+  flex-shrink: 0;
+}
+
+/* 保留ボタン */
+.kc-hold-btn {
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  border: 1px solid var(--bd);
+  background: none;
+  color: var(--bd2);
+  font-size: 0.65rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.12s;
+  padding: 0;
+  line-height: 1;
+}
+
+.kc-hold-btn:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.kc-hold-btn.active {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: #fff;
+}
+
+/* 保留カード スタイル */
+.kanban-card.on-hold {
+  border-color: var(--gold);
+  background: rgba(196,136,42,0.06);
+}
+
 /* 不合格チェックボックス（候補者リスト） */
 .ob-cell.reject.checked {
   background: rgba(192,57,43,0.1);
