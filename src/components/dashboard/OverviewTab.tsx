@@ -107,67 +107,116 @@ export default function OverviewTab({ candidates, applicantCount, interviewCount
 
   return (
     <>
-      {/* サマリーテーブル（3列横並び） */}
+      {/* サマリーテーブル（3列横並び・バー形式） */}
       <div className="summary-grid">
         <div className="summary-card">
           <div className="summary-card-title">最終結果</div>
-          <table className="summary-table">
-            <tbody>
-              {[
-                { label: '参加承諾', value: `${acceptCount} / ${target}`, color: 'var(--grn)' },
-                { label: '合格', value: goukakuCount, color: 'var(--grn)' },
-                { label: '合格基準', value: passCount, color: 'var(--blu)' },
-                { label: '不合格', value: candidates.filter((c) => c.status === '不合格').length, color: 'var(--bd2)' },
-                { label: '辞退', value: candidates.filter((c) => c.status === '辞退').length, color: 'var(--red)' },
-                { label: '保留', value: candidates.filter((c) => c.status === '保留').length, color: 'var(--gold)' },
-              ].map((r) => (
-                <tr key={r.label}>
-                  <td className="summary-label"><span className="summary-dot" style={{ background: r.color }} />{r.label}</td>
-                  <td className="summary-num">{r.value}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="summary-bars">
+            {[
+              { label: '参加承諾', value: acceptCount, target, color: 'var(--grn)' },
+              { label: '合格', value: goukakuCount, color: 'var(--grn)' },
+              { label: '合格基準', value: passCount, color: 'var(--blu)' },
+              { label: '不合格', value: candidates.filter((c) => c.status === '不合格').length, color: 'var(--bd2)' },
+              { label: '辞退', value: candidates.filter((c) => c.status === '辞退').length, color: 'var(--red)' },
+            ].map((r) => {
+              const max = Math.max(acceptCount, goukakuCount, passCount, candidates.filter((c) => c.status === '不合格').length, candidates.filter((c) => c.status === '辞退').length, 1)
+              return (
+                <div className="summary-bar-item" key={r.label}>
+                  <div className="summary-bar-label">{r.label}</div>
+                  <div className="summary-bar-track">
+                    <div
+                      className="summary-bar-fill"
+                      style={{
+                        width: `${Math.max((r.value / max) * 100, r.value > 0 ? 12 : 0)}%`,
+                        background: r.color,
+                      }}
+                    >
+                      {r.target !== undefined ? <span>{r.value} / {r.target}</span> : r.value > 0 && <span>{r.value}</span>}
+                    </div>
+                    {r.value === 0 && <span className="summary-bar-zero">{r.target !== undefined ? `0 / ${r.target}` : '0'}</span>}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
 
         <div className="summary-card">
           <div className="summary-card-title">選考中</div>
-          <table className="summary-table">
-            <tbody>
-              {[
-                { label: '応募完了', value: candidates.filter((c) => c.status === '応募完了').length, color: 'var(--grn)' },
-                { label: '書類選考', value: candidates.filter((c) => c.status === '書類選考').length, color: 'var(--blu)' },
-                { label: 'グループ面接', value: candidates.filter((c) => c.status === 'グループ面接').length, color: 'var(--gold)' },
-                { label: '最終面接', value: candidates.filter((c) => c.status === '最終面接').length, color: 'var(--red)' },
-                { label: '承諾書提出', value: candidates.filter((c) => c.status === '承諾書提出').length, color: 'var(--grn)' },
-              ].map((r) => (
-                <tr key={r.label}>
-                  <td className="summary-label"><span className="summary-dot" style={{ background: r.color }} />{r.label}</td>
-                  <td className="summary-num">{r.value}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="summary-bars">
+            {[
+              { label: '応募完了', value: candidates.filter((c) => c.status === '応募完了').length, color: 'var(--grn)' },
+              { label: '書類選考', value: candidates.filter((c) => c.status === '書類選考').length, color: 'var(--blu)' },
+              { label: 'グループ面接', value: candidates.filter((c) => c.status === 'グループ面接').length, color: 'var(--gold)' },
+              { label: '最終面接', value: candidates.filter((c) => c.status === '最終面接').length, color: 'var(--red)' },
+              { label: '保留', value: candidates.filter((c) => c.status === '保留').length, color: 'var(--gold)' },
+            ].map((r) => {
+              const max = Math.max(
+                candidates.filter((c) => c.status === '応募完了').length,
+                candidates.filter((c) => c.status === '書類選考').length,
+                candidates.filter((c) => c.status === 'グループ面接').length,
+                candidates.filter((c) => c.status === '最終面接').length,
+                candidates.filter((c) => c.status === '保留').length,
+                1
+              )
+              return (
+                <div className="summary-bar-item" key={r.label}>
+                  <div className="summary-bar-label">{r.label}</div>
+                  <div className="summary-bar-track">
+                    <div
+                      className="summary-bar-fill"
+                      style={{
+                        width: `${Math.max((r.value / max) * 100, r.value > 0 ? 12 : 0)}%`,
+                        background: r.color,
+                      }}
+                    >
+                      {r.value > 0 && <span>{r.value}</span>}
+                    </div>
+                    {r.value === 0 && <span className="summary-bar-zero">0</span>}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
 
         <div className="summary-card">
           <div className="summary-card-title">応募前（ヨミ）</div>
-          <table className="summary-table">
-            <tbody>
-              {[
-                { label: '応募見込み80%', value: yomiSummary['応募見込み80%'] ?? 0, color: 'var(--grn)' },
-                { label: '応募見込み50%', value: yomiSummary['応募見込み50%'] ?? 0, color: 'var(--blu)' },
-                { label: '応募見込み20%', value: yomiSummary['応募見込み20%'] ?? 0, color: 'var(--gold)' },
-                { label: '応募対象外', value: yomiSummary['応募対象外'] ?? 0, color: 'var(--bd2)' },
-                { label: '3期生候補', value: yomiSummary['3期生候補'] ?? 0, color: '#7b2d8e' },
-              ].map((r) => (
-                <tr key={r.label}>
-                  <td className="summary-label"><span className="summary-dot" style={{ background: r.color }} />{r.label}</td>
-                  <td className="summary-num">{r.value}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="summary-bars">
+            {[
+              { label: '応募見込み80%', value: yomiSummary['応募見込み80%'] ?? 0, color: 'var(--grn)' },
+              { label: '応募見込み50%', value: yomiSummary['応募見込み50%'] ?? 0, color: 'var(--blu)' },
+              { label: '応募見込み20%', value: yomiSummary['応募見込み20%'] ?? 0, color: 'var(--gold)' },
+              { label: '応募対象外', value: yomiSummary['応募対象外'] ?? 0, color: 'var(--bd2)' },
+              { label: '3期生候補', value: yomiSummary['3期生候補'] ?? 0, color: '#7b2d8e' },
+            ].map((r) => {
+              const max = Math.max(
+                yomiSummary['応募見込み80%'] ?? 0,
+                yomiSummary['応募見込み50%'] ?? 0,
+                yomiSummary['応募見込み20%'] ?? 0,
+                yomiSummary['応募対象外'] ?? 0,
+                yomiSummary['3期生候補'] ?? 0,
+                1
+              )
+              return (
+                <div className="summary-bar-item" key={r.label}>
+                  <div className="summary-bar-label">{r.label}</div>
+                  <div className="summary-bar-track">
+                    <div
+                      className="summary-bar-fill"
+                      style={{
+                        width: `${Math.max((r.value / max) * 100, r.value > 0 ? 12 : 0)}%`,
+                        background: r.color,
+                      }}
+                    >
+                      {r.value > 0 && <span>{r.value}</span>}
+                    </div>
+                    {r.value === 0 && <span className="summary-bar-zero">0</span>}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
       </div>
 
@@ -180,59 +229,6 @@ export default function OverviewTab({ candidates, applicantCount, interviewCount
         </div>
         <div className="progress-bar">
           <div className="progress-fill grn" style={{ width: `${target > 0 ? (confirmed / target) * 100 : 0}%` }} />
-        </div>
-      </div>
-
-      <div className="grid2">
-        <div className="card">
-          <div className="card-title">ステータス分布</div>
-          <div className="funnel">
-            {statusData.map((d) => {
-              const max = Math.max(...statusData.map((x) => x.count), 1)
-              return (
-                <div className="funnel-item" key={d.status}>
-                  <div className="funnel-label">{d.status}</div>
-                  <div
-                    className="funnel-bar"
-                    style={{
-                      width: `${Math.max((d.count / max) * 100, 12)}%`,
-                      background: d.color,
-                    }}
-                  >
-                    {d.count}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="card-title">ヨミ分布</div>
-          {yomiData.length > 0 ? (
-            <div className="chart-bars">
-              {yomiData.map((d) => (
-                <div className="chart-bar-item" key={d.yomi}>
-                  <div className="chart-bar-label">{d.yomi}</div>
-                  <div className="chart-bar-track">
-                    <div
-                      className="chart-bar-fill"
-                      style={{
-                        width: `${totalYomi > 0 ? (d.count / totalYomi) * 100 : 0}%`,
-                        background: d.color,
-                      }}
-                    >
-                      <span>{d.count}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ fontSize: '0.78rem', color: 'var(--mu)', padding: '1rem 0' }}>
-              ヨミデータなし
-            </div>
-          )}
         </div>
       </div>
 
