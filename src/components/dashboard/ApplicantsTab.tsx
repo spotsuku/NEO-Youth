@@ -45,9 +45,20 @@ const STATUS_FILTERS = ['全て', '応募前', '応募完了', '書類選考', '
 export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, verdictMap }: Props) {
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('全て')
+  const [typeFilter, setTypeFilter] = useState<'全て' | '学生' | '社会人'>('全て')
   const [selected, setSelected] = useState<YouthCandidate | null>(null)
   const [interviewTarget, setInterviewTarget] = useState<YouthCandidate | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
+
+  const isStudent = (c: YouthCandidate) => (c.type ?? '').includes('大学') || (c.type ?? '').includes('学生')
+
+  // KPI 集計
+  const totalCount = candidates.length
+  const appliedCount = candidates.filter((c) => c.status !== '応募前').length
+  const studentCount = candidates.filter(isStudent).length
+  const shakaijinCount = candidates.filter((c) => !isStudent(c)).length
+  const passCriteriaCount = candidates.filter((c) => c.ob_pass_criteria).length
+  const passCount = candidates.filter((c) => c.status === '合格' || c.status === '合格予定' || c.status === '補欠合格').length
 
   const filtered = useMemo(() => {
     return candidates
@@ -58,14 +69,16 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, v
           (c.kana ?? '').toLowerCase().includes(q) ||
           (c.school ?? '').toLowerCase().includes(q)
         const matchStatus = statusFilter === '全て' || (statusFilter === '不合格' ? !!c.rejected_at : c.status === statusFilter)
-        return matchQuery && matchStatus
+        const matchType = typeFilter === '全て' ||
+          (typeFilter === '学生' ? isStudent(c) : !isStudent(c))
+        return matchQuery && matchStatus && matchType
       })
       .sort((a, b) => {
         const ka = a.kana || a.name
         const kb = b.kana || b.name
         return ka.localeCompare(kb, 'ja')
       })
-  }, [candidates, query, statusFilter])
+  }, [candidates, query, statusFilter, typeFilter])
 
   const openInterview = (c: YouthCandidate) => {
     setSelected(null)
@@ -74,6 +87,34 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, v
 
   return (
     <>
+      {/* KPIカード */}
+      <div className="kpi-row">
+        <div className="kpi-card red">
+          <div className="kpi-label">候補者（累積）</div>
+          <div className="kpi-value">{totalCount}<span> 名</span></div>
+        </div>
+        <div className="kpi-card grn">
+          <div className="kpi-label">応募者（累積）</div>
+          <div className="kpi-value">{appliedCount}<span> 名</span></div>
+        </div>
+        <div className="kpi-card blu">
+          <div className="kpi-label">学生</div>
+          <div className="kpi-value">{studentCount}<span> 名</span></div>
+        </div>
+        <div className="kpi-card gold">
+          <div className="kpi-label">社会人</div>
+          <div className="kpi-value">{shakaijinCount}<span> 名</span></div>
+        </div>
+        <div className="kpi-card blu">
+          <div className="kpi-label">合格基準</div>
+          <div className="kpi-value">{passCriteriaCount}<span> 名</span></div>
+        </div>
+        <div className="kpi-card grn">
+          <div className="kpi-label">合格</div>
+          <div className="kpi-value">{passCount}<span> 名</span></div>
+        </div>
+      </div>
+
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '1rem' }}>
         <div className="section-title" style={{ marginBottom: 0 }}>候補者管理</div>
         <button className="iv-save-btn" style={{ fontSize: '0.72rem', padding: '0.35rem 0.8rem' }} onClick={() => setShowAddForm(true)}>
@@ -90,6 +131,22 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, v
           onChange={(e) => setQuery(e.target.value)}
         />
       </div>
+      {/* 区分フィルター（学生/社会人） */}
+      <div className="search-row" style={{ gap: '0.35rem' }}>
+        {(['全て', '学生', '社会人'] as const).map((f) => (
+          <button
+            key={f}
+            className={`filter-btn ${typeFilter === f ? 'active' : ''}`}
+            onClick={() => setTypeFilter(f)}
+          >
+            {f === '全て'
+              ? `区分: 全て (${candidates.length})`
+              : f === '学生'
+              ? `学生 (${studentCount})`
+              : `社会人 (${shakaijinCount})`}
+          </button>
+        ))}
+      </div>
       <div className="search-row" style={{ flexWrap: 'wrap', gap: '0.35rem' }}>
         {STATUS_FILTERS.map((f) => (
           <button
@@ -102,7 +159,7 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, v
         ))}
       </div>
 
-      <div className="table-wrap">
+      <div className="table-wrap sticky-head">
         <table className="editable-table">
           <thead>
             <tr>

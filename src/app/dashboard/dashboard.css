@@ -228,6 +228,19 @@
   background: var(--sur2);
 }
 
+/* スクロール時にヘッダーを固定するモディファイア */
+.table-wrap.sticky-head {
+  overflow: visible;
+}
+
+.table-wrap.sticky-head thead th {
+  position: sticky;
+  top: 56px; /* .db-header height */
+  z-index: 20;
+  background: var(--sur2);
+  box-shadow: 0 1px 0 var(--bd);
+}
+
 .table-wrap th {
   text-align: left;
   padding: 0.65rem 0.9rem;
