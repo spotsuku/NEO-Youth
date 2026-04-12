@@ -33,16 +33,41 @@ export default function RecruitmentDashboard({ candidates: initial, sessions, ve
   const [candidates, setCandidates] = useState<YouthCandidate[]>(initial)
 
   const updateCandidate = useCallback(async (name: string, patch: Partial<YouthCandidate>) => {
-    setCandidates((prev) =>
-      prev.map((c) => (c.name === name ? { ...c, ...patch } : c)),
-    )
+    // 元の値をスナップショット（ロールバック用）
+    let snapshot: YouthCandidate | null = null
+    setCandidates((prev) => {
+      const found = prev.find((c) => c.name === name)
+      if (found) snapshot = { ...found }
+      return prev.map((c) => (c.name === name ? { ...c, ...patch } : c))
+    })
     try {
-      await fetch(`/api/youth/candidates/${encodeURIComponent(name)}`, {
+      const res = await fetch(`/api/youth/candidates/${encodeURIComponent(name)}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(patch),
       })
-    } catch {}
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'PATCH 失敗' }))
+        console.error('[updateCandidate] PATCH error:', res.status, err)
+        // ロールバック
+        if (snapshot) {
+          const snap = snapshot
+          setCandidates((prev) => prev.map((c) => (c.name === name ? snap : c)))
+        }
+        return
+      }
+      // サーバーから返ってきた最新値で上書き（DB側で変換された値があれば反映）
+      const updated = await res.json().catch(() => null)
+      if (updated && updated.id) {
+        setCandidates((prev) => prev.map((c) => (c.name === name ? updated : c)))
+      }
+    } catch (e) {
+      console.error('[updateCandidate] network error:', e)
+      if (snapshot) {
+        const snap = snapshot
+        setCandidates((prev) => prev.map((c) => (c.name === name ? snap : c)))
+      }
+    }
   }, [])
 
   const addCandidate = useCallback(async (data: Partial<YouthCandidate>): Promise<boolean> => {
