@@ -49,9 +49,32 @@ const TIMELINE = [
   { date: '2026-05-01', title: '事前研修・オンボーディング', sub: '写真撮影・Slack・ポータル' },
 ]
 
+// 選考フローの順序: 応募前(0) → 応募完了(1) → 書類選考(2) → グループ面接(3) → 最終面接(4) → 合格系(5)
+// 保留/辞退 は分岐状態。最低でも「応募完了」まで到達したとみなす（stageIdx=1）
+const STAGE_INDEX: Record<string, number> = {
+  '応募前': 0,
+  '応募完了': 1,
+  '書類選考': 2,
+  'グループ面接': 3,
+  '最終面接': 4,
+  '合格予定': 5,
+  '合格': 5,
+  '補欠合格': 5,
+  '承諾書提出': 5,
+  '保留': 1,
+  '辞退': 1,
+}
+
+const stageIdx = (status: string | null | undefined): number =>
+  status && status in STAGE_INDEX ? STAGE_INDEX[status] : -1
+
 export default function OverviewTab({ candidates, applicantCount, interviewCount, sessionCount, verdictMap }: Props) {
   const target = 36
   const confirmed = candidates.filter((c) => c.status === '参加確定').length
+
+  // ステージ到達累積カウント: target以上のステージに到達した候補者数
+  const reachedCount = (target: number) =>
+    candidates.filter((c) => stageIdx(c.status) >= target).length
 
   // 最終面接結果の集計
   const verdictCounts = useMemo(() => {
@@ -142,22 +165,22 @@ export default function OverviewTab({ candidates, applicantCount, interviewCount
         </div>
 
         <div className="summary-card">
-          <div className="summary-card-title">選考中</div>
+          <div className="summary-card-title">選考中（累積: 各ステージに到達した人数）</div>
           <div className="summary-bars">
             {[
               { label: '応募前', value: candidates.filter((c) => c.status === '応募前').length, color: 'var(--bd2)' },
-              { label: '応募完了', value: candidates.filter((c) => c.status === '応募完了').length, color: 'var(--grn)' },
-              { label: '書類選考', value: candidates.filter((c) => c.status === '書類選考').length, color: 'var(--blu)' },
-              { label: 'グループ面接', value: candidates.filter((c) => c.status === 'グループ面接').length, color: 'var(--gold)' },
-              { label: '最終面接', value: candidates.filter((c) => c.status === '最終面接').length, color: 'var(--red)' },
+              { label: '応募完了', value: reachedCount(1), color: 'var(--grn)' },
+              { label: '書類選考', value: reachedCount(2), color: 'var(--blu)' },
+              { label: 'グループ面接', value: reachedCount(3), color: 'var(--gold)' },
+              { label: '最終面接', value: reachedCount(4), color: 'var(--red)' },
               { label: '保留', value: candidates.filter((c) => c.status === '保留').length, color: 'var(--gold)' },
             ].map((r) => {
               const max = Math.max(
                 candidates.filter((c) => c.status === '応募前').length,
-                candidates.filter((c) => c.status === '応募完了').length,
-                candidates.filter((c) => c.status === '書類選考').length,
-                candidates.filter((c) => c.status === 'グループ面接').length,
-                candidates.filter((c) => c.status === '最終面接').length,
+                reachedCount(1),
+                reachedCount(2),
+                reachedCount(3),
+                reachedCount(4),
                 candidates.filter((c) => c.status === '保留').length,
                 1
               )
