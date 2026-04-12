@@ -43,7 +43,21 @@ export async function PATCH(
     .select()
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error('[PATCH youth_candidates] supabase error:', {
+      name,
+      payload,
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+    })
+    return NextResponse.json({
+      error: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+      payload,
+    }, { status: 500 })
   }
   if (!data || data.length === 0) {
     return NextResponse.json({ error: '候補者が見つかりません', searched: name }, { status: 404 })

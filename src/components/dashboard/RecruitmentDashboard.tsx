@@ -48,7 +48,16 @@ export default function RecruitmentDashboard({ candidates: initial, sessions, ve
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: 'PATCH 失敗' }))
-        console.error('[updateCandidate] PATCH error:', res.status, err)
+        console.error('[updateCandidate] PATCH error:', {
+          status: res.status,
+          name,
+          patch,
+          message: err?.error,
+          code: err?.code,
+          details: err?.details,
+          hint: err?.hint,
+          payload: err?.payload,
+        })
         // ロールバック
         if (snapshot) {
           const snap = snapshot
