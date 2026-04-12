@@ -49,7 +49,7 @@ const TIMELINE = [
   { date: '2026-05-01', title: '事前研修・オンボーディング', sub: '写真撮影・Slack・ポータル' },
 ]
 
-// 選考フローの順序: 応募前(0) → 応募完了(1) → 書類選考(2) → グループ面接(3) → 最終面接(4) → 合格系(5)
+// 選考フローの順序: 応募前(0) → 応募完了(1) → 書類選考(2) → グループ面接(3) → 最終面接(4) → 合格予定(5) → 合格/補欠合格(6) → 承諾書提出(7)
 // 保留/辞退 は分岐状態。最低でも「応募完了」まで到達したとみなす（stageIdx=1）
 const STAGE_INDEX: Record<string, number> = {
   '応募前': 0,
@@ -58,9 +58,9 @@ const STAGE_INDEX: Record<string, number> = {
   'グループ面接': 3,
   '最終面接': 4,
   '合格予定': 5,
-  '合格': 5,
-  '補欠合格': 5,
-  '承諾書提出': 5,
+  '合格': 6,
+  '補欠合格': 6,
+  '承諾書提出': 7,
   '保留': 1,
   '辞退': 1,
 }
@@ -173,6 +173,7 @@ export default function OverviewTab({ candidates, applicantCount, interviewCount
               { label: '書類選考', value: reachedCount(2), color: 'var(--blu)' },
               { label: 'グループ面接', value: reachedCount(3), color: 'var(--gold)' },
               { label: '最終面接', value: reachedCount(4), color: 'var(--red)' },
+              { label: '合格予定', value: reachedCount(5), color: 'var(--blu)' },
               { label: '保留', value: candidates.filter((c) => c.status === '保留').length, color: 'var(--gold)' },
             ].map((r) => {
               const max = Math.max(
@@ -181,6 +182,7 @@ export default function OverviewTab({ candidates, applicantCount, interviewCount
                 reachedCount(2),
                 reachedCount(3),
                 reachedCount(4),
+                reachedCount(5),
                 candidates.filter((c) => c.status === '保留').length,
                 1
               )
