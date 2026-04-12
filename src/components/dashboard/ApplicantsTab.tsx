@@ -209,9 +209,9 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, v
                   <td style={{ textAlign: 'center' }}>
                     <button
                       className={`ob-cell ${c.interview_date ? 'checked' : ''}`}
-                      onClick={() => openInterview(c)}
+                      onClick={() => onUpdate(c.name, { interview_date: c.interview_date ? null : new Date().toISOString().slice(0, 10) })}
                       type="button"
-                      title={c.interview_date ? `面談日: ${c.interview_date}` : '面談記録を追加'}
+                      title={c.interview_date ? `面談日: ${c.interview_date}` : '面談済にする'}
                     >
                       {c.interview_date ? '\u2713' : ''}
                     </button>
