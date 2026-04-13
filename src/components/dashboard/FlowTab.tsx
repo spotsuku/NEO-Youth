@@ -66,8 +66,9 @@ export default function FlowTab({ candidates, onUpdate }: Props) {
     dragRef.current = null
   }
 
-  const total = candidates.length
-  const count = (key: string) => candidates.filter((c) => c.status === key).length
+  const total = candidates.filter((c) => !c.rejected_at).length
+  // 不合格者はカウントに含めない（カードは表示される）
+  const count = (key: string) => candidates.filter((c) => c.status === key && !c.rejected_at).length
 
   // 不合格: ステータスは変えず rejected_at をトグル（その場でグレーアウト）
   const handleReject = (name: string) => {
@@ -127,7 +128,7 @@ function KanbanCol({ col, dragName, overCol, onDragStart, onDragOver, onDrop, on
     >
       <div className="kanban-col-head" style={{ borderBottomColor: col.color }}>
         <span style={{ color: col.color }}>{col.key}</span>
-        <span className="kanban-col-count">{col.candidates.length}</span>
+        <span className="kanban-col-count">{col.candidates.filter((c) => !c.rejected_at).length}</span>
       </div>
       <div className="kanban-col-body">
         {col.candidates.map((c) => (

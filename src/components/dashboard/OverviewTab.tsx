@@ -72,9 +72,9 @@ export default function OverviewTab({ candidates, applicantCount, interviewCount
   const target = 36
   const confirmed = candidates.filter((c) => c.status === '参加確定').length
 
-  // ステージ到達累積カウント: target以上のステージに到達した候補者数
+  // ステージ到達累積カウント: target以上のステージに到達した候補者数（不合格者は除外）
   const reachedCount = (target: number) =>
-    candidates.filter((c) => stageIdx(c.status) >= target).length
+    candidates.filter((c) => !c.rejected_at && stageIdx(c.status) >= target).length
 
   // 最終面接結果の集計
   const verdictCounts = useMemo(() => {
@@ -124,9 +124,10 @@ export default function OverviewTab({ candidates, applicantCount, interviewCount
 
   const totalYomi = yomiData.reduce((s, d) => s + d.count, 0)
 
-  const passCount = candidates.filter((c) => c.ob_pass_criteria).length
-  const acceptCount = candidates.filter((c) => c.status === '承諾書提出').length
-  const goukakuCount = candidates.filter((c) => c.status === '合格' || c.status === '合格予定').length
+  // 不合格者は各カウントから除外（最終結果の不合格バーでのみカウント）
+  const passCount = candidates.filter((c) => c.ob_pass_criteria && !c.rejected_at).length
+  const acceptCount = candidates.filter((c) => c.status === '承諾書提出' && !c.rejected_at).length
+  const goukakuCount = candidates.filter((c) => (c.status === '合格' || c.status === '合格予定') && !c.rejected_at).length
 
   return (
     <>
@@ -140,9 +141,9 @@ export default function OverviewTab({ candidates, applicantCount, interviewCount
               { label: '合格', value: goukakuCount, color: 'var(--grn)' },
               { label: '合格基準', value: passCount, color: 'var(--blu)' },
               { label: '不合格', value: candidates.filter((c) => !!c.rejected_at).length, color: 'var(--bd2)' },
-              { label: '辞退', value: candidates.filter((c) => c.status === '辞退').length, color: 'var(--red)' },
+              { label: '辞退', value: candidates.filter((c) => c.status === '辞退' && !c.rejected_at).length, color: 'var(--red)' },
             ].map((r) => {
-              const max = Math.max(acceptCount, goukakuCount, passCount, candidates.filter((c) => !!c.rejected_at).length, candidates.filter((c) => c.status === '辞退').length, 1)
+              const max = Math.max(acceptCount, goukakuCount, passCount, candidates.filter((c) => !!c.rejected_at).length, candidates.filter((c) => c.status === '辞退' && !c.rejected_at).length, 1)
               return (
                 <div className="summary-bar-item" key={r.label}>
                   <div className="summary-bar-label">{r.label}</div>
@@ -168,22 +169,22 @@ export default function OverviewTab({ candidates, applicantCount, interviewCount
           <div className="summary-card-title">選考中（累積: 各ステージに到達した人数）</div>
           <div className="summary-bars">
             {[
-              { label: '応募前', value: candidates.filter((c) => c.status === '応募前').length, color: 'var(--bd2)' },
+              { label: '応募前', value: candidates.filter((c) => c.status === '応募前' && !c.rejected_at).length, color: 'var(--bd2)' },
               { label: '応募完了', value: reachedCount(1), color: 'var(--grn)' },
               { label: '書類選考', value: reachedCount(2), color: 'var(--blu)' },
               { label: 'グループ面接', value: reachedCount(3), color: 'var(--gold)' },
               { label: '最終面接', value: reachedCount(4), color: 'var(--red)' },
               { label: '合格予定', value: reachedCount(5), color: 'var(--blu)' },
-              { label: '保留', value: candidates.filter((c) => c.status === '保留').length, color: 'var(--gold)' },
+              { label: '保留', value: candidates.filter((c) => c.status === '保留' && !c.rejected_at).length, color: 'var(--gold)' },
             ].map((r) => {
               const max = Math.max(
-                candidates.filter((c) => c.status === '応募前').length,
+                candidates.filter((c) => c.status === '応募前' && !c.rejected_at).length,
                 reachedCount(1),
                 reachedCount(2),
                 reachedCount(3),
                 reachedCount(4),
                 reachedCount(5),
-                candidates.filter((c) => c.status === '保留').length,
+                candidates.filter((c) => c.status === '保留' && !c.rejected_at).length,
                 1
               )
               return (

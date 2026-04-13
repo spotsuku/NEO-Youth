@@ -52,13 +52,14 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, v
 
   const isStudent = (c: YouthCandidate) => (c.type ?? '').includes('大学') || (c.type ?? '').includes('学生')
 
-  // KPI 集計
-  const totalCount = candidates.length
-  const appliedCount = candidates.filter((c) => c.status !== '応募前').length
-  const studentCount = candidates.filter(isStudent).length
-  const shakaijinCount = candidates.filter((c) => !isStudent(c)).length
-  const passCriteriaCount = candidates.filter((c) => c.ob_pass_criteria).length
-  const passCount = candidates.filter((c) => c.status === '合格' || c.status === '合格予定' || c.status === '補欠合格').length
+  // KPI 集計（不合格者は合計から除外）
+  const active = candidates.filter((c) => !c.rejected_at)
+  const totalCount = active.length
+  const appliedCount = active.filter((c) => c.status !== '応募前').length
+  const studentCount = active.filter(isStudent).length
+  const shakaijinCount = active.filter((c) => !isStudent(c)).length
+  const passCriteriaCount = active.filter((c) => c.ob_pass_criteria).length
+  const passCount = active.filter((c) => c.status === '合格' || c.status === '合格予定' || c.status === '補欠合格').length
 
   const filtered = useMemo(() => {
     return candidates
