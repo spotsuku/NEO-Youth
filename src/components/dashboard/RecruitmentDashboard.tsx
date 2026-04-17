@@ -5,6 +5,7 @@ import {
   APPLICANTS,
   INTERVIEWS,
   ONBOARDING,
+  PARTNERSHIPS,
   SESSIONS,
   STATUS_DATA,
   YOMI_DATA,
@@ -16,6 +17,7 @@ import InterviewsTab from './InterviewsTab'
 import FlowTab from './FlowTab'
 import OnboardingTab from './OnboardingTab'
 import SessionsTab from './SessionsTab'
+import PartnershipsTab from './PartnershipsTab'
 
 const TABS = [
   { key: 'overview', label: '概要' },
@@ -24,6 +26,7 @@ const TABS = [
   { key: 'flow', label: '選考フロー' },
   { key: 'onboarding', label: 'オンボーディング' },
   { key: 'sessions', label: '説明会' },
+  { key: 'partnerships', label: '団体連携' },
 ] as const
 
 type TabKey = (typeof TABS)[number]['key']
@@ -85,6 +88,11 @@ export default function RecruitmentDashboard() {
         {tab === 'sessions' && (
           <div className="db-page">
             <SessionsTab sessions={SESSIONS} />
+          </div>
+        )}
+        {tab === 'partnerships' && (
+          <div className="db-page">
+            <PartnershipsTab initial={PARTNERSHIPS} />
           </div>
         )}
       </main>

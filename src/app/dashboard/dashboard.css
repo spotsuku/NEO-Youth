@@ -737,3 +737,201 @@
   margin-top: 0.2rem;
   font-family: 'JetBrains Mono', monospace;
 }
+
+/* ========================================
+   PARTNERSHIPS (団体連携) - Excel-like table
+   ======================================== */
+.pt-wrap {
+  overflow-x: auto;
+  border-radius: 7px;
+  border: 1px solid var(--bd);
+  background: var(--sur);
+}
+
+.pt-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+  table-layout: auto;
+}
+
+.pt-table thead {
+  background: var(--sur2);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.pt-table th {
+  text-align: left;
+  padding: 0.6rem 0.7rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--mu);
+  text-transform: uppercase;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--bd);
+  border-right: 1px solid var(--bd);
+}
+
+.pt-table th:last-child {
+  border-right: none;
+}
+
+.pt-table td {
+  padding: 0.45rem 0.55rem;
+  border-top: 1px solid var(--bd);
+  border-right: 1px solid var(--bd);
+  vertical-align: top;
+  color: var(--ink2);
+  background: var(--sur);
+}
+
+.pt-table td:last-child {
+  border-right: none;
+}
+
+.pt-table tr:hover td {
+  background: #faf8f3;
+}
+
+.pt-idx {
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--mu);
+  font-weight: 700;
+}
+
+.pt-cell {
+  width: 100%;
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 0.3rem 0.45rem;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-size: 0.78rem;
+  color: var(--ink);
+  border-radius: 3px;
+  outline: none;
+  transition: all 0.12s;
+}
+
+.pt-cell:hover {
+  border-color: var(--bd);
+  background: #fff;
+}
+
+.pt-cell:focus {
+  border-color: var(--red);
+  background: #fff;
+  box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.08);
+}
+
+.pt-textarea {
+  resize: vertical;
+  min-height: 54px;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  line-height: 1.5;
+}
+
+.pt-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.pt-contact-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.pt-contact-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.25rem 0.5rem;
+  align-items: center;
+}
+
+.pt-field-label {
+  font-size: 0.58rem;
+  color: var(--mu);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.pt-log-row {
+  display: grid;
+  grid-template-columns: 130px 1fr auto;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.pt-date {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+}
+
+.pt-mini {
+  background: transparent;
+  border: 1px solid var(--bd);
+  color: var(--mu);
+  border-radius: 3px;
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  line-height: 1;
+  padding: 0;
+  transition: all 0.12s;
+  flex-shrink: 0;
+}
+
+.pt-mini:hover {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.pt-mini.pt-danger {
+  width: auto;
+  height: auto;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.68rem;
+}
+
+.pt-add {
+  background: transparent;
+  border: 1px dashed var(--bd2);
+  color: var(--mu);
+  border-radius: 3px;
+  padding: 0.28rem 0.5rem;
+  font-size: 0.68rem;
+  cursor: pointer;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  transition: all 0.12s;
+  align-self: flex-start;
+}
+
+.pt-add:hover {
+  border-color: var(--red);
+  color: var(--red);
+  border-style: solid;
+}
+
+.pt-empty {
+  font-size: 0.7rem;
+  color: var(--bd2);
+  padding: 0.2rem 0.3rem;
+  font-style: italic;
+}
+
+.pt-note {
+  margin-top: 0.8rem;
+  font-size: 0.7rem;
+  color: var(--mu);
+  text-align: right;
+}

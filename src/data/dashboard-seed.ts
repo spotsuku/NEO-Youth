@@ -2,6 +2,7 @@ import type {
   DashboardApplicant,
   DashboardInterview,
   OnboardingRecord,
+  Partnership,
   SessionRecord,
   StatusData,
   YomiData,
@@ -154,6 +155,63 @@ export const YOMI_DATA: YomiData[] = [
   { yomi: 'S 説明会・面談', count: 32, color: 'var(--accent2)' },
   { yomi: 'AA イベント複数', count: 32, color: 'var(--gold)' },
   { yomi: 'A イベント単発', count: 223, color: 'var(--muted)' },
+]
+
+export const PARTNERSHIPS: Partnership[] = [
+  {
+    id: 'p-1',
+    university: '九州大学',
+    partnerContacts: [
+      { name: '田中 一郎', role: '共創学部 准教授' },
+      { name: '佐藤 花子', role: 'キャリア支援センター' },
+    ],
+    internalHandler: '三木浩汰',
+    contact: {
+      email: 'tanaka@kyushu-u.ac.jp',
+      phone: '092-000-0000',
+      line: 'kyudai_tanaka',
+      messenger: '',
+    },
+    partnershipDetails: '授業連携・インターン紹介・共同イベント開催',
+    logs: [
+      { date: '2026-02-14', content: '共創学部1年生向け授業で三木が講演実施（テーマ：起業家精神）' },
+      { date: '2026-03-10', content: 'キャリア支援センターでNEO ACADEMIA説明会を実施' },
+    ],
+  },
+  {
+    id: 'p-2',
+    university: '九州産業大学',
+    partnerContacts: [
+      { name: '山田 太郎', role: '芸術学部 教授' },
+    ],
+    internalHandler: '橡木彩乃',
+    contact: {
+      email: 'yamada@kyusan-u.ac.jp',
+      phone: '092-111-1111',
+      line: '',
+      messenger: 'yamada.taro',
+    },
+    partnershipDetails: 'アート・デザイン領域での連携、ポートフォリオ講座',
+    logs: [
+      { date: '2026-03-07', content: '芸術学部学生向け説明会を開催' },
+    ],
+  },
+  {
+    id: 'p-3',
+    university: '立命館アジア太平洋大学',
+    partnerContacts: [
+      { name: '鈴木 美咲', role: 'サステナビリティ観光学部 講師' },
+    ],
+    internalHandler: '三木浩汰',
+    contact: {
+      email: 'suzuki@apu.ac.jp',
+      phone: '',
+      line: '',
+      messenger: '',
+    },
+    partnershipDetails: '地方創生領域での共同プロジェクト検討',
+    logs: [],
+  },
 ]
 
 export const KANBAN_COLS = [

@@ -62,6 +62,33 @@ export interface YomiData {
   color: string
 }
 
+export interface PartnerContact {
+  name: string
+  role: string
+}
+
+export interface PartnershipContactInfo {
+  email: string
+  phone: string
+  line: string
+  messenger: string
+}
+
+export interface PartnershipLog {
+  date: string
+  content: string
+}
+
+export interface Partnership {
+  id: string
+  university: string
+  partnerContacts: PartnerContact[]
+  internalHandler: string
+  contact: PartnershipContactInfo
+  partnershipDetails: string
+  logs: PartnershipLog[]
+}
+
 export const OB_LABELS: Record<string, string> = {
   final_exam: '最終選考',
   mail_sent: '合格メール',
