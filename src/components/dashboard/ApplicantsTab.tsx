@@ -10,7 +10,9 @@ interface Props {
   onUpdate: (name: string, patch: Partial<YouthCandidate>) => Promise<void>
   onAdd: (data: Partial<YouthCandidate>) => Promise<boolean>
   onDelete: (name: string) => Promise<void>
+  onPromoteFinal: (name: string) => Promise<boolean>
   verdictMap: Record<string, VerdictRecord>
+  promotedNames: Set<string>
 }
 
 // ステータス（事実に基づく状態）
@@ -42,13 +44,26 @@ const VERDICT_BADGE: Record<string, string> = {
 
 const STATUS_FILTERS = ['全て', '応募前', '応募完了', '書類選考', 'グループ面接', '最終面接', '合格予定', '合格', '補欠合格', '承諾書提出', '保留', '不合格', '辞退']
 
-export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, verdictMap }: Props) {
+export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, onPromoteFinal, verdictMap, promotedNames }: Props) {
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('全て')
   const [typeFilter, setTypeFilter] = useState<'全て' | '学生' | '社会人'>('全て')
   const [selected, setSelected] = useState<YouthCandidate | null>(null)
   const [interviewTarget, setInterviewTarget] = useState<YouthCandidate | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
+  const [promoting, setPromoting] = useState<Set<string>>(new Set())
+
+  const handlePromote = async (name: string) => {
+    if (!confirm(`${name} さんを「最終面接シート」に追加しますか？\n（応募書類情報が連携されます）`)) return
+    setPromoting((prev) => new Set(prev).add(name))
+    const ok = await onPromoteFinal(name)
+    setPromoting((prev) => {
+      const next = new Set(prev)
+      next.delete(name)
+      return next
+    })
+    if (!ok) alert('連携に失敗しました。コンソールを確認してください。')
+  }
 
   const isStudent = (c: YouthCandidate) => (c.type ?? '').includes('大学') || (c.type ?? '').includes('学生')
 
@@ -176,6 +191,7 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, v
               <th>説明会</th>
               <th>面談済</th>
               <th>最終面接</th>
+              <th>シート連携</th>
               <th></th>
               <th></th>
               <th></th>
@@ -285,6 +301,27 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, v
                       <span style={{ color: 'var(--bd2)', fontSize: '0.72rem' }}>-</span>
                     )}
                   </td>
+                  {/* 最終面接シート連携 */}
+                  <td>
+                    {c.status === '最終面接' ? (
+                      promotedNames.has(c.name) ? (
+                        <span className="badge grn" title="最終面接シートに追加済み">✓ 連携済</span>
+                      ) : (
+                        <button
+                          className="detail-btn"
+                          onClick={() => handlePromote(c.name)}
+                          disabled={promoting.has(c.name)}
+                          title="この候補者を最終面接シートに追加します"
+                        >
+                          {promoting.has(c.name) ? '連携中...' : '+ シート追加'}
+                        </button>
+                      )
+                    ) : promotedNames.has(c.name) ? (
+                      <span className="badge gray" title="最終面接シートに登録済（過去）">登録済</span>
+                    ) : (
+                      <span style={{ color: 'var(--bd2)', fontSize: '0.72rem' }}>-</span>
+                    )}
+                  </td>
                   {/* 面談ボタン */}
                   <td>
                     <button className="detail-btn" onClick={() => openInterview(c)}>面談</button>
@@ -310,7 +347,7 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, v
               )
             })}
             {filtered.length === 0 && (
-              <tr><td colSpan={15} style={{ textAlign: 'center', color: 'var(--mu)', padding: '2rem' }}>該当する候補者がいません</td></tr>
+              <tr><td colSpan={16} style={{ textAlign: 'center', color: 'var(--mu)', padding: '2rem' }}>該当する候補者がいません</td></tr>
             )}
           </tbody>
         </table>

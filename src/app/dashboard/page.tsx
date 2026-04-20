@@ -16,7 +16,7 @@ async function getData() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
 
   if (!url || !key) {
-    return { candidates: [], sessions: [], verdicts: [], error: null }
+    return { candidates: [], sessions: [], verdicts: [], promotedNames: [], error: null }
   }
 
   const supabase = createClient(url, key)
@@ -25,22 +25,25 @@ async function getData() {
     { data: candidates, error: ce },
     { data: sessions, error: se },
     { data: verdicts, error: ve },
+    { data: finalSheet, error: fe },
   ] = await Promise.all([
     supabase.from('youth_candidates').select('*').order('id'),
     supabase.from('youth_sessions').select('*').order('id'),
     supabase.from('interviews').select('candidate_name, verdict, score_total'),
+    supabase.from('candidates').select('name'),
   ])
 
   return {
     candidates: (candidates ?? []) as YouthCandidate[],
     sessions: (sessions ?? []) as YouthSession[],
     verdicts: (verdicts ?? []) as VerdictRecord[],
-    error: ce?.message ?? se?.message ?? ve?.message ?? null,
+    promotedNames: ((finalSheet ?? []) as { name: string }[]).map((r) => r.name),
+    error: ce?.message ?? se?.message ?? ve?.message ?? fe?.message ?? null,
   }
 }
 
 export default async function DashboardPage() {
-  const { candidates, sessions, verdicts, error } = await getData()
+  const { candidates, sessions, verdicts, promotedNames, error } = await getData()
 
   // verdict を Map に変換
   const verdictMap: Record<string, VerdictRecord> = {}
@@ -53,6 +56,7 @@ export default async function DashboardPage() {
       candidates={candidates}
       sessions={sessions}
       verdictMap={verdictMap}
+      promotedNames={promotedNames}
       dbError={error}
     />
   )

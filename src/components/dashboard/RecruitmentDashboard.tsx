@@ -28,12 +28,36 @@ interface Props {
   candidates: YouthCandidate[]
   sessions: YouthSession[]
   verdictMap: Record<string, VerdictRecord>
+  promotedNames: string[]
   dbError: string | null
 }
 
-export default function RecruitmentDashboard({ candidates: initial, sessions, verdictMap, dbError }: Props) {
+export default function RecruitmentDashboard({ candidates: initial, sessions, verdictMap, promotedNames, dbError }: Props) {
   const [tab, setTab] = useState<TabKey>('overview')
   const [candidates, setCandidates] = useState<YouthCandidate[]>(initial)
+  const [promoted, setPromoted] = useState<Set<string>>(() => new Set(promotedNames))
+
+  const promoteToFinal = useCallback(async (name: string): Promise<boolean> => {
+    try {
+      const res = await fetch(`/api/youth/candidates/${encodeURIComponent(name)}/promote-final`, {
+        method: 'POST',
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        console.error('[promoteToFinal] error:', err)
+        return false
+      }
+      setPromoted((prev) => {
+        const next = new Set(prev)
+        next.add(name)
+        return next
+      })
+      return true
+    } catch (e) {
+      console.error('[promoteToFinal] network error:', e)
+      return false
+    }
+  }, [])
 
   const updateCandidate = useCallback(async (name: string, patch: Partial<YouthCandidate>) => {
     // 元の値をスナップショット（ロールバック用）
@@ -171,7 +195,15 @@ export default function RecruitmentDashboard({ candidates: initial, sessions, ve
         )}
         {tab === 'applicants' && (
           <div className="db-page">
-            <ApplicantsTab candidates={candidates} onUpdate={updateCandidate} onAdd={addCandidate} onDelete={deleteCandidate} verdictMap={verdictMap} />
+            <ApplicantsTab
+              candidates={candidates}
+              onUpdate={updateCandidate}
+              onAdd={addCandidate}
+              onDelete={deleteCandidate}
+              onPromoteFinal={promoteToFinal}
+              verdictMap={verdictMap}
+              promotedNames={promoted}
+            />
           </div>
         )}
         {tab === 'interviews' && (
