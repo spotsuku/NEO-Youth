@@ -24,10 +24,17 @@ export async function POST(
     .maybeSingle()
 
   if (ye) {
-    return NextResponse.json({ error: ye.message }, { status: 500 })
+    console.error('[promote-final] youth_candidates fetch error:', ye)
+    return NextResponse.json({
+      step: 'fetch_youth',
+      error: ye.message,
+      code: ye.code,
+      details: ye.details,
+      hint: ye.hint,
+    }, { status: 500 })
   }
   if (!youth) {
-    return NextResponse.json({ error: '候補者が見つかりません' }, { status: 404 })
+    return NextResponse.json({ step: 'fetch_youth', error: '候補者が見つかりません' }, { status: 404 })
   }
 
   // 2) candidates テーブル用にマッピング
@@ -44,28 +51,63 @@ export async function POST(
     career: youth.career ?? null,
   }
 
-  // 3) name をユニークキーとして UPSERT（既に存在すれば応募書類だけ上書き）
+  // 3) 既存行があれば UPDATE、無ければ INSERT（明示的に分岐）
+  //    upsert(onConflict) が環境によって権限問題を起こしたケースを回避するため。
+  const { data: existing, error: xe } = await supabase
+    .from('candidates')
+    .select('id')
+    .eq('name', name)
+    .limit(1)
+    .maybeSingle()
+
+  if (xe) {
+    console.error('[promote-final] candidates lookup error:', xe)
+    return NextResponse.json({
+      step: 'lookup_candidates',
+      error: xe.message,
+      code: xe.code,
+      details: xe.details,
+      hint: xe.hint,
+    }, { status: 500 })
+  }
+
+  if (existing) {
+    const { data, error } = await supabase
+      .from('candidates')
+      .update(payload)
+      .eq('name', name)
+      .select()
+    if (error) {
+      console.error('[promote-final] candidates UPDATE error:', { name, payload, ...error })
+      return NextResponse.json({
+        step: 'update_candidates',
+        error: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        payload,
+      }, { status: 500 })
+    }
+    return NextResponse.json({ promoted: name, action: 'updated', candidate: data?.[0] ?? null })
+  }
+
   const { data, error } = await supabase
     .from('candidates')
-    .upsert(payload, { onConflict: 'name' })
+    .insert(payload)
     .select()
 
   if (error) {
-    console.error('[promote-final] supabase error:', {
-      name,
-      payload,
-      code: error.code,
-      message: error.message,
-      details: error.details,
-      hint: error.hint,
-    })
+    console.error('[promote-final] candidates INSERT error:', { name, payload, ...error })
     return NextResponse.json({
+      step: 'insert_candidates',
       error: error.message,
       code: error.code,
       details: error.details,
       hint: error.hint,
+      payload,
     }, { status: 500 })
   }
 
-  return NextResponse.json({ promoted: name, candidate: data?.[0] ?? null })
+  return NextResponse.json({ promoted: name, action: 'inserted', candidate: data?.[0] ?? null })
 }
+
