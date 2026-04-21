@@ -78,7 +78,14 @@ export async function POST(
       .eq('name', name)
       .select()
     if (error) {
-      console.error('[promote-final] candidates UPDATE error:', { name, payload, ...error })
+      console.error('[promote-final] candidates UPDATE error:', {
+        candidate: name,
+        payload,
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+      })
       return NextResponse.json({
         step: 'update_candidates',
         error: error.message,
@@ -97,7 +104,14 @@ export async function POST(
     .select()
 
   if (error) {
-    console.error('[promote-final] candidates INSERT error:', { name, payload, ...error })
+    console.error('[promote-final] candidates INSERT error:', {
+      candidate: name,
+      payload,
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+    })
     return NextResponse.json({
       step: 'insert_candidates',
       error: error.message,
