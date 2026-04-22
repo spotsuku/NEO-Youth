@@ -142,7 +142,16 @@ export default function PartnershipsTab() {
     ;(async () => {
       try {
         const res = await fetch('/api/youth/partnerships', { cache: 'no-store' })
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}))
+          const hint =
+            typeof err?.message === 'string' && /relation .* does not exist/i.test(err.message)
+              ? '（Supabase で 016_youth_partnerships.sql を実行してください）'
+              : ''
+          throw new Error(
+            `読み込み失敗 (HTTP ${res.status}): ${err?.error ?? err?.message ?? '不明なエラー'} ${hint}`.trim(),
+          )
+        }
         const data = (await res.json()) as Row[]
         if (!aborted) setRows(data)
       } catch (e: unknown) {
@@ -277,6 +286,7 @@ export default function PartnershipsTab() {
 
     const created: Row[] = []
     let failed = 0
+    let firstError: string | null = null
 
     for (let i = 0; i < legacyRows.length; i++) {
       const payload = legacyToPayload(legacyRows[i])
@@ -288,13 +298,23 @@ export default function PartnershipsTab() {
         })
         if (!res.ok) {
           failed++
-          console.error('[partnerships import] row failed:', await res.json().catch(() => ({})))
+          const err = await res.json().catch(() => ({}))
+          console.error('[partnerships import] row failed:', err)
+          if (!firstError) {
+            const msg = err?.error ?? err?.message ?? `HTTP ${res.status}`
+            const tableMissing =
+              typeof msg === 'string' && /relation .* does not exist/i.test(msg)
+            firstError = tableMissing
+              ? 'Supabase に youth_partnerships テーブルがまだ作成されていません。SQL Editor で 016_youth_partnerships.sql を実行してください。'
+              : `${msg}${err?.hint ? ` / hint: ${err.hint}` : ''}`
+          }
         } else {
           created.push((await res.json()) as Row)
         }
       } catch (e) {
         failed++
         console.error('[partnerships import] network error:', e)
+        if (!firstError) firstError = e instanceof Error ? e.message : 'ネットワークエラー'
       }
       setImportStatus({ done: i + 1, total: legacyRows.length })
     }
@@ -311,7 +331,7 @@ export default function PartnershipsTab() {
       setImportResult(`${created.length} 件を DB にインポートしました。元データはブラウザ内のバックアップキーに保存済みです。`)
     } else {
       setImportResult(
-        `${created.length} 件をインポートしましたが、${failed} 件が失敗しました。元データは削除せず残しています（再試行可）。`,
+        `${created.length} 件をインポート、${failed} 件が失敗しました。元データは削除せず残しています（再試行可）。\n原因: ${firstError ?? '不明'}`,
       )
     }
 
@@ -481,7 +501,15 @@ export default function PartnershipsTab() {
             </div>
           )}
           {importResult && (
-            <div style={{ fontSize: '0.74rem', color: 'var(--grn)', marginBottom: '0.5rem' }}>
+            <div
+              style={{
+                fontSize: '0.74rem',
+                color: importResult.includes('失敗') ? 'var(--red)' : 'var(--grn)',
+                marginBottom: '0.5rem',
+                whiteSpace: 'pre-wrap',
+                lineHeight: 1.5,
+              }}
+            >
               {importResult}
             </div>
           )}
