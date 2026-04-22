@@ -23,6 +23,62 @@ type PartnershipLog = Row['logs'][number]
 
 const SAVE_DEBOUNCE_MS = 600
 
+// 旧 localStorage 仕様（リリース前の PartnershipsTab が保存していた形式）
+const LEGACY_STORAGE_KEY = 'neo-partnerships-v1'
+
+interface LegacyRow {
+  id?: string
+  university?: string
+  partnerContacts?: { name?: string; role?: string }[]
+  internalHandler?: string
+  contact?: { email?: string; phone?: string; line?: string; messenger?: string }
+  partnershipDetails?: string
+  logs?: { date?: string; content?: string }[]
+}
+
+function readLegacy(): LegacyRow[] | null {
+  try {
+    const raw = localStorage.getItem(LEGACY_STORAGE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed as LegacyRow[]
+    return null
+  } catch {
+    return null
+  }
+}
+
+// 移行後、元データはバックアップとして保持（破棄せず別キーへリネーム）
+function archiveLegacy() {
+  try {
+    const raw = localStorage.getItem(LEGACY_STORAGE_KEY)
+    if (raw) {
+      const backupKey = `${LEGACY_STORAGE_KEY}-backup-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}`
+      localStorage.setItem(backupKey, raw)
+      localStorage.removeItem(LEGACY_STORAGE_KEY)
+    }
+  } catch {}
+}
+
+function legacyToPayload(l: LegacyRow) {
+  return {
+    university: l.university ?? '',
+    partner_contacts:
+      Array.isArray(l.partnerContacts) && l.partnerContacts.length > 0
+        ? l.partnerContacts.map((c) => ({ name: c?.name ?? '', role: c?.role ?? '' }))
+        : [{ name: '', role: '' }],
+    internal_handler: l.internalHandler ?? '',
+    contact_email: l.contact?.email ?? '',
+    contact_phone: l.contact?.phone ?? '',
+    contact_line: l.contact?.line ?? '',
+    contact_messenger: l.contact?.messenger ?? '',
+    partnership_details: l.partnershipDetails ?? '',
+    logs: Array.isArray(l.logs)
+      ? l.logs.map((x) => ({ date: x?.date ?? '', content: x?.content ?? '' }))
+      : [],
+  }
+}
+
 function csvEscape(v: string) {
   if (v == null) return ''
   const s = String(v)
@@ -71,6 +127,12 @@ export default function PartnershipsTab() {
   const [errorMsg, setErrorMsg] = useState('')
   const [savingIds, setSavingIds] = useState<Set<string>>(new Set())
 
+  // 旧 localStorage からの移行用
+  const [legacyRows, setLegacyRows] = useState<LegacyRow[] | null>(null)
+  const [importing, setImporting] = useState(false)
+  const [importStatus, setImportStatus] = useState<{ done: number; total: number } | null>(null)
+  const [importResult, setImportResult] = useState<string>('')
+
   // 行ごとの保存デバウンスタイマー
   const saveTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
 
@@ -89,6 +151,9 @@ export default function PartnershipsTab() {
         if (!aborted) setLoading(false)
       }
     })()
+    // localStorage に旧データが残っていれば検出（DB の読み込み結果とは独立）
+    const legacy = readLegacy()
+    if (legacy) setLegacyRows(legacy)
     return () => {
       aborted = true
     }
@@ -192,6 +257,71 @@ export default function PartnershipsTab() {
   useEffect(() => {
     currentRef.current = rows
   }, [rows])
+
+  // 旧 localStorage データを DB に一括インポート（バックアップを残す）
+  async function importLegacy() {
+    if (!legacyRows || importing) return
+    if (
+      !confirm(
+        `ローカルブラウザに保存されている ${legacyRows.length} 件の団体連携データを DB にインポートしますか？\n\n` +
+          '※ 既に DB に同名の団体がある場合は重複して追加されます（後から手動で調整してください）\n' +
+          '※ 元データは自動的にバックアップキーへ退避され、すぐには削除されません',
+      )
+    ) {
+      return
+    }
+
+    setImporting(true)
+    setImportStatus({ done: 0, total: legacyRows.length })
+    setImportResult('')
+
+    const created: Row[] = []
+    let failed = 0
+
+    for (let i = 0; i < legacyRows.length; i++) {
+      const payload = legacyToPayload(legacyRows[i])
+      try {
+        const res = await fetch('/api/youth/partnerships', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+        if (!res.ok) {
+          failed++
+          console.error('[partnerships import] row failed:', await res.json().catch(() => ({})))
+        } else {
+          created.push((await res.json()) as Row)
+        }
+      } catch (e) {
+        failed++
+        console.error('[partnerships import] network error:', e)
+      }
+      setImportStatus({ done: i + 1, total: legacyRows.length })
+    }
+
+    // 新規行を現在のリストに追加
+    if (created.length > 0) {
+      setRows((prev) => [...prev, ...created])
+    }
+
+    // 元データをバックアップキーへリネームしてバナーを閉じる
+    if (failed === 0) {
+      archiveLegacy()
+      setLegacyRows(null)
+      setImportResult(`${created.length} 件を DB にインポートしました。元データはブラウザ内のバックアップキーに保存済みです。`)
+    } else {
+      setImportResult(
+        `${created.length} 件をインポートしましたが、${failed} 件が失敗しました。元データは削除せず残しています（再試行可）。`,
+      )
+    }
+
+    setImporting(false)
+  }
+
+  function dismissLegacy() {
+    if (!confirm('このメッセージを非表示にしますか？ローカルデータは削除されません。\n（ページをリロードすると再度表示されます）')) return
+    setLegacyRows(null)
+  }
 
   async function addRow() {
     try {
@@ -315,6 +445,61 @@ export default function PartnershipsTab() {
           ⬇ CSV出力（Excel対応）
         </button>
       </div>
+
+      {legacyRows && (
+        <div
+          style={{
+            marginBottom: '0.9rem',
+            padding: '0.8rem 1rem',
+            fontSize: '0.78rem',
+            color: 'var(--ink)',
+            background: 'rgba(196,136,42,0.08)',
+            border: '1px solid rgba(196,136,42,0.35)',
+            borderRadius: '5px',
+          }}
+        >
+          <div style={{ fontWeight: 700, color: 'var(--gold)', marginBottom: '0.35rem' }}>
+            ローカル保存データが見つかりました（{legacyRows.length} 件）
+          </div>
+          <div style={{ color: 'var(--ink2)', lineHeight: 1.6, marginBottom: '0.6rem' }}>
+            以前の団体連携タブ（localStorage 版）で登録された {legacyRows.length} 件のデータがこのブラウザに残っています。
+            DB 同期版に切り替わったため、そのままでは他のユーザーに共有されません。
+            <br />
+            <strong>DB にインポート</strong> を押すと、全件を Supabase へ登録し、全員に共有されるようになります。
+            元データはブラウザ内のバックアップキーに自動退避されます（即時には削除しません）。
+          </div>
+          {importStatus && (
+            <div
+              style={{
+                fontSize: '0.72rem',
+                color: 'var(--mu)',
+                marginBottom: '0.5rem',
+                fontFamily: "'JetBrains Mono', monospace",
+              }}
+            >
+              進行状況: {importStatus.done} / {importStatus.total}
+            </div>
+          )}
+          {importResult && (
+            <div style={{ fontSize: '0.74rem', color: 'var(--grn)', marginBottom: '0.5rem' }}>
+              {importResult}
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button
+              className="filter-btn"
+              onClick={importLegacy}
+              disabled={importing}
+              style={{ borderColor: 'var(--gold)', color: 'var(--gold)' }}
+            >
+              {importing ? 'インポート中...' : `⬆ DB にインポート（${legacyRows.length} 件）`}
+            </button>
+            <button className="filter-btn" onClick={dismissLegacy} disabled={importing}>
+              今は閉じる
+            </button>
+          </div>
+        </div>
+      )}
 
       {errorMsg && (
         <div
