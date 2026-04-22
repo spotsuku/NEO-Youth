@@ -3,7 +3,6 @@
 import { useState, useCallback } from 'react'
 import type { YouthCandidate, YouthSession } from '@/types/dashboard'
 import type { VerdictRecord } from '@/app/dashboard/page'
-import { PARTNERSHIPS } from '@/data/dashboard-seed'
 import OverviewTab from './OverviewTab'
 import ApplicantsTab from './ApplicantsTab'
 import InterviewsTab from './InterviewsTab'
@@ -228,7 +227,7 @@ export default function RecruitmentDashboard({ candidates: initial, sessions, ve
         )}
         {tab === 'partnerships' && (
           <div className="db-page">
-            <PartnershipsTab initial={PARTNERSHIPS} />
+            <PartnershipsTab />
           </div>
         )}
       </main>

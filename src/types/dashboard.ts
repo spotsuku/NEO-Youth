@@ -100,33 +100,8 @@ export interface YomiData {
   color: string
 }
 
-// 団体連携（団体・大学との提携管理）
-export interface PartnerContact {
-  name: string
-  role: string
-}
-
-export interface PartnershipContactInfo {
-  email: string
-  phone: string
-  line: string
-  messenger: string
-}
-
-export interface PartnershipLog {
-  date: string
-  content: string
-}
-
-export interface Partnership {
-  id: string
-  university: string
-  partnerContacts: PartnerContact[]
-  internalHandler: string
-  contact: PartnershipContactInfo
-  partnershipDetails: string
-  logs: PartnershipLog[]
-}
+// 団体連携（youth_partnerships テーブル）は PartnershipsTab 内で
+// 独自に Row 型を定義しているため、ここでは型を公開しない。
 
 // オンボーディングのフィールド定義
 export const OB_LABELS: Record<string, string> = {
