@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-// 1先方担当（人）= 連絡先＋ログを内包
+// 1先方担当（人）= 連絡先＋ログ＋社内担当を内包
 interface Contact {
   name: string
   role: string
+  internal_handler: string
   email: string
   phone: string
   line: string
@@ -73,6 +74,7 @@ function legacyToPayload(l: LegacyRow) {
   const partnerContacts = baseContacts.map((c, i) => ({
     name: c?.name ?? '',
     role: c?.role ?? '',
+    internal_handler: l.internalHandler ?? '',
     email: i === 0 ? l.contact?.email ?? '' : '',
     phone: i === 0 ? l.contact?.phone ?? '' : '',
     line: i === 0 ? l.contact?.line ?? '' : '',
@@ -100,10 +102,11 @@ function csvEscape(v: string) {
 function toCSV(rows: Row[]): string {
   const header = [
     '大学名',
-    '社内担当',
+    '社内担当（団体全体）',
     '提携内容',
     '先方担当氏名',
     '役職/所属',
+    '社内担当（先方ごと）',
     'メール',
     '電話',
     'LINE',
@@ -113,7 +116,7 @@ function toCSV(rows: Row[]): string {
   const body: string[][] = []
   for (const r of rows) {
     if (r.partner_contacts.length === 0) {
-      body.push([r.university, r.internal_handler, r.partnership_details, '', '', '', '', '', '', ''])
+      body.push([r.university, r.internal_handler, r.partnership_details, '', '', '', '', '', '', '', ''])
       continue
     }
     for (const c of r.partner_contacts) {
@@ -123,6 +126,7 @@ function toCSV(rows: Row[]): string {
         r.partnership_details,
         c.name,
         c.role,
+        c.internal_handler,
         c.email,
         c.phone,
         c.line,
@@ -365,7 +369,7 @@ export default function PartnershipsTab() {
       ...r,
       partner_contacts: [
         ...r.partner_contacts,
-        { name: '', role: '', email: '', phone: '', line: '', messenger: '', logs: [] },
+        { name: '', role: '', internal_handler: '', email: '', phone: '', line: '', messenger: '', logs: [] },
       ],
     }))
   }
@@ -376,7 +380,7 @@ export default function PartnershipsTab() {
       ...r,
       partner_contacts:
         r.partner_contacts.length <= 1
-          ? [{ name: '', role: '', email: '', phone: '', line: '', messenger: '', logs: [] }]
+          ? [{ name: '', role: '', internal_handler: '', email: '', phone: '', line: '', messenger: '', logs: [] }]
           : r.partner_contacts.filter((_, i) => i !== idx),
     }))
   }
@@ -759,15 +763,18 @@ function PartnershipDetail({
 
       <div className="pt-detail-fields">
         <div className="pt-field">
-          <div className="pt-field-label">社内担当</div>
+          <div className="pt-field-label">社内担当（団体全体・元の担当）</div>
           <input
             className="pt-cell"
             value={row.internal_handler}
-            placeholder="担当者"
+            placeholder="団体全体の担当者"
             onChange={(e) =>
               onUpdate(row.id, (r) => ({ ...r, internal_handler: e.target.value }))
             }
           />
+          <div className="pt-field-hint">
+            ※ 先方担当ごとに分かれている場合は、各カード内の「社内担当」を使ってください
+          </div>
         </div>
         <div className="pt-field">
           <div className="pt-field-label">提携内容</div>
@@ -810,6 +817,17 @@ function PartnershipDetail({
                 >
                   ×
                 </button>
+              </div>
+              <div className="pt-contact-handler">
+                <label className="pt-field-label">社内担当</label>
+                <input
+                  className="pt-cell"
+                  value={c.internal_handler}
+                  placeholder={row.internal_handler || '担当者（この先方）'}
+                  onChange={(e) =>
+                    updateContact(row.id, idx, { internal_handler: e.target.value })
+                  }
+                />
               </div>
               <div className="pt-contact-grid">
                 <label className="pt-field-label">メール</label>

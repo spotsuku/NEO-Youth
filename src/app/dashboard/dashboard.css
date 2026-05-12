@@ -920,6 +920,24 @@
   gap: 0.3rem;
 }
 
+.pt-field-hint {
+  font-size: 0.62rem;
+  color: var(--mu);
+  line-height: 1.4;
+  margin-top: 0.15rem;
+}
+
+/* 先方担当カード内の社内担当行（横並び） */
+.pt-contact-handler {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.25rem 0.5rem;
+  align-items: center;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px dashed var(--bd);
+  margin-bottom: 0.05rem;
+}
+
 .pt-section-label {
   font-size: 0.62rem;
   font-weight: 700;

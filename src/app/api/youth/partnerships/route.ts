@@ -9,6 +9,7 @@ const supabase = createClient(
 interface ContactShape {
   name?: string
   role?: string
+  internal_handler?: string
   email?: string
   phone?: string
   line?: string
@@ -38,6 +39,7 @@ function normalize(row: RowShape) {
   const normalized = list.map((c, i) => ({
     name: c?.name ?? '',
     role: c?.role ?? '',
+    internal_handler: c?.internal_handler ?? row.internal_handler ?? '',
     email: c?.email ?? (i === 0 ? row.contact_email ?? '' : ''),
     phone: c?.phone ?? (i === 0 ? row.contact_phone ?? '' : ''),
     line: c?.line ?? (i === 0 ? row.contact_line ?? '' : ''),
@@ -86,6 +88,7 @@ export async function POST(req: NextRequest) {
       ? body.partner_contacts.map((c) => ({
           name: c?.name ?? '',
           role: c?.role ?? '',
+          internal_handler: c?.internal_handler ?? '',
           email: c?.email ?? '',
           phone: c?.phone ?? '',
           line: c?.line ?? '',
@@ -94,7 +97,7 @@ export async function POST(req: NextRequest) {
             ? c!.logs!.map((l) => ({ date: l?.date ?? '', content: l?.content ?? '' }))
             : [],
         }))
-      : [{ name: '', role: '', email: '', phone: '', line: '', messenger: '', logs: [] }]
+      : [{ name: '', role: '', internal_handler: '', email: '', phone: '', line: '', messenger: '', logs: [] }]
 
   const payload = {
     university: body.university ?? '',
