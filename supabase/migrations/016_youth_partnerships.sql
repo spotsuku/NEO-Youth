@@ -29,6 +29,7 @@ create table if not exists youth_partnerships (
   updated_at          timestamptz default now()
 );
 
+drop trigger if exists youth_partnerships_updated_at on youth_partnerships;
 create trigger youth_partnerships_updated_at
   before update on youth_partnerships
   for each row execute function update_updated_at();
@@ -38,6 +39,11 @@ create index if not exists idx_youth_partnerships_created    on youth_partnershi
 
 -- ── RLS ───────────────────────────────────
 alter table youth_partnerships enable row level security;
+
+drop policy if exists "youth_partnerships_read"   on youth_partnerships;
+drop policy if exists "youth_partnerships_insert" on youth_partnerships;
+drop policy if exists "youth_partnerships_update" on youth_partnerships;
+drop policy if exists "youth_partnerships_delete" on youth_partnerships;
 
 create policy "youth_partnerships_read"   on youth_partnerships for select using (true);
 create policy "youth_partnerships_insert" on youth_partnerships for insert with check (true);
