@@ -409,7 +409,7 @@ export default function PartnershipsTab() {
   function addLog(id: string) {
     mutateRow(id, (r) => ({
       ...r,
-      logs: [...r.logs, { date: new Date().toISOString().slice(0, 10), content: '' }],
+      logs: [{ date: new Date().toISOString().slice(0, 10), content: '' }, ...r.logs],
     }))
   }
 
@@ -670,29 +670,39 @@ export default function PartnershipsTab() {
                 <td>
                   <div className="pt-list">
                     {r.logs.length === 0 && <div className="pt-empty">実施記録なし</div>}
-                    {r.logs.map((l, idx) => (
-                      <div className="pt-log-row" key={idx}>
-                        <input
-                          className="pt-cell pt-date"
-                          type="date"
-                          value={l.date}
-                          onChange={(e) => updateLog(r.id, idx, { date: e.target.value })}
-                        />
-                        <input
-                          className="pt-cell"
-                          value={l.content}
-                          placeholder="例）大学の授業で三木が講演実施"
-                          onChange={(e) => updateLog(r.id, idx, { content: e.target.value })}
-                        />
-                        <button
-                          className="pt-mini"
-                          onClick={() => removeLog(r.id, idx)}
-                          title="削除"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
+                    {r.logs
+                      .map((log, idx) => ({ log, idx }))
+                      .sort((a, b) => {
+                        const da = a.log.date || ''
+                        const db = b.log.date || ''
+                        if (da === db) return a.idx - b.idx
+                        if (!da) return -1
+                        if (!db) return 1
+                        return db.localeCompare(da)
+                      })
+                      .map(({ log: l, idx }) => (
+                        <div className="pt-log-row" key={idx}>
+                          <input
+                            className="pt-cell pt-date"
+                            type="date"
+                            value={l.date}
+                            onChange={(e) => updateLog(r.id, idx, { date: e.target.value })}
+                          />
+                          <input
+                            className="pt-cell"
+                            value={l.content}
+                            placeholder="例）大学の授業で三木が講演実施"
+                            onChange={(e) => updateLog(r.id, idx, { content: e.target.value })}
+                          />
+                          <button
+                            className="pt-mini"
+                            onClick={() => removeLog(r.id, idx)}
+                            title="削除"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
                     <button className="pt-add" onClick={() => addLog(r.id)}>
                       ＋ ログを追加
                     </button>
