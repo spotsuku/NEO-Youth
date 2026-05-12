@@ -2,28 +2,34 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-// サーバー上の youth_partnerships 1行
+// 1先方担当（人）= 連絡先＋ログを内包
+interface Contact {
+  name: string
+  role: string
+  email: string
+  phone: string
+  line: string
+  messenger: string
+  logs: PartnershipLog[]
+}
+
+interface PartnershipLog {
+  date: string
+  content: string
+}
+
+// 1団体 = 1行
 interface Row {
   id: string
   university: string
-  partner_contacts: { name: string; role: string }[]
   internal_handler: string
-  contact_email: string
-  contact_phone: string
-  contact_line: string
-  contact_messenger: string
   partnership_details: string
-  logs: { date: string; content: string }[]
-  created_at?: string
-  updated_at?: string
+  partner_contacts: Contact[]
 }
-
-type PartnerContact = Row['partner_contacts'][number]
-type PartnershipLog = Row['logs'][number]
 
 const SAVE_DEBOUNCE_MS = 600
 
-// 旧 localStorage 仕様（リリース前の PartnershipsTab が保存していた形式）
+// ── 旧 localStorage（リリース前バージョン）からの移行 ─────────────
 const LEGACY_STORAGE_KEY = 'neo-partnerships-v1'
 
 interface LegacyRow {
@@ -48,7 +54,6 @@ function readLegacy(): LegacyRow[] | null {
   }
 }
 
-// 移行後、元データはバックアップとして保持（破棄せず別キーへリネーム）
 function archiveLegacy() {
   try {
     const raw = localStorage.getItem(LEGACY_STORAGE_KEY)
@@ -60,25 +65,33 @@ function archiveLegacy() {
   } catch {}
 }
 
+// 旧形式 → 新 API payload（先方担当の最初の人に連絡先・ログを集約）
 function legacyToPayload(l: LegacyRow) {
+  const baseContacts =
+    Array.isArray(l.partnerContacts) && l.partnerContacts.length > 0
+      ? l.partnerContacts
+      : [{ name: '', role: '' }]
+  const partnerContacts = baseContacts.map((c, i) => ({
+    name: c?.name ?? '',
+    role: c?.role ?? '',
+    email: i === 0 ? l.contact?.email ?? '' : '',
+    phone: i === 0 ? l.contact?.phone ?? '' : '',
+    line: i === 0 ? l.contact?.line ?? '' : '',
+    messenger: i === 0 ? l.contact?.messenger ?? '' : '',
+    logs:
+      i === 0 && Array.isArray(l.logs)
+        ? l.logs.map((x) => ({ date: x?.date ?? '', content: x?.content ?? '' }))
+        : [],
+  }))
   return {
     university: l.university ?? '',
-    partner_contacts:
-      Array.isArray(l.partnerContacts) && l.partnerContacts.length > 0
-        ? l.partnerContacts.map((c) => ({ name: c?.name ?? '', role: c?.role ?? '' }))
-        : [{ name: '', role: '' }],
     internal_handler: l.internalHandler ?? '',
-    contact_email: l.contact?.email ?? '',
-    contact_phone: l.contact?.phone ?? '',
-    contact_line: l.contact?.line ?? '',
-    contact_messenger: l.contact?.messenger ?? '',
     partnership_details: l.partnershipDetails ?? '',
-    logs: Array.isArray(l.logs)
-      ? l.logs.map((x) => ({ date: x?.date ?? '', content: x?.content ?? '' }))
-      : [],
+    partner_contacts: partnerContacts,
   }
 }
 
+// ── CSV エクスポート ───────────────────────────────
 function csvEscape(v: string) {
   if (v == null) return ''
   const s = String(v)
@@ -89,37 +102,41 @@ function csvEscape(v: string) {
 function toCSV(rows: Row[]): string {
   const header = [
     '大学名',
-    '先方担当',
     '社内担当',
+    '提携内容',
+    '先方担当氏名',
+    '役職/所属',
     'メール',
     '電話',
     'LINE',
     'Messenger',
-    '提携内容',
     '実施内容ログ',
   ]
-  const body = rows.map((r) => [
-    r.university,
-    r.partner_contacts
-      .filter((c) => c.name || c.role)
-      .map((c) => (c.role ? `${c.name}（${c.role}）` : c.name))
-      .join(' / '),
-    r.internal_handler,
-    r.contact_email,
-    r.contact_phone,
-    r.contact_line,
-    r.contact_messenger,
-    r.partnership_details,
-    r.logs
-      .filter((l) => l.date || l.content)
-      .map((l) => `${l.date}：${l.content}`)
-      .join(' / '),
-  ])
-  return [header, ...body]
-    .map((row) => row.map(csvEscape).join(','))
-    .join('\r\n')
+  const body: string[][] = []
+  for (const r of rows) {
+    if (r.partner_contacts.length === 0) {
+      body.push([r.university, r.internal_handler, r.partnership_details, '', '', '', '', '', '', ''])
+      continue
+    }
+    for (const c of r.partner_contacts) {
+      body.push([
+        r.university,
+        r.internal_handler,
+        r.partnership_details,
+        c.name,
+        c.role,
+        c.email,
+        c.phone,
+        c.line,
+        c.messenger,
+        c.logs.filter((l) => l.date || l.content).map((l) => `${l.date}：${l.content}`).join(' / '),
+      ])
+    }
+  }
+  return [header, ...body].map((row) => row.map(csvEscape).join(',')).join('\r\n')
 }
 
+// ── 本体 ──────────────────────────────────────
 export default function PartnershipsTab() {
   const [rows, setRows] = useState<Row[]>([])
   const [query, setQuery] = useState('')
@@ -127,14 +144,21 @@ export default function PartnershipsTab() {
   const [errorMsg, setErrorMsg] = useState('')
   const [savingIds, setSavingIds] = useState<Set<string>>(new Set())
 
-  // 旧 localStorage からの移行用
+  // ログ表示中の (rowId, contactIndex) を保持
+  const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set())
+  const expandKey = (rowId: string, idx: number) => `${rowId}::${idx}`
+
+  // 旧 localStorage 移行 UI 用
   const [legacyRows, setLegacyRows] = useState<LegacyRow[] | null>(null)
   const [importing, setImporting] = useState(false)
   const [importStatus, setImportStatus] = useState<{ done: number; total: number } | null>(null)
   const [importResult, setImportResult] = useState<string>('')
 
-  // 行ごとの保存デバウンスタイマー
   const saveTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
+  const currentRef = useRef<Row[]>(rows)
+  useEffect(() => {
+    currentRef.current = rows
+  }, [rows])
 
   // 初期ロード
   useEffect(() => {
@@ -146,7 +170,7 @@ export default function PartnershipsTab() {
           const err = await res.json().catch(() => ({}))
           const hint =
             typeof err?.message === 'string' && /relation .* does not exist/i.test(err.message)
-              ? '（Supabase で 016_youth_partnerships.sql を実行してください）'
+              ? '（Supabase で 016_youth_partnerships.sql / 017_partnership_contacts_nested.sql を実行してください）'
               : ''
           throw new Error(
             `読み込み失敗 (HTTP ${res.status}): ${err?.error ?? err?.message ?? '不明なエラー'} ${hint}`.trim(),
@@ -160,7 +184,6 @@ export default function PartnershipsTab() {
         if (!aborted) setLoading(false)
       }
     })()
-    // localStorage に旧データが残っていれば検出（DB の読み込み結果とは独立）
     const legacy = readLegacy()
     if (legacy) setLegacyRows(legacy)
     return () => {
@@ -168,14 +191,13 @@ export default function PartnershipsTab() {
     }
   }, [])
 
-  // 30秒おきに再フェッチ（他ユーザーの編集を緩やかに反映）
+  // 30秒おきに再フェッチ
   useEffect(() => {
     const t = setInterval(async () => {
       try {
         const res = await fetch('/api/youth/partnerships', { cache: 'no-store' })
         if (!res.ok) return
         const data = (await res.json()) as Row[]
-        // 自分が編集中の行（保存中）は残し、それ以外はサーバー値で置き換え
         setRows((prev) => {
           const editing = new Set(savingIds)
           const prevById = new Map(prev.map((r) => [r.id, r]))
@@ -186,6 +208,7 @@ export default function PartnershipsTab() {
     return () => clearInterval(t)
   }, [savingIds])
 
+  // ── 検索 ───────────────────────────
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!q) return rows
@@ -194,12 +217,15 @@ export default function PartnershipsTab() {
         r.university,
         r.internal_handler,
         r.partnership_details,
-        r.contact_email,
-        r.contact_phone,
-        r.contact_line,
-        r.contact_messenger,
-        ...r.partner_contacts.flatMap((c) => [c.name, c.role]),
-        ...r.logs.flatMap((l) => [l.date, l.content]),
+        ...r.partner_contacts.flatMap((c) => [
+          c.name,
+          c.role,
+          c.email,
+          c.phone,
+          c.line,
+          c.messenger,
+          ...c.logs.flatMap((l) => [l.date, l.content]),
+        ]),
       ]
         .join(' ')
         .toLowerCase()
@@ -207,20 +233,19 @@ export default function PartnershipsTab() {
     })
   }, [rows, query])
 
-  // 行を mutate してデバウンス保存
+  // ── ローカル変更 + デバウンス保存 ──────────────
   function mutateRow(id: string, updater: (r: Row) => Row) {
     setRows((prev) => prev.map((r) => (r.id === id ? updater(r) : r)))
-    scheduleSave(id, updater)
+    scheduleSave(id)
   }
 
-  function scheduleSave(id: string, updater: (r: Row) => Row) {
+  function scheduleSave(id: string) {
     const timers = saveTimers.current
     if (timers.has(id)) clearTimeout(timers.get(id)!)
     const t = setTimeout(async () => {
       timers.delete(id)
       const current = currentRef.current.find((r) => r.id === id)
       if (!current) return
-      // updater はすでに state に反映済みなので current がそのまま送信対象
       setSavingIds((prev) => new Set(prev).add(id))
       try {
         const res = await fetch(`/api/youth/partnerships/${id}`, {
@@ -228,20 +253,15 @@ export default function PartnershipsTab() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             university: current.university,
-            partner_contacts: current.partner_contacts,
             internal_handler: current.internal_handler,
-            contact_email: current.contact_email,
-            contact_phone: current.contact_phone,
-            contact_line: current.contact_line,
-            contact_messenger: current.contact_messenger,
             partnership_details: current.partnership_details,
-            logs: current.logs,
+            partner_contacts: current.partner_contacts,
           }),
         })
         if (!res.ok) {
           const err = await res.json().catch(() => ({}))
           console.error('[partnerships PATCH] failed:', err)
-          setErrorMsg(`保存失敗: ${err.error ?? res.status}`)
+          setErrorMsg(`保存失敗: ${err.error ?? err.message ?? `HTTP ${res.status}`}${err.hint ? ` / ${err.hint}` : ''}`)
         } else {
           setErrorMsg('')
         }
@@ -257,17 +277,130 @@ export default function PartnershipsTab() {
       }
     }, SAVE_DEBOUNCE_MS)
     timers.set(id, t)
-    // 不要な lint 警告を避けるため updater を明示的に参照
-    void updater
   }
 
-  // 最新の rows を ref で参照して保存時の stale closure を回避
-  const currentRef = useRef<Row[]>(rows)
-  useEffect(() => {
-    currentRef.current = rows
-  }, [rows])
+  // ── 行の追加・削除 ────────────────────────
+  async function addRow() {
+    try {
+      const res = await fetch('/api/youth/partnerships', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        console.error('[partnerships POST] failed:', err)
+        const tableMissing =
+          typeof err?.message === 'string' && /relation .* does not exist/i.test(err.message)
+        setErrorMsg(
+          tableMissing
+            ? 'Supabase に youth_partnerships テーブルが存在しません。SQL Editor で 016_youth_partnerships.sql を実行してください。'
+            : `行追加失敗: ${err.error ?? err.message ?? `HTTP ${res.status}`}${err.hint ? ` / ${err.hint}` : ''}`,
+        )
+        return
+      }
+      const created = (await res.json()) as Row
+      setRows((prev) => [...prev, created])
+      setErrorMsg('')
+    } catch (e) {
+      console.error('[partnerships POST] network error:', e)
+      setErrorMsg('行追加失敗: ネットワークエラー')
+    }
+  }
 
-  // 旧 localStorage データを DB に一括インポート（バックアップを残す）
+  async function deleteRow(id: string) {
+    if (!confirm('この団体（行）を削除しますか？\n中の先方担当・ログもすべて削除されます。')) return
+    const prev = rows
+    setRows((r) => r.filter((x) => x.id !== id))
+    try {
+      const res = await fetch(`/api/youth/partnerships/${id}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        console.error('[partnerships DELETE] failed:', err)
+        setErrorMsg(`削除失敗: ${err.error ?? err.message ?? `HTTP ${res.status}`}${err.hint ? ` / ${err.hint}` : ''}`)
+        setRows(prev)
+      } else {
+        setErrorMsg('')
+      }
+    } catch (e) {
+      console.error('[partnerships DELETE] network error:', e)
+      setErrorMsg('削除失敗: ネットワークエラー')
+      setRows(prev)
+    }
+  }
+
+  // ── 先方担当（人）の追加・削除・更新 ───────────────
+  function addContact(rowId: string) {
+    mutateRow(rowId, (r) => ({
+      ...r,
+      partner_contacts: [
+        ...r.partner_contacts,
+        { name: '', role: '', email: '', phone: '', line: '', messenger: '', logs: [] },
+      ],
+    }))
+  }
+
+  function removeContact(rowId: string, idx: number) {
+    if (!confirm('この先方担当を削除しますか？')) return
+    mutateRow(rowId, (r) => ({
+      ...r,
+      partner_contacts:
+        r.partner_contacts.length <= 1
+          ? [{ name: '', role: '', email: '', phone: '', line: '', messenger: '', logs: [] }]
+          : r.partner_contacts.filter((_, i) => i !== idx),
+    }))
+  }
+
+  function updateContact(rowId: string, idx: number, patch: Partial<Contact>) {
+    mutateRow(rowId, (r) => {
+      const next = r.partner_contacts.slice()
+      next[idx] = { ...next[idx], ...patch }
+      return { ...r, partner_contacts: next }
+    })
+  }
+
+  // ── ログ操作 ───────────────────────────
+  function addLog(rowId: string, idx: number) {
+    mutateRow(rowId, (r) => {
+      const next = r.partner_contacts.slice()
+      next[idx] = {
+        ...next[idx],
+        logs: [...next[idx].logs, { date: new Date().toISOString().slice(0, 10), content: '' }],
+      }
+      return { ...r, partner_contacts: next }
+    })
+    setExpandedLogs((prev) => new Set(prev).add(expandKey(rowId, idx)))
+  }
+
+  function removeLog(rowId: string, idx: number, logIdx: number) {
+    mutateRow(rowId, (r) => {
+      const next = r.partner_contacts.slice()
+      next[idx] = { ...next[idx], logs: next[idx].logs.filter((_, i) => i !== logIdx) }
+      return { ...r, partner_contacts: next }
+    })
+  }
+
+  function updateLog(rowId: string, idx: number, logIdx: number, patch: Partial<PartnershipLog>) {
+    mutateRow(rowId, (r) => {
+      const next = r.partner_contacts.slice()
+      const logs = next[idx].logs.slice()
+      logs[logIdx] = { ...logs[logIdx], ...patch }
+      next[idx] = { ...next[idx], logs }
+      return { ...r, partner_contacts: next }
+    })
+  }
+
+  function toggleLogs(rowId: string, idx: number) {
+    const key = expandKey(rowId, idx)
+    setExpandedLogs((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
+
+  // ── レガシー移行 ──────────────────────────
   async function importLegacy() {
     if (!legacyRows || importing) return
     if (
@@ -319,12 +452,8 @@ export default function PartnershipsTab() {
       setImportStatus({ done: i + 1, total: legacyRows.length })
     }
 
-    // 新規行を現在のリストに追加
-    if (created.length > 0) {
-      setRows((prev) => [...prev, ...created])
-    }
+    if (created.length > 0) setRows((prev) => [...prev, ...created])
 
-    // 元データをバックアップキーへリネームしてバナーを閉じる
     if (failed === 0) {
       archiveLegacy()
       setLegacyRows(null)
@@ -343,80 +472,7 @@ export default function PartnershipsTab() {
     setLegacyRows(null)
   }
 
-  async function addRow() {
-    try {
-      const res = await fetch('/api/youth/partnerships', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const created = (await res.json()) as Row
-      setRows((prev) => [...prev, created])
-    } catch (e) {
-      console.error('[partnerships POST] failed:', e)
-      setErrorMsg('行の追加に失敗しました')
-    }
-  }
-
-  async function deleteRow(id: string) {
-    if (!confirm('この行を削除しますか？')) return
-    const prev = rows
-    setRows((r) => r.filter((x) => x.id !== id))
-    try {
-      const res = await fetch(`/api/youth/partnerships/${id}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    } catch (e) {
-      console.error('[partnerships DELETE] failed:', e)
-      setErrorMsg('削除に失敗しました')
-      setRows(prev) // ロールバック
-    }
-  }
-
-  function updatePartnerContact(id: string, idx: number, patch: Partial<PartnerContact>) {
-    mutateRow(id, (r) => {
-      const next = r.partner_contacts.slice()
-      next[idx] = { ...next[idx], ...patch }
-      return { ...r, partner_contacts: next }
-    })
-  }
-
-  function addPartnerContact(id: string) {
-    mutateRow(id, (r) => ({
-      ...r,
-      partner_contacts: [...r.partner_contacts, { name: '', role: '' }],
-    }))
-  }
-
-  function removePartnerContact(id: string, idx: number) {
-    mutateRow(id, (r) => ({
-      ...r,
-      partner_contacts:
-        r.partner_contacts.length <= 1
-          ? [{ name: '', role: '' }]
-          : r.partner_contacts.filter((_, i) => i !== idx),
-    }))
-  }
-
-  function updateLog(id: string, idx: number, patch: Partial<PartnershipLog>) {
-    mutateRow(id, (r) => {
-      const next = r.logs.slice()
-      next[idx] = { ...next[idx], ...patch }
-      return { ...r, logs: next }
-    })
-  }
-
-  function addLog(id: string) {
-    mutateRow(id, (r) => ({
-      ...r,
-      logs: [...r.logs, { date: new Date().toISOString().slice(0, 10), content: '' }],
-    }))
-  }
-
-  function removeLog(id: string, idx: number) {
-    mutateRow(id, (r) => ({ ...r, logs: r.logs.filter((_, i) => i !== idx) }))
-  }
-
+  // ── CSV ───────────────────────────────
   function exportCSV() {
     const csv = toCSV(rows)
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
@@ -432,6 +488,7 @@ export default function PartnershipsTab() {
 
   const syncLabel = savingIds.size > 0 ? '保存中…' : loading ? '読込中…' : 'DB 同期済'
 
+  // ── レンダリング ────────────────────────
   return (
     <>
       <div className="section-title">
@@ -454,7 +511,7 @@ export default function PartnershipsTab() {
         <input
           className="search-input"
           type="text"
-          placeholder="大学名・担当者・提携内容で検索..."
+          placeholder="大学名・担当者・提携内容・ログで検索..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
@@ -539,23 +596,22 @@ export default function PartnershipsTab() {
             background: 'rgba(192,57,43,0.06)',
             border: '1px solid rgba(192,57,43,0.2)',
             borderRadius: '4px',
+            whiteSpace: 'pre-wrap',
           }}
         >
           {errorMsg}
         </div>
       )}
 
-      <div className="pt-wrap">
+      <div className="pt-wrap sticky-head">
         <table className="pt-table">
           <thead>
             <tr>
               <th style={{ width: 40 }}>#</th>
-              <th style={{ minWidth: 160 }}>大学名</th>
-              <th style={{ minWidth: 240 }}>先方担当</th>
-              <th style={{ minWidth: 130 }}>社内担当</th>
-              <th style={{ minWidth: 260 }}>連絡先</th>
-              <th style={{ minWidth: 220 }}>提携内容</th>
-              <th style={{ minWidth: 300 }}>実施内容ログ</th>
+              <th style={{ minWidth: 160 }}>大学・団体名</th>
+              <th style={{ minWidth: 120 }}>社内担当</th>
+              <th style={{ minWidth: 200 }}>提携内容</th>
+              <th>先方担当（複数登録可）</th>
               <th style={{ width: 60 }}></th>
             </tr>
           </thead>
@@ -567,45 +623,11 @@ export default function PartnershipsTab() {
                   <input
                     className="pt-cell"
                     value={r.university}
-                    placeholder="大学名"
+                    placeholder="大学・団体名"
                     onChange={(e) =>
                       mutateRow(r.id, (row) => ({ ...row, university: e.target.value }))
                     }
                   />
-                </td>
-                <td>
-                  <div className="pt-list">
-                    {r.partner_contacts.map((c, idx) => (
-                      <div className="pt-contact-row" key={idx}>
-                        <input
-                          className="pt-cell"
-                          value={c.name}
-                          placeholder="氏名"
-                          onChange={(e) =>
-                            updatePartnerContact(r.id, idx, { name: e.target.value })
-                          }
-                        />
-                        <input
-                          className="pt-cell"
-                          value={c.role}
-                          placeholder="役職/所属"
-                          onChange={(e) =>
-                            updatePartnerContact(r.id, idx, { role: e.target.value })
-                          }
-                        />
-                        <button
-                          className="pt-mini"
-                          onClick={() => removePartnerContact(r.id, idx)}
-                          title="削除"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                    <button className="pt-add" onClick={() => addPartnerContact(r.id)}>
-                      ＋ 先方担当を追加
-                    </button>
-                  </div>
                 </td>
                 <td>
                   <input
@@ -618,46 +640,6 @@ export default function PartnershipsTab() {
                   />
                 </td>
                 <td>
-                  <div className="pt-contact-grid">
-                    <label className="pt-field-label">メール</label>
-                    <input
-                      className="pt-cell"
-                      value={r.contact_email}
-                      placeholder="example@example.com"
-                      onChange={(e) =>
-                        mutateRow(r.id, (row) => ({ ...row, contact_email: e.target.value }))
-                      }
-                    />
-                    <label className="pt-field-label">電話</label>
-                    <input
-                      className="pt-cell"
-                      value={r.contact_phone}
-                      placeholder="090-0000-0000"
-                      onChange={(e) =>
-                        mutateRow(r.id, (row) => ({ ...row, contact_phone: e.target.value }))
-                      }
-                    />
-                    <label className="pt-field-label">LINE</label>
-                    <input
-                      className="pt-cell"
-                      value={r.contact_line}
-                      placeholder="LINE ID"
-                      onChange={(e) =>
-                        mutateRow(r.id, (row) => ({ ...row, contact_line: e.target.value }))
-                      }
-                    />
-                    <label className="pt-field-label">Messenger</label>
-                    <input
-                      className="pt-cell"
-                      value={r.contact_messenger}
-                      placeholder="Messenger"
-                      onChange={(e) =>
-                        mutateRow(r.id, (row) => ({ ...row, contact_messenger: e.target.value }))
-                      }
-                    />
-                  </div>
-                </td>
-                <td>
                   <textarea
                     className="pt-cell pt-textarea"
                     value={r.partnership_details}
@@ -668,33 +650,115 @@ export default function PartnershipsTab() {
                   />
                 </td>
                 <td>
-                  <div className="pt-list">
-                    {r.logs.length === 0 && <div className="pt-empty">実施記録なし</div>}
-                    {r.logs.map((l, idx) => (
-                      <div className="pt-log-row" key={idx}>
-                        <input
-                          className="pt-cell pt-date"
-                          type="date"
-                          value={l.date}
-                          onChange={(e) => updateLog(r.id, idx, { date: e.target.value })}
-                        />
-                        <input
-                          className="pt-cell"
-                          value={l.content}
-                          placeholder="例）大学の授業で三木が講演実施"
-                          onChange={(e) => updateLog(r.id, idx, { content: e.target.value })}
-                        />
-                        <button
-                          className="pt-mini"
-                          onClick={() => removeLog(r.id, idx)}
-                          title="削除"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                    <button className="pt-add" onClick={() => addLog(r.id)}>
-                      ＋ ログを追加
+                  <div className="pt-contacts">
+                    {r.partner_contacts.map((c, idx) => {
+                      const key = expandKey(r.id, idx)
+                      const expanded = expandedLogs.has(key)
+                      const logCount = c.logs.length
+                      return (
+                        <div className="pt-contact-card" key={idx}>
+                          <div className="pt-contact-row">
+                            <input
+                              className="pt-cell"
+                              value={c.name}
+                              placeholder="氏名"
+                              onChange={(e) => updateContact(r.id, idx, { name: e.target.value })}
+                            />
+                            <input
+                              className="pt-cell"
+                              value={c.role}
+                              placeholder="役職/所属"
+                              onChange={(e) => updateContact(r.id, idx, { role: e.target.value })}
+                            />
+                            <button
+                              className="pt-mini"
+                              onClick={() => removeContact(r.id, idx)}
+                              title="この先方担当を削除"
+                            >
+                              ×
+                            </button>
+                          </div>
+                          <div className="pt-contact-grid">
+                            <label className="pt-field-label">メール</label>
+                            <input
+                              className="pt-cell"
+                              value={c.email}
+                              placeholder="example@example.com"
+                              onChange={(e) => updateContact(r.id, idx, { email: e.target.value })}
+                            />
+                            <label className="pt-field-label">電話</label>
+                            <input
+                              className="pt-cell"
+                              value={c.phone}
+                              placeholder="090-0000-0000"
+                              onChange={(e) => updateContact(r.id, idx, { phone: e.target.value })}
+                            />
+                            <label className="pt-field-label">LINE</label>
+                            <input
+                              className="pt-cell"
+                              value={c.line}
+                              placeholder="LINE ID"
+                              onChange={(e) => updateContact(r.id, idx, { line: e.target.value })}
+                            />
+                            <label className="pt-field-label">Messenger</label>
+                            <input
+                              className="pt-cell"
+                              value={c.messenger}
+                              placeholder="Messenger"
+                              onChange={(e) => updateContact(r.id, idx, { messenger: e.target.value })}
+                            />
+                          </div>
+                          <div className="pt-logs-bar">
+                            <button
+                              className="pt-log-toggle"
+                              onClick={() => toggleLogs(r.id, idx)}
+                              title={expanded ? 'ログを閉じる' : 'ログを開く'}
+                            >
+                              {expanded ? '▼' : '▶'} 実施ログ（{logCount}）
+                            </button>
+                            <button className="pt-add" onClick={() => addLog(r.id, idx)}>
+                              ＋ ログを追加
+                            </button>
+                          </div>
+                          {expanded && (
+                            <div className="pt-logs">
+                              {c.logs.length === 0 && (
+                                <div className="pt-empty">実施記録はまだありません</div>
+                              )}
+                              {c.logs.map((l, logIdx) => (
+                                <div className="pt-log-row" key={logIdx}>
+                                  <input
+                                    className="pt-cell pt-date"
+                                    type="date"
+                                    value={l.date}
+                                    onChange={(e) =>
+                                      updateLog(r.id, idx, logIdx, { date: e.target.value })
+                                    }
+                                  />
+                                  <input
+                                    className="pt-cell"
+                                    value={l.content}
+                                    placeholder="例）大学の授業で三木が講演実施"
+                                    onChange={(e) =>
+                                      updateLog(r.id, idx, logIdx, { content: e.target.value })
+                                    }
+                                  />
+                                  <button
+                                    className="pt-mini"
+                                    onClick={() => removeLog(r.id, idx, logIdx)}
+                                    title="ログを削除"
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                    <button className="pt-add pt-add-contact" onClick={() => addContact(r.id)}>
+                      ＋ 先方担当を追加
                     </button>
                   </div>
                 </td>
@@ -712,7 +776,7 @@ export default function PartnershipsTab() {
             {!loading && filtered.length === 0 && (
               <tr>
                 <td
-                  colSpan={8}
+                  colSpan={6}
                   style={{ textAlign: 'center', color: 'var(--mu)', padding: '2rem' }}
                 >
                   該当する連携団体がありません
@@ -722,7 +786,7 @@ export default function PartnershipsTab() {
             {loading && rows.length === 0 && (
               <tr>
                 <td
-                  colSpan={8}
+                  colSpan={6}
                   style={{ textAlign: 'center', color: 'var(--mu)', padding: '2rem' }}
                 >
                   読み込み中...
@@ -734,7 +798,7 @@ export default function PartnershipsTab() {
       </div>
 
       <div className="pt-note">
-        ※ 編集内容は Supabase に自動保存され、全ユーザーで共有されます（約0.6秒後に反映）。30秒ごとに他ユーザーの更新を取得します。
+        ※ 1団体につき1行。先方担当は行内で複数登録できます。編集は Supabase に自動保存され、全ユーザーで共有されます（約0.6秒後に反映）。30秒ごとに他ユーザーの更新を取得します。
       </div>
     </>
   )

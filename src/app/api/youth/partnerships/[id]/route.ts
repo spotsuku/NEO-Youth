@@ -10,11 +10,12 @@ const ALLOWED = new Set([
   'university',
   'partner_contacts',
   'internal_handler',
+  'partnership_details',
+  // 旧カラム — 互換のため受け付けるが、新 UI からは送信しない
   'contact_email',
   'contact_phone',
   'contact_line',
   'contact_messenger',
-  'partnership_details',
   'logs',
 ])
 
@@ -59,13 +60,20 @@ export async function DELETE(
   { params }: { params: { id: string } },
 ) {
   const id = params.id
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('youth_partnerships')
     .delete()
     .eq('id', id)
+    .select()
 
   if (error) {
-    return NextResponse.json({ error: error.message, code: error.code }, { status: 500 })
+    console.error('[partnerships DELETE] error:', { id, error })
+    return NextResponse.json({
+      error: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+    }, { status: 500 })
   }
-  return NextResponse.json({ deleted: id })
+  return NextResponse.json({ deleted: id, affected: data?.length ?? 0 })
 }
