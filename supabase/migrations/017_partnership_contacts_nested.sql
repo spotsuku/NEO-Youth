@@ -49,15 +49,10 @@ from (
 ) sub
 where yp.id = sub.id;
 
--- 行レベル列は今後参照されないので空に揃える（消すのは将来の任意マイグレーション）
-update youth_partnerships set
-  contact_email     = '',
-  contact_phone     = '',
-  contact_line      = '',
-  contact_messenger = '',
-  logs              = '[]'::jsonb
-where contact_email is not null
-   or contact_phone is not null
-   or contact_line is not null
-   or contact_messenger is not null
-   or logs <> '[]'::jsonb;
+-- 注意:
+--   以前ここで行レベル列（contact_email/phone/line/messenger, logs）を
+--   '' / '[]' に空寄せしていたが、デプロイ反映が遅れている環境で
+--   旧 UI が「実施記録なし」しか表示しなくなったため取り消した。
+--   今後は行レベルと partner_contacts[0] を二重保持して、
+--   旧 UI / 新 UI どちらでも閲覧できるようにする。
+--   行レベル列の正式な削除は将来別マイグレーションで行う。
