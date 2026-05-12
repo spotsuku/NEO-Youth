@@ -754,79 +754,191 @@
 }
 
 /* ========================================
-   PARTNERSHIPS (団体連携) - 1 org per row, multi-contacts
+   PARTNERSHIPS (団体連携) - Master-Detail layout
    ======================================== */
-.pt-wrap {
-  overflow-x: auto;
-  border-radius: 7px;
-  border: 1px solid var(--bd);
+
+/* split: 左サイドバー（大学一覧）+ 右詳細パネル */
+.pt-split {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 0.9rem;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .pt-split {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 左サイドバー: スクロール中もスティッキー */
+.pt-sidebar {
   background: var(--sur);
-}
-
-/* sticky-head 修飾子: ページスクロール時にヘッダーを固定 */
-.pt-wrap.sticky-head {
-  overflow: visible;
-}
-
-.pt-wrap.sticky-head .pt-table thead th {
+  border: 1px solid var(--bd);
+  border-radius: 7px;
   position: sticky;
-  top: 56px; /* .db-header height */
-  z-index: 20;
-  background: var(--sur2);
-  box-shadow: 0 1px 0 var(--bd);
+  top: 70px; /* below db-header + small margin */
+  max-height: calc(100vh - 90px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-.pt-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.78rem;
-  table-layout: auto;
-}
-
-.pt-table thead {
-  background: var(--sur2);
-}
-
-.pt-table th {
-  text-align: left;
-  padding: 0.6rem 0.7rem;
+.pt-sidebar-head {
+  padding: 0.55rem 0.8rem;
   font-size: 0.6rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  color: var(--mu);
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  white-space: nowrap;
-  border-bottom: 1px solid var(--bd);
-  border-right: 1px solid var(--bd);
-}
-
-.pt-table th:last-child {
-  border-right: none;
-}
-
-.pt-table td {
-  padding: 0.5rem 0.6rem;
-  border-top: 1px solid var(--bd);
-  border-right: 1px solid var(--bd);
-  vertical-align: top;
-  color: var(--ink2);
-  background: var(--sur);
-}
-
-.pt-table td:last-child {
-  border-right: none;
-}
-
-.pt-table tr:hover td {
-  background: #faf8f3;
-}
-
-.pt-idx {
-  text-align: center;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
   color: var(--mu);
+  background: var(--sur2);
+  border-bottom: 1px solid var(--bd);
+}
+
+.pt-sidebar-list {
+  overflow-y: auto;
+  flex: 1;
+  min-height: 100px;
+}
+
+.pt-sidebar-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.55rem 0.8rem;
+  border: none;
+  border-bottom: 1px solid var(--bd);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-size: 0.82rem;
+  color: var(--ink2);
+  transition: background 0.1s;
+}
+
+.pt-sidebar-item:hover {
+  background: var(--sur2);
+}
+
+.pt-sidebar-item.active {
+  background: rgba(192, 57, 43, 0.06);
+  color: var(--red);
+  font-weight: 600;
+  border-left: 3px solid var(--red);
+  padding-left: calc(0.8rem - 3px);
+}
+
+.pt-sidebar-uni {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  margin-right: 0.4rem;
+}
+
+.pt-sidebar-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.pt-sidebar-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 18px;
+  padding: 0 0.4rem;
+  border-radius: 9px;
+  background: var(--sur2);
+  border: 1px solid var(--bd);
+  font-size: 0.65rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  color: var(--mu);
+}
+
+.pt-sidebar-item.active .pt-sidebar-count {
+  background: var(--red);
+  border-color: var(--red);
+  color: #fff;
+}
+
+.pt-saving-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--gold);
+  animation: pulse 1.4s infinite;
+}
+
+/* 右詳細パネル */
+.pt-detail {
+  background: var(--sur);
+  border: 1px solid var(--bd);
+  border-radius: 7px;
+  padding: 1rem 1.1rem 1.2rem;
+  min-height: 200px;
+}
+
+.pt-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--bd);
+}
+
+.pt-title {
+  flex: 1;
+  font-size: 1.05rem !important;
   font-weight: 700;
+  color: var(--ink) !important;
+  padding: 0.35rem 0.55rem !important;
+}
+
+.pt-detail-fields {
+  display: grid;
+  grid-template-columns: minmax(160px, 240px) 1fr;
+  gap: 0.6rem 0.9rem;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 700px) {
+  .pt-detail-fields {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pt-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.pt-section-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mu);
+  margin: 0.4rem 0 0.55rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.pt-section-label::before {
+  content: '';
+  display: block;
+  width: 3px;
+  height: 9px;
+  border-radius: 2px;
+  background: var(--red);
 }
 
 .pt-cell {

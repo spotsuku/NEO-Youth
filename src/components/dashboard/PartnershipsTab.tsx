@@ -29,7 +29,7 @@ interface Row {
 
 const SAVE_DEBOUNCE_MS = 600
 
-// ── 旧 localStorage（リリース前バージョン）からの移行 ─────────────
+// ── 旧 localStorage 移行（既存ロジックを保持） ───────────────
 const LEGACY_STORAGE_KEY = 'neo-partnerships-v1'
 
 interface LegacyRow {
@@ -65,7 +65,6 @@ function archiveLegacy() {
   } catch {}
 }
 
-// 旧形式 → 新 API payload（先方担当の最初の人に連絡先・ログを集約）
 function legacyToPayload(l: LegacyRow) {
   const baseContacts =
     Array.isArray(l.partnerContacts) && l.partnerContacts.length > 0
@@ -91,7 +90,6 @@ function legacyToPayload(l: LegacyRow) {
   }
 }
 
-// ── CSV エクスポート ───────────────────────────────
 function csvEscape(v: string) {
   if (v == null) return ''
   const s = String(v)
@@ -136,6 +134,13 @@ function toCSV(rows: Row[]): string {
   return [header, ...body].map((row) => row.map(csvEscape).join(',')).join('\r\n')
 }
 
+function nonEmptyContactCount(r: Row): number {
+  return r.partner_contacts.filter(
+    (c) =>
+      c.name || c.role || c.email || c.phone || c.line || c.messenger || c.logs.length > 0,
+  ).length
+}
+
 // ── 本体 ──────────────────────────────────────
 export default function PartnershipsTab() {
   const [rows, setRows] = useState<Row[]>([])
@@ -143,8 +148,9 @@ export default function PartnershipsTab() {
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
   const [savingIds, setSavingIds] = useState<Set<string>>(new Set())
+  const [selectedId, setSelectedId] = useState<string | null>(null)
 
-  // ログ表示中の (rowId, contactIndex) を保持
+  // ログ表示中の (rowId, contactIndex)
   const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set())
   const expandKey = (rowId: string, idx: number) => `${rowId}::${idx}`
 
@@ -177,7 +183,10 @@ export default function PartnershipsTab() {
           )
         }
         const data = (await res.json()) as Row[]
-        if (!aborted) setRows(data)
+        if (!aborted) {
+          setRows(data)
+          if (data.length > 0) setSelectedId(data[0].id)
+        }
       } catch (e: unknown) {
         if (!aborted) setErrorMsg(e instanceof Error ? e.message : '読み込みに失敗しました')
       } finally {
@@ -208,8 +217,8 @@ export default function PartnershipsTab() {
     return () => clearInterval(t)
   }, [savingIds])
 
-  // ── 検索 ───────────────────────────
-  const filtered = useMemo(() => {
+  // 検索（サイドバーのフィルタ）
+  const filteredRows = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!q) return rows
     return rows.filter((r) => {
@@ -232,6 +241,19 @@ export default function PartnershipsTab() {
       return hay.includes(q)
     })
   }, [rows, query])
+
+  // 大学名でソート（読みやすさのため）
+  const sortedRows = useMemo(() => {
+    return filteredRows.slice().sort((a, b) => {
+      const aU = (a.university || '').trim()
+      const bU = (b.university || '').trim()
+      if (!aU && bU) return 1
+      if (aU && !bU) return -1
+      return aU.localeCompare(bU, 'ja')
+    })
+  }, [filteredRows])
+
+  const selected = rows.find((r) => r.id === selectedId) ?? null
 
   // ── ローカル変更 + デバウンス保存 ──────────────
   function mutateRow(id: string, updater: (r: Row) => Row) {
@@ -301,6 +323,7 @@ export default function PartnershipsTab() {
       }
       const created = (await res.json()) as Row
       setRows((prev) => [...prev, created])
+      setSelectedId(created.id)
       setErrorMsg('')
     } catch (e) {
       console.error('[partnerships POST] network error:', e)
@@ -309,9 +332,14 @@ export default function PartnershipsTab() {
   }
 
   async function deleteRow(id: string) {
-    if (!confirm('この団体（行）を削除しますか？\n中の先方担当・ログもすべて削除されます。')) return
+    if (!confirm('この団体を削除しますか？\n中の先方担当・ログもすべて削除されます。')) return
     const prev = rows
+    const wasSelected = selectedId === id
     setRows((r) => r.filter((x) => x.id !== id))
+    if (wasSelected) {
+      const remaining = prev.filter((x) => x.id !== id)
+      setSelectedId(remaining[0]?.id ?? null)
+    }
     try {
       const res = await fetch(`/api/youth/partnerships/${id}`, { method: 'DELETE' })
       if (!res.ok) {
@@ -319,6 +347,7 @@ export default function PartnershipsTab() {
         console.error('[partnerships DELETE] failed:', err)
         setErrorMsg(`削除失敗: ${err.error ?? err.message ?? `HTTP ${res.status}`}${err.hint ? ` / ${err.hint}` : ''}`)
         setRows(prev)
+        if (wasSelected) setSelectedId(id)
       } else {
         setErrorMsg('')
       }
@@ -326,10 +355,11 @@ export default function PartnershipsTab() {
       console.error('[partnerships DELETE] network error:', e)
       setErrorMsg('削除失敗: ネットワークエラー')
       setRows(prev)
+      if (wasSelected) setSelectedId(id)
     }
   }
 
-  // ── 先方担当（人）の追加・削除・更新 ───────────────
+  // ── 先方担当の追加・削除・更新 ───────────────
   function addContact(rowId: string) {
     mutateRow(rowId, (r) => ({
       ...r,
@@ -359,7 +389,7 @@ export default function PartnershipsTab() {
     })
   }
 
-  // ── ログ操作 ───────────────────────────
+  // ── ログ ───────────────────────────
   function addLog(rowId: string, idx: number) {
     mutateRow(rowId, (r) => {
       const next = r.partner_contacts.slice()
@@ -400,7 +430,7 @@ export default function PartnershipsTab() {
     })
   }
 
-  // ── レガシー移行 ──────────────────────────
+  // ── レガシー移行 ───────────────────────
   async function importLegacy() {
     if (!legacyRows || importing) return
     if (
@@ -409,9 +439,8 @@ export default function PartnershipsTab() {
           '※ 既に DB に同名の団体がある場合は重複して追加されます（後から手動で調整してください）\n' +
           '※ 元データは自動的にバックアップキーへ退避され、すぐには削除されません',
       )
-    ) {
+    )
       return
-    }
 
     setImporting(true)
     setImportStatus({ done: 0, total: legacyRows.length })
@@ -435,8 +464,7 @@ export default function PartnershipsTab() {
           console.error('[partnerships import] row failed:', err)
           if (!firstError) {
             const msg = err?.error ?? err?.message ?? `HTTP ${res.status}`
-            const tableMissing =
-              typeof msg === 'string' && /relation .* does not exist/i.test(msg)
+            const tableMissing = typeof msg === 'string' && /relation .* does not exist/i.test(msg)
             firstError = tableMissing
               ? 'Supabase に youth_partnerships テーブルがまだ作成されていません。SQL Editor で 016_youth_partnerships.sql を実行してください。'
               : `${msg}${err?.hint ? ` / hint: ${err.hint}` : ''}`
@@ -468,7 +496,12 @@ export default function PartnershipsTab() {
   }
 
   function dismissLegacy() {
-    if (!confirm('このメッセージを非表示にしますか？ローカルデータは削除されません。\n（ページをリロードすると再度表示されます）')) return
+    if (
+      !confirm(
+        'このメッセージを非表示にしますか？ローカルデータは削除されません。\n（ページをリロードすると再度表示されます）',
+      )
+    )
+      return
     setLegacyRows(null)
   }
 
@@ -603,202 +636,257 @@ export default function PartnershipsTab() {
         </div>
       )}
 
-      <div className="pt-wrap sticky-head">
-        <table className="pt-table">
-          <thead>
-            <tr>
-              <th style={{ width: 40 }}>#</th>
-              <th style={{ minWidth: 160 }}>大学・団体名</th>
-              <th style={{ minWidth: 120 }}>社内担当</th>
-              <th style={{ minWidth: 200 }}>提携内容</th>
-              <th>先方担当（複数登録可）</th>
-              <th style={{ width: 60 }}></th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((r, i) => (
-              <tr key={r.id}>
-                <td className="pt-idx">{i + 1}</td>
-                <td>
-                  <input
-                    className="pt-cell"
-                    value={r.university}
-                    placeholder="大学・団体名"
-                    onChange={(e) =>
-                      mutateRow(r.id, (row) => ({ ...row, university: e.target.value }))
-                    }
-                  />
-                </td>
-                <td>
-                  <input
-                    className="pt-cell"
-                    value={r.internal_handler}
-                    placeholder="担当者"
-                    onChange={(e) =>
-                      mutateRow(r.id, (row) => ({ ...row, internal_handler: e.target.value }))
-                    }
-                  />
-                </td>
-                <td>
-                  <textarea
-                    className="pt-cell pt-textarea"
-                    value={r.partnership_details}
-                    placeholder="授業連携、インターン紹介など"
-                    onChange={(e) =>
-                      mutateRow(r.id, (row) => ({ ...row, partnership_details: e.target.value }))
-                    }
-                  />
-                </td>
-                <td>
-                  <div className="pt-contacts">
-                    {r.partner_contacts.map((c, idx) => {
-                      const key = expandKey(r.id, idx)
-                      const expanded = expandedLogs.has(key)
-                      const logCount = c.logs.length
-                      return (
-                        <div className="pt-contact-card" key={idx}>
-                          <div className="pt-contact-row">
-                            <input
-                              className="pt-cell"
-                              value={c.name}
-                              placeholder="氏名"
-                              onChange={(e) => updateContact(r.id, idx, { name: e.target.value })}
-                            />
-                            <input
-                              className="pt-cell"
-                              value={c.role}
-                              placeholder="役職/所属"
-                              onChange={(e) => updateContact(r.id, idx, { role: e.target.value })}
-                            />
-                            <button
-                              className="pt-mini"
-                              onClick={() => removeContact(r.id, idx)}
-                              title="この先方担当を削除"
-                            >
-                              ×
-                            </button>
-                          </div>
-                          <div className="pt-contact-grid">
-                            <label className="pt-field-label">メール</label>
-                            <input
-                              className="pt-cell"
-                              value={c.email}
-                              placeholder="example@example.com"
-                              onChange={(e) => updateContact(r.id, idx, { email: e.target.value })}
-                            />
-                            <label className="pt-field-label">電話</label>
-                            <input
-                              className="pt-cell"
-                              value={c.phone}
-                              placeholder="090-0000-0000"
-                              onChange={(e) => updateContact(r.id, idx, { phone: e.target.value })}
-                            />
-                            <label className="pt-field-label">LINE</label>
-                            <input
-                              className="pt-cell"
-                              value={c.line}
-                              placeholder="LINE ID"
-                              onChange={(e) => updateContact(r.id, idx, { line: e.target.value })}
-                            />
-                            <label className="pt-field-label">Messenger</label>
-                            <input
-                              className="pt-cell"
-                              value={c.messenger}
-                              placeholder="Messenger"
-                              onChange={(e) => updateContact(r.id, idx, { messenger: e.target.value })}
-                            />
-                          </div>
-                          <div className="pt-logs-bar">
-                            <button
-                              className="pt-log-toggle"
-                              onClick={() => toggleLogs(r.id, idx)}
-                              title={expanded ? 'ログを閉じる' : 'ログを開く'}
-                            >
-                              {expanded ? '▼' : '▶'} 実施ログ（{logCount}）
-                            </button>
-                            <button className="pt-add" onClick={() => addLog(r.id, idx)}>
-                              ＋ ログを追加
-                            </button>
-                          </div>
-                          {expanded && (
-                            <div className="pt-logs">
-                              {c.logs.length === 0 && (
-                                <div className="pt-empty">実施記録はまだありません</div>
-                              )}
-                              {c.logs.map((l, logIdx) => (
-                                <div className="pt-log-row" key={logIdx}>
-                                  <input
-                                    className="pt-cell pt-date"
-                                    type="date"
-                                    value={l.date}
-                                    onChange={(e) =>
-                                      updateLog(r.id, idx, logIdx, { date: e.target.value })
-                                    }
-                                  />
-                                  <input
-                                    className="pt-cell"
-                                    value={l.content}
-                                    placeholder="例）大学の授業で三木が講演実施"
-                                    onChange={(e) =>
-                                      updateLog(r.id, idx, logIdx, { content: e.target.value })
-                                    }
-                                  />
-                                  <button
-                                    className="pt-mini"
-                                    onClick={() => removeLog(r.id, idx, logIdx)}
-                                    title="ログを削除"
-                                  >
-                                    ×
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })}
-                    <button className="pt-add pt-add-contact" onClick={() => addContact(r.id)}>
-                      ＋ 先方担当を追加
-                    </button>
-                  </div>
-                </td>
-                <td>
-                  <button
-                    className="pt-mini pt-danger"
-                    onClick={() => deleteRow(r.id)}
-                    title="行を削除"
-                  >
-                    削除
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {!loading && filtered.length === 0 && (
-              <tr>
-                <td
-                  colSpan={6}
-                  style={{ textAlign: 'center', color: 'var(--mu)', padding: '2rem' }}
-                >
-                  該当する連携団体がありません
-                </td>
-              </tr>
+      <div className="pt-split">
+        {/* 左: 大学一覧サイドバー */}
+        <aside className="pt-sidebar">
+          <div className="pt-sidebar-head">
+            大学・団体（{sortedRows.length}{query ? ` / ${rows.length}` : ''}）
+          </div>
+          <div className="pt-sidebar-list">
+            {sortedRows.length === 0 && !loading && (
+              <div className="pt-empty" style={{ padding: '1rem', textAlign: 'center' }}>
+                {query ? '該当する団体がありません' : '団体がまだ登録されていません'}
+              </div>
             )}
-            {loading && rows.length === 0 && (
-              <tr>
-                <td
-                  colSpan={6}
-                  style={{ textAlign: 'center', color: 'var(--mu)', padding: '2rem' }}
+            {sortedRows.map((r) => {
+              const count = nonEmptyContactCount(r)
+              const isSelected = r.id === selectedId
+              const isSaving = savingIds.has(r.id)
+              return (
+                <button
+                  key={r.id}
+                  className={`pt-sidebar-item ${isSelected ? 'active' : ''}`}
+                  onClick={() => setSelectedId(r.id)}
+                  type="button"
                 >
-                  読み込み中...
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                  <span className="pt-sidebar-uni">{r.university || '（名称未設定）'}</span>
+                  <span className="pt-sidebar-meta">
+                    {isSaving && <span className="pt-saving-dot" title="保存中" />}
+                    <span className="pt-sidebar-count">{count}</span>
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        </aside>
+
+        {/* 右: 詳細パネル */}
+        <section className="pt-detail">
+          {!selected ? (
+            <div
+              style={{
+                textAlign: 'center',
+                color: 'var(--mu)',
+                padding: '3rem 1rem',
+                fontSize: '0.85rem',
+              }}
+            >
+              {loading
+                ? '読み込み中...'
+                : rows.length === 0
+                ? '「＋ 行を追加」で最初の団体を登録してください'
+                : '左の一覧から大学を選択してください'}
+            </div>
+          ) : (
+            <PartnershipDetail
+              row={selected}
+              onUpdate={mutateRow}
+              onDelete={() => deleteRow(selected.id)}
+              expandedLogs={expandedLogs}
+              expandKey={expandKey}
+              toggleLogs={toggleLogs}
+              addContact={addContact}
+              removeContact={removeContact}
+              updateContact={updateContact}
+              addLog={addLog}
+              removeLog={removeLog}
+              updateLog={updateLog}
+            />
+          )}
+        </section>
       </div>
 
       <div className="pt-note">
         ※ 1団体につき1行。先方担当は行内で複数登録できます。編集は Supabase に自動保存され、全ユーザーで共有されます（約0.6秒後に反映）。30秒ごとに他ユーザーの更新を取得します。
+      </div>
+    </>
+  )
+}
+
+// ── 詳細パネル ───────────────────────────
+interface DetailProps {
+  row: Row
+  onUpdate: (id: string, updater: (r: Row) => Row) => void
+  onDelete: () => void
+  expandedLogs: Set<string>
+  expandKey: (rowId: string, idx: number) => string
+  toggleLogs: (rowId: string, idx: number) => void
+  addContact: (rowId: string) => void
+  removeContact: (rowId: string, idx: number) => void
+  updateContact: (rowId: string, idx: number, patch: Partial<Contact>) => void
+  addLog: (rowId: string, idx: number) => void
+  removeLog: (rowId: string, idx: number, logIdx: number) => void
+  updateLog: (rowId: string, idx: number, logIdx: number, patch: Partial<PartnershipLog>) => void
+}
+
+function PartnershipDetail({
+  row,
+  onUpdate,
+  onDelete,
+  expandedLogs,
+  expandKey,
+  toggleLogs,
+  addContact,
+  removeContact,
+  updateContact,
+  addLog,
+  removeLog,
+  updateLog,
+}: DetailProps) {
+  return (
+    <>
+      <div className="pt-detail-head">
+        <input
+          className="pt-cell pt-title"
+          value={row.university}
+          placeholder="大学・団体名"
+          onChange={(e) => onUpdate(row.id, (r) => ({ ...r, university: e.target.value }))}
+        />
+        <button className="pt-mini pt-danger" onClick={onDelete} title="この団体を削除">
+          団体を削除
+        </button>
+      </div>
+
+      <div className="pt-detail-fields">
+        <div className="pt-field">
+          <div className="pt-field-label">社内担当</div>
+          <input
+            className="pt-cell"
+            value={row.internal_handler}
+            placeholder="担当者"
+            onChange={(e) =>
+              onUpdate(row.id, (r) => ({ ...r, internal_handler: e.target.value }))
+            }
+          />
+        </div>
+        <div className="pt-field">
+          <div className="pt-field-label">提携内容</div>
+          <textarea
+            className="pt-cell pt-textarea"
+            value={row.partnership_details}
+            placeholder="授業連携、インターン紹介など"
+            onChange={(e) =>
+              onUpdate(row.id, (r) => ({ ...r, partnership_details: e.target.value }))
+            }
+          />
+        </div>
+      </div>
+
+      <div className="pt-section-label">先方担当（{row.partner_contacts.length}名）</div>
+
+      <div className="pt-contacts">
+        {row.partner_contacts.map((c, idx) => {
+          const key = expandKey(row.id, idx)
+          const expanded = expandedLogs.has(key)
+          return (
+            <div className="pt-contact-card" key={idx}>
+              <div className="pt-contact-row">
+                <input
+                  className="pt-cell"
+                  value={c.name}
+                  placeholder="氏名"
+                  onChange={(e) => updateContact(row.id, idx, { name: e.target.value })}
+                />
+                <input
+                  className="pt-cell"
+                  value={c.role}
+                  placeholder="役職/所属"
+                  onChange={(e) => updateContact(row.id, idx, { role: e.target.value })}
+                />
+                <button
+                  className="pt-mini"
+                  onClick={() => removeContact(row.id, idx)}
+                  title="この先方担当を削除"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="pt-contact-grid">
+                <label className="pt-field-label">メール</label>
+                <input
+                  className="pt-cell"
+                  value={c.email}
+                  placeholder="example@example.com"
+                  onChange={(e) => updateContact(row.id, idx, { email: e.target.value })}
+                />
+                <label className="pt-field-label">電話</label>
+                <input
+                  className="pt-cell"
+                  value={c.phone}
+                  placeholder="090-0000-0000"
+                  onChange={(e) => updateContact(row.id, idx, { phone: e.target.value })}
+                />
+                <label className="pt-field-label">LINE</label>
+                <input
+                  className="pt-cell"
+                  value={c.line}
+                  placeholder="LINE ID"
+                  onChange={(e) => updateContact(row.id, idx, { line: e.target.value })}
+                />
+                <label className="pt-field-label">Messenger</label>
+                <input
+                  className="pt-cell"
+                  value={c.messenger}
+                  placeholder="Messenger"
+                  onChange={(e) => updateContact(row.id, idx, { messenger: e.target.value })}
+                />
+              </div>
+              <div className="pt-logs-bar">
+                <button
+                  className="pt-log-toggle"
+                  onClick={() => toggleLogs(row.id, idx)}
+                  title={expanded ? 'ログを閉じる' : 'ログを開く'}
+                >
+                  {expanded ? '▼' : '▶'} 実施ログ（{c.logs.length}）
+                </button>
+                <button className="pt-add" onClick={() => addLog(row.id, idx)}>
+                  ＋ ログを追加
+                </button>
+              </div>
+              {expanded && (
+                <div className="pt-logs">
+                  {c.logs.length === 0 && <div className="pt-empty">実施記録はまだありません</div>}
+                  {c.logs.map((l, logIdx) => (
+                    <div className="pt-log-row" key={logIdx}>
+                      <input
+                        className="pt-cell pt-date"
+                        type="date"
+                        value={l.date}
+                        onChange={(e) => updateLog(row.id, idx, logIdx, { date: e.target.value })}
+                      />
+                      <input
+                        className="pt-cell"
+                        value={l.content}
+                        placeholder="例）大学の授業で三木が講演実施"
+                        onChange={(e) => updateLog(row.id, idx, logIdx, { content: e.target.value })}
+                      />
+                      <button
+                        className="pt-mini"
+                        onClick={() => removeLog(row.id, idx, logIdx)}
+                        title="ログを削除"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
+        <button className="pt-add pt-add-contact" onClick={() => addContact(row.id)}>
+          ＋ 先方担当を追加
+        </button>
       </div>
     </>
   )
