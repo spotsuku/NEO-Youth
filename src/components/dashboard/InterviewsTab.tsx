@@ -1,18 +1,18 @@
 'use client'
 
 import { useState } from 'react'
-import type { DashboardInterview } from '@/types/dashboard'
+import type { YouthCandidate } from '@/types/dashboard'
 import Modal from './Modal'
 
 interface Props {
-  interviews: DashboardInterview[]
+  candidates: YouthCandidate[]
 }
 
-export default function InterviewsTab({ interviews }: Props) {
-  const [selected, setSelected] = useState<DashboardInterview | null>(null)
+export default function InterviewsTab({ candidates }: Props) {
+  const [selected, setSelected] = useState<YouthCandidate | null>(null)
 
-  const special = interviews.filter((i) => i.result.includes('特別')).length
-  const general = interviews.filter((i) => i.result.includes('一般')).length
+  const special = candidates.filter((c) => (c.interview_result ?? '').includes('特別')).length
+  const general = candidates.filter((c) => (c.interview_result ?? '').includes('一般')).length
 
   return (
     <>
@@ -20,7 +20,7 @@ export default function InterviewsTab({ interviews }: Props) {
         <div className="kpi-card red">
           <div className="kpi-label">面談実施数</div>
           <div className="kpi-value">
-            {interviews.length}
+            {candidates.length}
             <span> 件</span>
           </div>
         </div>
@@ -57,31 +57,31 @@ export default function InterviewsTab({ interviews }: Props) {
             </tr>
           </thead>
           <tbody>
-            {interviews.map((iv, i) => (
-              <tr key={i}>
-                <td style={{ fontWeight: 600 }}>{iv.name}</td>
-                <td style={{ fontSize: '0.75rem' }}>{iv.referral}</td>
-                <td>{iv.org}</td>
+            {candidates.map((c) => (
+              <tr key={c.id}>
+                <td style={{ fontWeight: 600 }}>{c.name}</td>
+                <td style={{ fontSize: '0.75rem' }}>{c.referral ?? '-'}</td>
+                <td>{c.school ?? '-'}</td>
                 <td style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.75rem' }}>
-                  {iv.date}
+                  {c.interview_date ?? '-'}
                 </td>
                 <td>
-                  <span className={`badge ${iv.type === '大学生' ? 'blu' : 'gold'}`}>
-                    {iv.type}
+                  <span className={`badge ${(c.type ?? '').includes('社会人') ? 'gold' : 'blu'}`}>
+                    {(c.type ?? '').includes('社会人') ? '社会人' : '大学生'}
                   </span>
                 </td>
-                <td>{iv.course}</td>
+                <td>{c.interview_course ?? '-'}</td>
                 <td>
                   <span
                     className={`badge ${
-                      iv.result.includes('特別') ? 'grn' : iv.result.includes('一般') ? 'gray' : 'red'
+                      (c.interview_result ?? '').includes('特別') ? 'grn' : 'gray'
                     }`}
                   >
-                    {iv.result.includes('特別') ? '特別選考' : '一般'}
+                    {(c.interview_result ?? '').includes('特別') ? '特別選考' : '一般'}
                   </span>
                 </td>
                 <td>
-                  <button className="detail-btn" onClick={() => setSelected(iv)}>
+                  <button className="detail-btn" onClick={() => setSelected(c)}>
                     詳細
                   </button>
                 </td>
@@ -97,52 +97,50 @@ export default function InterviewsTab({ interviews }: Props) {
             <div className="field-row">
               <div>
                 <div className="field-label">ふりがな</div>
-                <div className="field-value">{selected.kana}</div>
+                <div className="field-value">{selected.kana ?? '-'}</div>
               </div>
               <div>
                 <div className="field-label">紹介者</div>
-                <div className="field-value">{selected.referral}</div>
+                <div className="field-value">{selected.referral ?? '-'}</div>
               </div>
             </div>
             <div className="field-row">
               <div>
                 <div className="field-label">担当者</div>
-                <div className="field-value">{selected.handler}</div>
+                <div className="field-value">{selected.interview_handler ?? '-'}</div>
               </div>
               <div>
                 <div className="field-label">所属</div>
-                <div className="field-value">{selected.org}</div>
+                <div className="field-value">{selected.school ?? '-'}</div>
               </div>
             </div>
             <div className="field-row">
               <div>
                 <div className="field-label">面談日</div>
-                <div className="field-value">{selected.date}</div>
+                <div className="field-value">{selected.interview_date ?? '-'}</div>
               </div>
               <div>
                 <div className="field-label">進路希望</div>
-                <div className="field-value">{selected.course}</div>
+                <div className="field-value">{selected.interview_course ?? '-'}</div>
               </div>
             </div>
             <div className="field-row">
               <div>
                 <div className="field-label">区分</div>
-                <div className="field-value">{selected.type}</div>
+                <div className="field-value">{selected.type ?? '-'}</div>
               </div>
               <div>
                 <div className="field-label">結果</div>
                 <div className="field-value">
-                  <span
-                    className={`badge ${selected.result.includes('特別') ? 'grn' : 'gray'}`}
-                  >
-                    {selected.result}
+                  <span className={`badge ${(selected.interview_result ?? '').includes('特別') ? 'grn' : 'gray'}`}>
+                    {selected.interview_result ?? '-'}
                   </span>
                 </div>
               </div>
             </div>
             <div>
               <div className="field-label">備考</div>
-              <div className="field-value long">{selected.notes}</div>
+              <div className="field-value long">{selected.interview_notes ?? '-'}</div>
             </div>
           </>
         )}

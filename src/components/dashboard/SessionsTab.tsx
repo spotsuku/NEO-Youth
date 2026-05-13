@@ -1,14 +1,14 @@
 'use client'
 
-import type { SessionRecord } from '@/types/dashboard'
+import type { YouthSession } from '@/types/dashboard'
 
 interface Props {
-  sessions: SessionRecord[]
+  sessions: YouthSession[]
 }
 
 export default function SessionsTab({ sessions }: Props) {
   const attended = sessions.filter((s) => s.attended).length
-  const uniqueSessions = Array.from(new Set(sessions.map((s) => s.session)))
+  const uniqueSessions = Array.from(new Set(sessions.map((s) => s.session_label)))
 
   return (
     <>
@@ -40,13 +40,13 @@ export default function SessionsTab({ sessions }: Props) {
         <div className="progress-label">
           <span>出席率</span>
           <span>
-            {attended} / {sessions.length} ({Math.round((attended / sessions.length) * 100)}%)
+            {attended} / {sessions.length} ({sessions.length > 0 ? Math.round((attended / sessions.length) * 100) : 0}%)
           </span>
         </div>
         <div className="progress-bar">
           <div
             className="progress-fill grn"
-            style={{ width: `${(attended / sessions.length) * 100}%` }}
+            style={{ width: `${sessions.length > 0 ? (attended / sessions.length) * 100 : 0}%` }}
           />
         </div>
       </div>
@@ -66,28 +66,28 @@ export default function SessionsTab({ sessions }: Props) {
             </tr>
           </thead>
           <tbody>
-            {sessions.map((s, i) => (
-              <tr key={i}>
+            {sessions.map((s) => (
+              <tr key={s.id}>
                 <td>
                   <span className={`chk ${s.attended ? 'ok' : 'ng'}`}>
                     {s.attended ? '\u2713' : '\u2715'}
                   </span>
                 </td>
-                <td style={{ fontWeight: 600 }}>{s.name}</td>
+                <td style={{ fontWeight: 600 }}>{s.candidate_name}</td>
                 <td style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.75rem' }}>
                   {s.age || '-'}
                 </td>
                 <td>
                   {s.type ? (
-                    <span className={`badge ${s.type.includes('大学') ? 'blu' : 'gray'}`}>
+                    <span className={`badge ${(s.type ?? '').includes('大学') ? 'blu' : 'gray'}`}>
                       {s.type}
                     </span>
                   ) : (
                     <span style={{ color: 'var(--bd2)', fontSize: '0.75rem' }}>-</span>
                   )}
                 </td>
-                <td>{s.org}</td>
-                <td style={{ fontSize: '0.75rem' }}>{s.session}</td>
+                <td>{s.org ?? '-'}</td>
+                <td style={{ fontSize: '0.75rem' }}>{s.session_label}</td>
               </tr>
             ))}
           </tbody>

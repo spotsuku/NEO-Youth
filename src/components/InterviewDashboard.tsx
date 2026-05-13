@@ -144,8 +144,9 @@ export default function InterviewDashboard({ candidates: rawCandidates, initialI
         <div data-main style={{ marginLeft: '252px', flex: 1, minHeight: '100vh', minWidth: 0, background: 'var(--bg)', width: 'calc(100% - 252px)' }}>
           <div data-topbar className={styles.topbar}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <a href="/dashboard" className={styles.tbBtn} style={{ textDecoration: 'none' }}>Dashboard</a>
               <span className={styles.counter}>{currentIdx + 1} / {candidates.length}</span>
-              <button className={styles.tbBtn} onClick={() => setCurrentIdx(i => Math.max(0, i - 1))}>← 前</button>
+              <button className={styles.tbBtn} onClick={() => setCurrentIdx(i => Math.max(0, i - 1))}>��� 前</button>
               <button className={styles.tbBtn} onClick={() => setCurrentIdx(i => Math.min(candidates.length - 1, i + 1))}>次 →</button>
               <button className={styles.tbBtn} onClick={() => window.print()}>🖨 印刷</button>
               {saveStatus === 'saving' && <span className={styles.saving}>⏳ 保存中…</span>}
