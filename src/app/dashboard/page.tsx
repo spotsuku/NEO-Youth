@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
+import { redirect } from 'next/navigation'
 import type { YouthCandidate, YouthSession } from '@/types/dashboard'
+import { getAppUser } from '@/lib/auth'
 import RecruitmentDashboard from '@/components/dashboard/RecruitmentDashboard'
 
 export const dynamic = 'force-dynamic'
@@ -11,7 +13,7 @@ export interface VerdictRecord {
   score_total: number | null
 }
 
-async function getData() {
+async function getData(isAdmin: boolean) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
 
@@ -24,12 +26,15 @@ async function getData() {
   const [
     { data: candidates, error: ce },
     { data: sessions, error: se },
+    // 最終面接の評価（verdict/score）は管理者のみ取得
     { data: verdicts, error: ve },
     { data: finalSheet, error: fe },
   ] = await Promise.all([
     supabase.from('youth_candidates').select('*').order('id'),
     supabase.from('youth_sessions').select('*').order('id'),
-    supabase.from('interviews').select('candidate_name, verdict, score_total'),
+    isAdmin
+      ? supabase.from('interviews').select('candidate_name, verdict, score_total')
+      : Promise.resolve({ data: [], error: null }),
     supabase.from('candidates').select('name'),
   ])
 
@@ -43,7 +48,16 @@ async function getData() {
 }
 
 export default async function DashboardPage() {
-  const { candidates, sessions, verdicts, promotedNames, error } = await getData()
+  const user = await getAppUser()
+  if (!user) redirect('/login?next=/dashboard')
+  const isAdmin = user.role === 'admin'
+
+  const { candidates, sessions, verdicts, promotedNames, error } = await getData(isAdmin)
+
+  // 非管理者には個人の評価・面談コメントを渡さない
+  const safeCandidates = isAdmin
+    ? candidates
+    : candidates.map((c) => ({ ...c, interview_notes: null, interview_result: null }))
 
   // verdict を Map に変換
   const verdictMap: Record<string, VerdictRecord> = {}
@@ -53,11 +67,12 @@ export default async function DashboardPage() {
 
   return (
     <RecruitmentDashboard
-      candidates={candidates}
+      candidates={safeCandidates}
       sessions={sessions}
       verdictMap={verdictMap}
       promotedNames={promotedNames}
       dbError={error}
+      currentUser={user}
     />
   )
 }

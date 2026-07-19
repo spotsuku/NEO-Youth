@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
+import { redirect } from 'next/navigation'
 import { Candidate, Interview } from '@/types'
+import { getAppUser } from '@/lib/auth'
 import InterviewDashboard from '@/components/InterviewDashboard'
 
 // キャッシュなし・常に最新データを取得
@@ -33,6 +35,11 @@ async function getData() {
 }
 
 export default async function Page() {
+  // 最終面接シート（個人の評価・コメント）は管理者のみ閲覧可
+  const user = await getAppUser()
+  if (!user) redirect('/login?next=/')
+  if (user.role !== 'admin') redirect('/dashboard')
+
   const { candidates, interviews, error } = await getData()
 
   if (error) {

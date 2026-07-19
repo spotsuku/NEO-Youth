@@ -13,6 +13,7 @@ interface Props {
   onPromoteFinal: (name: string) => Promise<boolean>
   verdictMap: Record<string, VerdictRecord>
   promotedNames: Set<string>
+  isAdmin: boolean
 }
 
 // ステータス（事実に基づく状態）
@@ -44,7 +45,7 @@ const VERDICT_BADGE: Record<string, string> = {
 
 const STATUS_FILTERS = ['全て', '応募前', '応募完了', '書類選考', 'グループ面接', '最終面接', '合格予定', '合格', '補欠合格', '承諾書提出', '保留', '不合格', '辞退']
 
-export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, onPromoteFinal, verdictMap, promotedNames }: Props) {
+export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, onPromoteFinal, verdictMap, promotedNames, isAdmin }: Props) {
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('全て')
   const [typeFilter, setTypeFilter] = useState<'全て' | '学生' | '社会人'>('全て')
@@ -190,9 +191,9 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, o
               <th>不合格</th>
               <th>説明会</th>
               <th>面談済</th>
-              <th>最終面接</th>
-              <th>シート連携</th>
-              <th></th>
+              {isAdmin && <th>最終面接</th>}
+              {isAdmin && <th>シート連携</th>}
+              {isAdmin && <th></th>}
               <th></th>
               <th></th>
             </tr>
@@ -290,42 +291,48 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, o
                       {c.interview_date ? '\u2713' : ''}
                     </button>
                   </td>
-                  {/* 最終面接結果 */}
-                  <td>
-                    {v ? (
-                      <span className={`badge ${VERDICT_BADGE[v.verdict!] ?? 'gray'}`}>
-                        {v.verdict}
-                        {v.score_total != null && <span style={{ marginLeft: '0.3rem', opacity: 0.7 }}>{v.score_total}pt</span>}
-                      </span>
-                    ) : (
-                      <span style={{ color: 'var(--bd2)', fontSize: '0.72rem' }}>-</span>
-                    )}
-                  </td>
-                  {/* 最終面接シート連携 */}
-                  <td>
-                    {c.status === '最終面接' ? (
-                      promotedNames.has(c.name) ? (
-                        <span className="badge grn" title="最終面接シートに追加済み">✓ 連携済</span>
+                  {/* 最終面接結果（管理者のみ） */}
+                  {isAdmin && (
+                    <td>
+                      {v ? (
+                        <span className={`badge ${VERDICT_BADGE[v.verdict!] ?? 'gray'}`}>
+                          {v.verdict}
+                          {v.score_total != null && <span style={{ marginLeft: '0.3rem', opacity: 0.7 }}>{v.score_total}pt</span>}
+                        </span>
                       ) : (
-                        <button
-                          className="detail-btn"
-                          onClick={() => handlePromote(c.name)}
-                          disabled={promoting.has(c.name)}
-                          title="この候補者を最終面接シートに追加します"
-                        >
-                          {promoting.has(c.name) ? '連携中...' : '+ シート追加'}
-                        </button>
-                      )
-                    ) : promotedNames.has(c.name) ? (
-                      <span className="badge gray" title="最終面接シートに登録済（過去）">登録済</span>
-                    ) : (
-                      <span style={{ color: 'var(--bd2)', fontSize: '0.72rem' }}>-</span>
-                    )}
-                  </td>
-                  {/* 面談ボタン */}
-                  <td>
-                    <button className="detail-btn" onClick={() => openInterview(c)}>面談</button>
-                  </td>
+                        <span style={{ color: 'var(--bd2)', fontSize: '0.72rem' }}>-</span>
+                      )}
+                    </td>
+                  )}
+                  {/* 最終面接シート連携（管理者のみ） */}
+                  {isAdmin && (
+                    <td>
+                      {c.status === '最終面接' ? (
+                        promotedNames.has(c.name) ? (
+                          <span className="badge grn" title="最終面接シートに追加済み">✓ 連携済</span>
+                        ) : (
+                          <button
+                            className="detail-btn"
+                            onClick={() => handlePromote(c.name)}
+                            disabled={promoting.has(c.name)}
+                            title="この候補者を最終面接シートに追加します"
+                          >
+                            {promoting.has(c.name) ? '連携中...' : '+ シート追加'}
+                          </button>
+                        )
+                      ) : promotedNames.has(c.name) ? (
+                        <span className="badge gray" title="最終面接シートに登録済（過去）">登録済</span>
+                      ) : (
+                        <span style={{ color: 'var(--bd2)', fontSize: '0.72rem' }}>-</span>
+                      )}
+                    </td>
+                  )}
+                  {/* 面談ボタン（面談記録=評価コメントを含むため管理者のみ） */}
+                  {isAdmin && (
+                    <td>
+                      <button className="detail-btn" onClick={() => openInterview(c)}>面談</button>
+                    </td>
+                  )}
                   {/* 詳細 */}
                   <td>
                     <button className="detail-btn" onClick={() => setSelected(c)}>詳細</button>
@@ -347,7 +354,7 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, o
               )
             })}
             {filtered.length === 0 && (
-              <tr><td colSpan={16} style={{ textAlign: 'center', color: 'var(--mu)', padding: '2rem' }}>該当する候補者がいません</td></tr>
+              <tr><td colSpan={isAdmin ? 16 : 13} style={{ textAlign: 'center', color: 'var(--mu)', padding: '2rem' }}>該当する候補者がいません</td></tr>
             )}
           </tbody>
         </table>
@@ -355,7 +362,7 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, o
 
       {/* 詳細モーダル */}
       <Modal open={!!selected} onClose={() => setSelected(null)} title={selected?.name ?? ''}>
-        {selected && <CandidateDetail candidate={selected} onOpenInterview={() => openInterview(selected)} onUpdate={onUpdate} />}
+        {selected && <CandidateDetail candidate={selected} onOpenInterview={isAdmin ? () => openInterview(selected) : null} onUpdate={onUpdate} />}
       </Modal>
 
       {/* 面談記録モーダル */}
@@ -457,7 +464,7 @@ function InlineSelect({ value, options, onSave, badgeClass }: {
 /* ── 候補者詳細表示 ── */
 function CandidateDetail({ candidate: c, onOpenInterview, onUpdate }: {
   candidate: YouthCandidate
-  onOpenInterview: () => void
+  onOpenInterview: (() => void) | null
   onUpdate: (name: string, patch: Partial<YouthCandidate>) => Promise<void>
 }) {
   const save = (field: string) => (val: string) => {
@@ -498,9 +505,11 @@ function CandidateDetail({ candidate: c, onOpenInterview, onUpdate }: {
         <div><div className="field-label">2次面接希望日</div><div className="field-value" style={{ fontSize: '0.78rem' }}>{c.interview2_dates ?? '-'}</div></div>
         <div><div className="field-label">3次面接</div><div className="field-value">{c.interview3_dates ?? '-'}</div></div>
       </div>
-      <div style={{ marginTop: '1rem' }}>
-        <button className="detail-btn" style={{ padding: '0.5rem 1rem', fontSize: '0.8rem' }} onClick={onOpenInterview}>面談記録を開く</button>
-      </div>
+      {onOpenInterview && (
+        <div style={{ marginTop: '1rem' }}>
+          <button className="detail-btn" style={{ padding: '0.5rem 1rem', fontSize: '0.8rem' }} onClick={onOpenInterview}>面談記録を開く</button>
+        </div>
+      )}
     </>
   )
 }

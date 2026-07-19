@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { requireAdmin } from '@/lib/auth'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -10,6 +11,9 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: { name: string } }
 ) {
+  const auth = await requireAdmin()
+  if ('response' in auth) return auth.response
+
   const name = decodeURIComponent(params.name)
   const body = await req.json()
 
@@ -70,6 +74,9 @@ export async function PATCH(
 }
 
 export async function GET() {
+  const auth = await requireAdmin()
+  if ('response' in auth) return auth.response
+
   const { data } = await supabase
     .from('candidates')
     .select('id, name')

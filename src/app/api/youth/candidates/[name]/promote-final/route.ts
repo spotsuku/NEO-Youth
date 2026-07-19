@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { requireAdmin } from '@/lib/auth'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -13,6 +14,9 @@ export async function POST(
   _req: NextRequest,
   { params }: { params: { name: string } },
 ) {
+  const auth = await requireAdmin()
+  if ('response' in auth) return auth.response
+
   const name = decodeURIComponent(params.name)
 
   // 1) youth_candidates から該当者を取得

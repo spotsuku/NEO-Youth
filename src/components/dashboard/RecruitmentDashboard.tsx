@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react'
 import type { YouthCandidate, YouthSession } from '@/types/dashboard'
 import type { VerdictRecord } from '@/app/dashboard/page'
+import type { AppUser } from '@/lib/auth'
 import OverviewTab from './OverviewTab'
 import ApplicantsTab from './ApplicantsTab'
 import InterviewsTab from './InterviewsTab'
@@ -10,15 +11,18 @@ import FlowTab from './FlowTab'
 import OnboardingTab from './OnboardingTab'
 import SessionsTab from './SessionsTab'
 import PartnershipsTab from './PartnershipsTab'
+import AdminTab from './AdminTab'
 
+// adminOnly のタブは管理者のみ表示（面談記録=個人の評価コメントを含むため）
 const TABS = [
-  { key: 'overview', label: '概要' },
-  { key: 'applicants', label: '候補者' },
-  { key: 'interviews', label: '面談記録' },
-  { key: 'flow', label: '選考フロー' },
-  { key: 'onboarding', label: 'オンボーディング' },
-  { key: 'sessions', label: '説明会' },
-  { key: 'partnerships', label: '団体連携' },
+  { key: 'overview', label: '概要', adminOnly: false },
+  { key: 'applicants', label: '候補者', adminOnly: false },
+  { key: 'interviews', label: '面談記録', adminOnly: true },
+  { key: 'flow', label: '選考フロー', adminOnly: false },
+  { key: 'onboarding', label: 'オンボーディング', adminOnly: false },
+  { key: 'sessions', label: '説明会', adminOnly: false },
+  { key: 'partnerships', label: '団体連携', adminOnly: false },
+  { key: 'admin', label: '管理', adminOnly: true },
 ] as const
 
 type TabKey = (typeof TABS)[number]['key']
@@ -29,10 +33,18 @@ interface Props {
   verdictMap: Record<string, VerdictRecord>
   promotedNames: string[]
   dbError: string | null
+  currentUser: AppUser
 }
 
-export default function RecruitmentDashboard({ candidates: initial, sessions, verdictMap, promotedNames, dbError }: Props) {
+export default function RecruitmentDashboard({ candidates: initial, sessions, verdictMap, promotedNames, dbError, currentUser }: Props) {
+  const isAdmin = currentUser.role === 'admin'
+  const visibleTabs = TABS.filter((t) => !t.adminOnly || isAdmin)
   const [tab, setTab] = useState<TabKey>('overview')
+
+  const logout = async () => {
+    try { await fetch('/api/auth/logout', { method: 'POST' }) } catch {}
+    window.location.href = '/login'
+  }
   const [candidates, setCandidates] = useState<YouthCandidate[]>(initial)
   const [promoted, setPromoted] = useState<Set<string>>(() => new Set(promotedNames))
 
@@ -139,7 +151,7 @@ export default function RecruitmentDashboard({ candidates: initial, sessions, ve
           NEO ACADEMIA <span>2nd / Dashboard</span>
         </div>
         <nav className="db-nav">
-          {TABS.map((t) => (
+          {visibleTabs.map((t) => (
             <button
               key={t.key}
               className={tab === t.key ? 'active' : ''}
@@ -149,29 +161,54 @@ export default function RecruitmentDashboard({ candidates: initial, sessions, ve
             </button>
           ))}
         </nav>
-        <a
-          href="/"
-          style={{
-            fontSize: '0.7rem',
-            color: 'var(--mu)',
-            textDecoration: 'none',
-            border: '1px solid var(--bd)',
-            borderRadius: '4px',
-            padding: '0.3rem 0.7rem',
-            whiteSpace: 'nowrap',
-            transition: 'all 0.12s',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = 'var(--red)'
-            e.currentTarget.style.color = 'var(--red)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = 'var(--bd)'
-            e.currentTarget.style.color = 'var(--mu)'
-          }}
-        >
-          面接シート
-        </a>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <span style={{ fontSize: '0.7rem', color: 'var(--mu)', whiteSpace: 'nowrap' }}>
+            {currentUser.name ?? currentUser.email}
+            <span className={`badge ${isAdmin ? 'red' : 'gray'}`} style={{ marginLeft: '0.35rem' }}>
+              {isAdmin ? '管理者' : '一般'}
+            </span>
+          </span>
+          {isAdmin && (
+            <a
+              href="/"
+              style={{
+                fontSize: '0.7rem',
+                color: 'var(--mu)',
+                textDecoration: 'none',
+                border: '1px solid var(--bd)',
+                borderRadius: '4px',
+                padding: '0.3rem 0.7rem',
+                whiteSpace: 'nowrap',
+                transition: 'all 0.12s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--red)'
+                e.currentTarget.style.color = 'var(--red)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--bd)'
+                e.currentTarget.style.color = 'var(--mu)'
+              }}
+            >
+              面接シート
+            </a>
+          )}
+          <button
+            onClick={logout}
+            style={{
+              fontSize: '0.7rem',
+              color: 'var(--mu)',
+              background: 'none',
+              border: '1px solid var(--bd)',
+              borderRadius: '4px',
+              padding: '0.3rem 0.7rem',
+              whiteSpace: 'nowrap',
+              cursor: 'pointer',
+            }}
+          >
+            ログアウト
+          </button>
+        </div>
       </header>
 
       {dbError && (
@@ -202,10 +239,11 @@ export default function RecruitmentDashboard({ candidates: initial, sessions, ve
               onPromoteFinal={promoteToFinal}
               verdictMap={verdictMap}
               promotedNames={promoted}
+              isAdmin={isAdmin}
             />
           </div>
         )}
-        {tab === 'interviews' && (
+        {tab === 'interviews' && isAdmin && (
           <div className="db-page">
             <InterviewsTab candidates={interviewed} />
           </div>
@@ -228,6 +266,11 @@ export default function RecruitmentDashboard({ candidates: initial, sessions, ve
         {tab === 'partnerships' && (
           <div className="db-page">
             <PartnershipsTab />
+          </div>
+        )}
+        {tab === 'admin' && isAdmin && (
+          <div className="db-page">
+            <AdminTab currentEmail={currentUser.email} />
           </div>
         )}
       </main>

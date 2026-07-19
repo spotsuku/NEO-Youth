@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { requireAdmin } from '@/lib/auth'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -42,6 +43,9 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: { name: string } }
 ) {
+  const auth = await requireAdmin()
+  if ('response' in auth) return auth.response
+
   const name = decodeURIComponent(params.name)
   const body = await req.json()
 
@@ -112,6 +116,9 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: { name: string } }
 ) {
+  const auth = await requireAdmin()
+  if ('response' in auth) return auth.response
+
   const name = decodeURIComponent(params.name)
   const { data, error } = await supabase
     .from('interview_logs')
