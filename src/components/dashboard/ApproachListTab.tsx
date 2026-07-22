@@ -39,7 +39,7 @@ function daysUntil(dateStr: string | null): number | null {
 
 type SortColumn =
   | 'name' | 'school' | 'grade' | 'step' | 'next_action' | 'na_due_date'
-  | 'na_written_at' | 'interview_handler' | 'contact_method' | 'inflow_source'
+  | 'na_written_at' | 'referral' | 'interview_handler' | 'contact_method' | 'inflow_source'
 
 const SORT_ACCESSORS: Record<SortColumn, (c: YouthCandidate, grade: string | null) => string> = {
   name: (c) => c.name ?? '',
@@ -52,6 +52,7 @@ const SORT_ACCESSORS: Record<SortColumn, (c: YouthCandidate, grade: string | nul
   next_action: (c) => c.next_action ?? '',
   na_due_date: (c) => c.na_due_date ?? '',
   na_written_at: (c) => c.na_written_at ?? '',
+  referral: (c) => c.referral ?? '',
   interview_handler: (c) => c.interview_handler ?? '',
   contact_method: (c) => c.contact_method ?? '',
   inflow_source: (c) => c.inflow_source ?? '',
@@ -65,6 +66,7 @@ const COLUMNS: { key: SortColumn; label: string }[] = [
   { key: 'next_action', label: 'ネクストアクション' },
   { key: 'na_due_date', label: 'NA期限' },
   { key: 'na_written_at', label: 'NA記入日' },
+  { key: 'referral', label: '紹介者' },
   { key: 'interview_handler', label: '対応者' },
   { key: 'contact_method', label: '連絡手段' },
   { key: 'inflow_source', label: '流入経路' },
@@ -296,6 +298,22 @@ export default function ApproachListTab({ candidates, onUpdate, initialStepFilte
                         className="cell-input"
                         value={c.na_written_at ?? ''}
                         onChange={(e) => onUpdate(c.name, { na_written_at: e.target.value || null })}
+                      />
+                    )}
+                  </td>
+                  <td>
+                    {readOnly ? (
+                      c.referral || '-'
+                    ) : (
+                      <input
+                        className="cell-input"
+                        defaultValue={c.referral ?? ''}
+                        placeholder="紹介者名"
+                        onBlur={(e) => {
+                          if (e.target.value !== (c.referral ?? '')) {
+                            onUpdate(c.name, { referral: e.target.value || null })
+                          }
+                        }}
                       />
                     )}
                   </td>
