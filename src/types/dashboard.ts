@@ -48,8 +48,62 @@ export interface YouthCandidate {
 
   attended_session: boolean
 
+  // アプローチ管理（ユースDB改修）
+  step: string | null
+  entry_year: number | null
+  course_length: number | null
+  next_action: string | null
+  na_due_date: string | null
+  na_written_at: string | null
+  contact_method: string | null
+  inflow_source: string | null
+  note: string | null
+  partner_id: string | null
+  archived: boolean
+
   created_at: string
   updated_at: string
+}
+
+// step_history テーブルと 1:1 対応
+export interface StepHistoryEntry {
+  id: number
+  youth_candidate_id: number
+  from_step: string | null
+  to_step: string | null
+  changed_at: string
+  changed_by: string | null
+}
+
+// select_options テーブルと 1:1 対応
+export interface SelectOption {
+  id: number
+  list_key: 'contact_method' | 'inflow_source'
+  value: string
+  sort_order: number
+}
+
+// アプローチ管理: 7段階ステップ（この順序で固定）
+export const APPROACH_STEPS = [
+  '対象外',
+  '未観測',
+  'イベント参加（1回）',
+  'イベント参加（複数回）',
+  '1on1実施',
+  'アカデミア興味あり',
+  'アカデミア参加口頭内諾',
+] as const
+
+export type ApproachStep = (typeof APPROACH_STEPS)[number]
+
+export const APPROACH_STEP_COLORS: Record<string, string> = {
+  '対象外': 'var(--bd2)',
+  '未観測': 'var(--mu)',
+  'イベント参加（1回）': 'var(--gold)',
+  'イベント参加（複数回）': 'var(--blu)',
+  '1on1実施': 'var(--blu)',
+  'アカデミア興味あり': 'var(--grn)',
+  'アカデミア参加口頭内諾': 'var(--grn)',
 }
 
 // youth_sessions テーブルと 1:1 対応
@@ -100,7 +154,7 @@ export interface YomiData {
   color: string
 }
 
-// 団体連携（youth_partnerships テーブル）は PartnershipsTab 内で
+// 学校連携（youth_partnerships テーブル）は PartnershipsTab 内で
 // 独自に Row 型を定義しているため、ここでは型を公開しない。
 
 // オンボーディングのフィールド定義

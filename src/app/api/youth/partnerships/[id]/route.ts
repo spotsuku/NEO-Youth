@@ -17,6 +17,12 @@ const ALLOWED = new Set([
   'contact_line',
   'contact_messenger',
   'logs',
+  // 学校連携拡張 — 契約管理・資料添付
+  'is_contracted',
+  'logo_url',
+  'documents',
+  'manager_name',
+  'deleted_at', // 復元（ゴミ箱から戻す）時に null をセットするために許可
 ])
 
 export async function PATCH(
@@ -55,6 +61,8 @@ export async function PATCH(
   return NextResponse.json(data[0])
 }
 
+// 論理削除（誤操作からの復旧用）。物理削除はしない。
+// 復元する場合は PATCH で { deleted_at: null } を送る。
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: { id: string } },
@@ -62,7 +70,7 @@ export async function DELETE(
   const id = params.id
   const { data, error } = await supabase
     .from('youth_partnerships')
-    .delete()
+    .update({ deleted_at: new Date().toISOString() })
     .eq('id', id)
     .select()
 

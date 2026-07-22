@@ -27,7 +27,7 @@ async function getData() {
     { data: verdicts, error: ve },
     { data: finalSheet, error: fe },
   ] = await Promise.all([
-    supabase.from('youth_candidates').select('*').order('id'),
+    supabase.from('youth_candidates').select('*').is('deleted_at', null).order('id'),
     supabase.from('youth_sessions').select('*').order('id'),
     supabase.from('interviews').select('candidate_name, verdict, score_total'),
     supabase.from('candidates').select('name'),

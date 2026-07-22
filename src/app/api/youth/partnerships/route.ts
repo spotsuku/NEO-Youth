@@ -14,7 +14,13 @@ interface ContactShape {
   phone?: string
   line?: string
   messenger?: string
-  logs?: { date?: string; content?: string }[]
+  logs?: { date?: string; content?: string; author?: string }[]
+}
+
+interface DocumentShape {
+  name?: string
+  url?: string
+  uploaded_at?: string
 }
 
 interface RowShape {
@@ -29,6 +35,12 @@ interface RowShape {
   contact_line?: string
   contact_messenger?: string
   logs?: { date?: string; content?: string }[]
+  // 学校連携拡張 — 契約管理・資料添付
+  is_contracted?: boolean
+  logo_url?: string
+  documents?: DocumentShape[]
+  manager_name?: string
+  deleted_at?: string | null
 }
 
 // 旧スキーマ → 新スキーマへ正規化（GET 結果に対する保険）
@@ -45,9 +57,9 @@ function normalize(row: RowShape) {
     line: c?.line ?? (i === 0 ? row.contact_line ?? '' : ''),
     messenger: c?.messenger ?? (i === 0 ? row.contact_messenger ?? '' : ''),
     logs: Array.isArray(c?.logs)
-      ? c!.logs!.map((l) => ({ date: l?.date ?? '', content: l?.content ?? '' }))
+      ? c!.logs!.map((l) => ({ date: l?.date ?? '', content: l?.content ?? '', author: l?.author ?? '' }))
       : i === 0 && Array.isArray(row.logs)
-      ? row.logs.map((l) => ({ date: l?.date ?? '', content: l?.content ?? '' }))
+      ? row.logs.map((l) => ({ date: l?.date ?? '', content: l?.content ?? '', author: '' }))
       : [],
   }))
   return {
@@ -56,15 +68,19 @@ function normalize(row: RowShape) {
     internal_handler: row.internal_handler ?? '',
     partnership_details: row.partnership_details ?? '',
     partner_contacts: normalized,
+    is_contracted: row.is_contracted ?? false,
+    logo_url: row.logo_url ?? '',
+    documents: Array.isArray(row.documents) ? row.documents : [],
+    manager_name: row.manager_name ?? '',
   }
 }
 
-// 一覧取得
-export async function GET() {
-  const { data, error } = await supabase
-    .from('youth_partnerships')
-    .select('*')
-    .order('created_at', { ascending: true })
+// 一覧取得（?trash=true でゴミ箱＝論理削除済み一覧）
+export async function GET(req: NextRequest) {
+  const trash = req.nextUrl.searchParams.get('trash') === 'true'
+  let query = supabase.from('youth_partnerships').select('*').order('created_at', { ascending: true })
+  query = trash ? query.not('deleted_at', 'is', null) : query.is('deleted_at', null)
+  const { data, error } = await query
 
   if (error) {
     console.error('[partnerships GET] error:', error)
@@ -110,6 +126,10 @@ export async function POST(req: NextRequest) {
     contact_line: '',
     contact_messenger: '',
     logs: [],
+    is_contracted: body.is_contracted ?? false,
+    logo_url: body.logo_url ?? '',
+    documents: Array.isArray(body.documents) ? body.documents : [],
+    manager_name: body.manager_name ?? '',
   }
 
   const { data, error } = await supabase

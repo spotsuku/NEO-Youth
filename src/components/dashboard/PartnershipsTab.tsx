@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import Modal from './Modal'
+import TrashPanel from './TrashPanel'
 
 // 1先方担当（人）= 連絡先＋ログ＋社内担当を内包
 interface Contact {
@@ -17,6 +19,13 @@ interface Contact {
 interface PartnershipLog {
   date: string
   content: string
+  author: string
+}
+
+interface PartnerDocument {
+  name: string
+  url: string
+  uploaded_at: string
 }
 
 // 1団体 = 1行
@@ -26,6 +35,10 @@ interface Row {
   internal_handler: string
   partnership_details: string
   partner_contacts: Contact[]
+  is_contracted: boolean
+  logo_url: string
+  documents: PartnerDocument[]
+  manager_name: string
 }
 
 const SAVE_DEBOUNCE_MS = 600
@@ -81,7 +94,7 @@ function legacyToPayload(l: LegacyRow) {
     messenger: i === 0 ? l.contact?.messenger ?? '' : '',
     logs:
       i === 0 && Array.isArray(l.logs)
-        ? l.logs.map((x) => ({ date: x?.date ?? '', content: x?.content ?? '' }))
+        ? l.logs.map((x) => ({ date: x?.date ?? '', content: x?.content ?? '', author: '' }))
         : [],
   }))
   return {
@@ -149,6 +162,8 @@ function nonEmptyContactCount(r: Row): number {
 export default function PartnershipsTab() {
   const [rows, setRows] = useState<Row[]>([])
   const [query, setQuery] = useState('')
+  const [contractFilter, setContractFilter] = useState<'全て' | '締結済み' | '候補'>('全て')
+  const [showTrash, setShowTrash] = useState(false)
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
   const [savingIds, setSavingIds] = useState<Set<string>>(new Set())
@@ -224,27 +239,33 @@ export default function PartnershipsTab() {
   // 検索（サイドバーのフィルタ）
   const filteredRows = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return rows
-    return rows.filter((r) => {
-      const hay = [
-        r.university,
-        r.internal_handler,
-        r.partnership_details,
-        ...r.partner_contacts.flatMap((c) => [
-          c.name,
-          c.role,
-          c.email,
-          c.phone,
-          c.line,
-          c.messenger,
-          ...c.logs.flatMap((l) => [l.date, l.content]),
-        ]),
-      ]
-        .join(' ')
-        .toLowerCase()
-      return hay.includes(q)
-    })
-  }, [rows, query])
+    return rows
+      .filter((r) => {
+        if (contractFilter === '締結済み') return r.is_contracted
+        if (contractFilter === '候補') return !r.is_contracted
+        return true
+      })
+      .filter((r) => {
+        if (!q) return true
+        const hay = [
+          r.university,
+          r.internal_handler,
+          r.partnership_details,
+          ...r.partner_contacts.flatMap((c) => [
+            c.name,
+            c.role,
+            c.email,
+            c.phone,
+            c.line,
+            c.messenger,
+            ...c.logs.flatMap((l) => [l.date, l.content]),
+          ]),
+        ]
+          .join(' ')
+          .toLowerCase()
+        return hay.includes(q)
+      })
+  }, [rows, query, contractFilter])
 
   // 大学名でソート（読みやすさのため）
   const sortedRows = useMemo(() => {
@@ -282,6 +303,10 @@ export default function PartnershipsTab() {
             internal_handler: current.internal_handler,
             partnership_details: current.partnership_details,
             partner_contacts: current.partner_contacts,
+            is_contracted: current.is_contracted,
+            logo_url: current.logo_url,
+            documents: current.documents,
+            manager_name: current.manager_name,
           }),
         })
         if (!res.ok) {
@@ -399,7 +424,7 @@ export default function PartnershipsTab() {
       const next = r.partner_contacts.slice()
       next[idx] = {
         ...next[idx],
-        logs: [...next[idx].logs, { date: new Date().toISOString().slice(0, 10), content: '' }],
+        logs: [...next[idx].logs, { date: new Date().toISOString().slice(0, 10), content: '', author: '' }],
       }
       return { ...r, partner_contacts: next }
     })
@@ -439,7 +464,7 @@ export default function PartnershipsTab() {
     if (!legacyRows || importing) return
     if (
       !confirm(
-        `ローカルブラウザに保存されている ${legacyRows.length} 件の団体連携データを DB にインポートしますか？\n\n` +
+        `ローカルブラウザに保存されている ${legacyRows.length} 件の学校連携データを DB にインポートしますか？\n\n` +
           '※ 既に DB に同名の団体がある場合は重複して追加されます（後から手動で調整してください）\n' +
           '※ 元データは自動的にバックアップキーへ退避され、すぐには削除されません',
       )
@@ -516,7 +541,7 @@ export default function PartnershipsTab() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `団体連携_${new Date().toISOString().slice(0, 10)}.csv`
+    a.download = `学校連携_${new Date().toISOString().slice(0, 10)}.csv`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -529,7 +554,7 @@ export default function PartnershipsTab() {
   return (
     <>
       <div className="section-title">
-        団体連携
+        学校連携
         <span
           style={{
             marginLeft: 'auto',
@@ -558,6 +583,25 @@ export default function PartnershipsTab() {
         <button className="filter-btn" onClick={exportCSV}>
           ⬇ CSV出力（Excel対応）
         </button>
+        <button className="filter-btn" onClick={() => setShowTrash(true)}>
+          🗑 ゴミ箱
+        </button>
+      </div>
+
+      <div className="search-row" style={{ gap: '0.35rem' }}>
+        {(['全て', '締結済み', '候補'] as const).map((f) => (
+          <button
+            key={f}
+            className={`filter-btn ${contractFilter === f ? 'active' : ''}`}
+            onClick={() => setContractFilter(f)}
+          >
+            {f === '全て'
+              ? `全て (${rows.length})`
+              : f === '締結済み'
+              ? `締結済み (${rows.filter((r) => r.is_contracted).length})`
+              : `候補 (${rows.filter((r) => !r.is_contracted).length})`}
+          </button>
+        ))}
       </div>
 
       {legacyRows && (
@@ -576,7 +620,7 @@ export default function PartnershipsTab() {
             ローカル保存データが見つかりました（{legacyRows.length} 件）
           </div>
           <div style={{ color: 'var(--ink2)', lineHeight: 1.6, marginBottom: '0.6rem' }}>
-            以前の団体連携タブ（localStorage 版）で登録された {legacyRows.length} 件のデータがこのブラウザに残っています。
+            以前の学校連携タブ（localStorage 版）で登録された {legacyRows.length} 件のデータがこのブラウザに残っています。
             DB 同期版に切り替わったため、そのままでは他のユーザーに共有されません。
             <br />
             <strong>DB にインポート</strong> を押すと、全件を Supabase へ登録し、全員に共有されるようになります。
@@ -663,8 +707,17 @@ export default function PartnershipsTab() {
                   onClick={() => setSelectedId(r.id)}
                   type="button"
                 >
-                  <span className="pt-sidebar-uni">{r.university || '（名称未設定）'}</span>
+                  <span className="pt-sidebar-uni">
+                    {r.logo_url && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={r.logo_url} alt="" style={{ width: '16px', height: '16px', objectFit: 'contain', borderRadius: '2px', marginRight: '0.35rem', verticalAlign: 'middle' }} />
+                    )}
+                    {r.university || '（名称未設定）'}
+                  </span>
                   <span className="pt-sidebar-meta">
+                    <span className={`badge ${r.is_contracted ? 'grn' : 'gray'}`} style={{ fontSize: '0.6rem', padding: '0.1rem 0.4rem' }}>
+                      {r.is_contracted ? '締結済み' : '候補'}
+                    </span>
                     {isSaving && <span className="pt-saving-dot" title="保存中" />}
                     <span className="pt-sidebar-count">{count}</span>
                   </span>
@@ -713,6 +766,10 @@ export default function PartnershipsTab() {
       <div className="pt-note">
         ※ 1団体につき1行。先方担当は行内で複数登録できます。編集は Supabase に自動保存され、全ユーザーで共有されます（約0.6秒後に反映）。30秒ごとに他ユーザーの更新を取得します。
       </div>
+
+      <Modal open={showTrash} onClose={() => setShowTrash(false)} title="ゴミ箱">
+        <TrashPanel apiPath="/api/youth/partnerships" nameField="id" labelField="university" open={showTrash} />
+      </Modal>
     </>
   )
 }
@@ -761,7 +818,33 @@ function PartnershipDetail({
         </button>
       </div>
 
+      <div className="pt-field" style={{ marginBottom: '1rem' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={row.is_contracted}
+            onChange={(e) => onUpdate(row.id, (r) => ({ ...r, is_contracted: e.target.checked }))}
+          />
+          <span className={`badge ${row.is_contracted ? 'grn' : 'gray'}`}>
+            {row.is_contracted ? '締結済み' : '候補'}
+          </span>
+        </label>
+      </div>
+
+      <PartnerAssets row={row} onUpdate={onUpdate} />
+
       <div className="pt-detail-fields">
+        <div className="pt-field">
+          <div className="pt-field-label">責任者名</div>
+          <input
+            className="pt-cell"
+            value={row.manager_name}
+            placeholder="先方の責任者名"
+            onChange={(e) =>
+              onUpdate(row.id, (r) => ({ ...r, manager_name: e.target.value }))
+            }
+          />
+        </div>
         <div className="pt-field">
           <div className="pt-field-label">社内担当（団体全体・元の担当）</div>
           <input
@@ -888,6 +971,13 @@ function PartnershipDetail({
                         placeholder="例）大学の授業で三木が講演実施"
                         onChange={(e) => updateLog(row.id, idx, logIdx, { content: e.target.value })}
                       />
+                      <input
+                        className="pt-cell"
+                        style={{ maxWidth: '110px' }}
+                        value={l.author ?? ''}
+                        placeholder="実施者"
+                        onChange={(e) => updateLog(row.id, idx, logIdx, { author: e.target.value })}
+                      />
                       <button
                         className="pt-mini"
                         onClick={() => removeLog(row.id, idx, logIdx)}
@@ -907,5 +997,116 @@ function PartnershipDetail({
         </button>
       </div>
     </>
+  )
+}
+
+// ── ロゴ・資料アップロード ───────────────────
+async function uploadFile(file: File): Promise<PartnerDocument> {
+  const form = new FormData()
+  form.append('file', file)
+  const res = await fetch('/api/youth/upload', { method: 'POST', body: form })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error ?? `アップロード失敗 (HTTP ${res.status})`)
+  }
+  return res.json()
+}
+
+function PartnerAssets({
+  row,
+  onUpdate,
+}: {
+  row: Row
+  onUpdate: (id: string, updater: (r: Row) => Row) => void
+}) {
+  const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [uploadingDoc, setUploadingDoc] = useState(false)
+  const [assetError, setAssetError] = useState('')
+
+  const handleLogoUpload = async (file: File) => {
+    setUploadingLogo(true)
+    setAssetError('')
+    try {
+      const uploaded = await uploadFile(file)
+      onUpdate(row.id, (r) => ({ ...r, logo_url: uploaded.url }))
+    } catch (e) {
+      setAssetError(e instanceof Error ? e.message : 'ロゴのアップロードに失敗しました')
+    } finally {
+      setUploadingLogo(false)
+    }
+  }
+
+  const handleDocUpload = async (file: File) => {
+    setUploadingDoc(true)
+    setAssetError('')
+    try {
+      const uploaded = await uploadFile(file)
+      onUpdate(row.id, (r) => ({ ...r, documents: [...r.documents, uploaded] }))
+    } catch (e) {
+      setAssetError(e instanceof Error ? e.message : '資料のアップロードに失敗しました')
+    } finally {
+      setUploadingDoc(false)
+    }
+  }
+
+  const removeDoc = (idx: number) => {
+    onUpdate(row.id, (r) => ({ ...r, documents: r.documents.filter((_, i) => i !== idx) }))
+  }
+
+  return (
+    <div className="pt-field" style={{ marginBottom: '1rem' }}>
+      <div className="pt-field-label">ロゴ・資料</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          {row.logo_url && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={row.logo_url}
+              alt="ロゴ"
+              style={{ width: '40px', height: '40px', objectFit: 'contain', border: '1px solid var(--bd)', borderRadius: '4px' }}
+            />
+          )}
+          <label className="pt-add" style={{ cursor: 'pointer' }}>
+            {uploadingLogo ? 'アップロード中...' : row.logo_url ? 'ロゴを変更' : 'ロゴを追加'}
+            <input
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) handleLogoUpload(file)
+                e.target.value = ''
+              }}
+            />
+          </label>
+        </div>
+
+        <label className="pt-add" style={{ cursor: 'pointer' }}>
+          {uploadingDoc ? 'アップロード中...' : '＋ 資料を追加'}
+          <input
+            type="file"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (file) handleDocUpload(file)
+              e.target.value = ''
+            }}
+          />
+        </label>
+      </div>
+
+      {assetError && <div style={{ color: 'var(--red)', fontSize: '0.72rem', marginTop: '0.35rem' }}>{assetError}</div>}
+
+      {row.documents.length > 0 && (
+        <ul style={{ marginTop: '0.5rem', fontSize: '0.78rem', paddingLeft: '1.1rem' }}>
+          {row.documents.map((d, idx) => (
+            <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <a href={d.url} target="_blank" rel="noopener noreferrer">{d.name}</a>
+              <button className="pt-mini" onClick={() => removeDoc(idx)} title="削除">×</button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   )
 }

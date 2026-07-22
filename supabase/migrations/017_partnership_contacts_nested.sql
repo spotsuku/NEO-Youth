@@ -1,4 +1,4 @@
--- Migration 017: 団体連携 — 連絡先・ログを先方担当ごとに格納する
+-- Migration 017: 学校連携 — 連絡先・ログを先方担当ごとに格納する
 --
 -- 変更点:
 --   旧構造: 行に contact_email/phone/line/messenger と logs を持ち、

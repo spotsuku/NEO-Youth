@@ -6,11 +6,12 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 )
 
-export async function GET() {
-  const { data, error } = await supabase
-    .from('youth_candidates')
-    .select('*')
-    .order('id')
+// ?trash=true でゴミ箱（論理削除済み）一覧を取得
+export async function GET(req: NextRequest) {
+  const trash = req.nextUrl.searchParams.get('trash') === 'true'
+  let query = supabase.from('youth_candidates').select('*').order('id')
+  query = trash ? query.not('deleted_at', 'is', null) : query.is('deleted_at', null)
+  const { data, error } = await query
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
@@ -20,7 +21,10 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const { name, kana, email, type, school, grade, status, yomi, source } = body
+  const {
+    name, kana, email, type, school, grade, status, yomi, source,
+    step, entry_year, course_length, contact_method, inflow_source,
+  } = body
 
   if (!name) {
     return NextResponse.json({ error: '氏名は必須です' }, { status: 400 })
@@ -38,6 +42,11 @@ export async function POST(req: NextRequest) {
       status: status || '応募完了',
       yomi: yomi || null,
       source: source || null,
+      step: step || '未観測',
+      entry_year: entry_year || null,
+      course_length: course_length || 3,
+      contact_method: contact_method || null,
+      inflow_source: inflow_source || null,
     })
     .select()
 
