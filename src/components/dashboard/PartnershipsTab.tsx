@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import Modal from './Modal'
+import TrashPanel from './TrashPanel'
 
 // 1先方担当（人）= 連絡先＋ログ＋社内担当を内包
 interface Contact {
@@ -17,6 +19,7 @@ interface Contact {
 interface PartnershipLog {
   date: string
   content: string
+  author: string
 }
 
 interface PartnerDocument {
@@ -35,6 +38,7 @@ interface Row {
   is_contracted: boolean
   logo_url: string
   documents: PartnerDocument[]
+  manager_name: string
 }
 
 const SAVE_DEBOUNCE_MS = 600
@@ -90,7 +94,7 @@ function legacyToPayload(l: LegacyRow) {
     messenger: i === 0 ? l.contact?.messenger ?? '' : '',
     logs:
       i === 0 && Array.isArray(l.logs)
-        ? l.logs.map((x) => ({ date: x?.date ?? '', content: x?.content ?? '' }))
+        ? l.logs.map((x) => ({ date: x?.date ?? '', content: x?.content ?? '', author: '' }))
         : [],
   }))
   return {
@@ -159,6 +163,7 @@ export default function PartnershipsTab() {
   const [rows, setRows] = useState<Row[]>([])
   const [query, setQuery] = useState('')
   const [contractFilter, setContractFilter] = useState<'全て' | '締結済み' | '候補'>('全て')
+  const [showTrash, setShowTrash] = useState(false)
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
   const [savingIds, setSavingIds] = useState<Set<string>>(new Set())
@@ -301,6 +306,7 @@ export default function PartnershipsTab() {
             is_contracted: current.is_contracted,
             logo_url: current.logo_url,
             documents: current.documents,
+            manager_name: current.manager_name,
           }),
         })
         if (!res.ok) {
@@ -418,7 +424,7 @@ export default function PartnershipsTab() {
       const next = r.partner_contacts.slice()
       next[idx] = {
         ...next[idx],
-        logs: [...next[idx].logs, { date: new Date().toISOString().slice(0, 10), content: '' }],
+        logs: [...next[idx].logs, { date: new Date().toISOString().slice(0, 10), content: '', author: '' }],
       }
       return { ...r, partner_contacts: next }
     })
@@ -576,6 +582,9 @@ export default function PartnershipsTab() {
         </button>
         <button className="filter-btn" onClick={exportCSV}>
           ⬇ CSV出力（Excel対応）
+        </button>
+        <button className="filter-btn" onClick={() => setShowTrash(true)}>
+          🗑 ゴミ箱
         </button>
       </div>
 
@@ -757,6 +766,10 @@ export default function PartnershipsTab() {
       <div className="pt-note">
         ※ 1団体につき1行。先方担当は行内で複数登録できます。編集は Supabase に自動保存され、全ユーザーで共有されます（約0.6秒後に反映）。30秒ごとに他ユーザーの更新を取得します。
       </div>
+
+      <Modal open={showTrash} onClose={() => setShowTrash(false)} title="ゴミ箱">
+        <TrashPanel apiPath="/api/youth/partnerships" nameField="id" labelField="university" open={showTrash} />
+      </Modal>
     </>
   )
 }
@@ -821,6 +834,17 @@ function PartnershipDetail({
       <PartnerAssets row={row} onUpdate={onUpdate} />
 
       <div className="pt-detail-fields">
+        <div className="pt-field">
+          <div className="pt-field-label">責任者名</div>
+          <input
+            className="pt-cell"
+            value={row.manager_name}
+            placeholder="先方の責任者名"
+            onChange={(e) =>
+              onUpdate(row.id, (r) => ({ ...r, manager_name: e.target.value }))
+            }
+          />
+        </div>
         <div className="pt-field">
           <div className="pt-field-label">社内担当（団体全体・元の担当）</div>
           <input
@@ -946,6 +970,13 @@ function PartnershipDetail({
                         value={l.content}
                         placeholder="例）大学の授業で三木が講演実施"
                         onChange={(e) => updateLog(row.id, idx, logIdx, { content: e.target.value })}
+                      />
+                      <input
+                        className="pt-cell"
+                        style={{ maxWidth: '110px' }}
+                        value={l.author ?? ''}
+                        placeholder="実施者"
+                        onChange={(e) => updateLog(row.id, idx, logIdx, { author: e.target.value })}
                       />
                       <button
                         className="pt-mini"

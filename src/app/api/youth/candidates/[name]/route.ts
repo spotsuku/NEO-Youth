@@ -22,6 +22,7 @@ const ALLOWED = new Set([
   'step', 'entry_year', 'course_length',
   'next_action', 'na_due_date', 'na_written_at',
   'contact_method', 'inflow_source', 'note', 'partner_id', 'archived',
+  'deleted_at', // 復元（ゴミ箱から戻す）時に null をセットするために許可
 ])
 
 export async function PATCH(
@@ -112,6 +113,8 @@ export async function GET(
   return NextResponse.json(data[0])
 }
 
+// 論理削除（誤操作からの復旧用）。物理削除はしない。
+// 復元する場合は PATCH で { deleted_at: null } を送る。
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: { name: string } },
@@ -119,7 +122,7 @@ export async function DELETE(
   const name = decodeURIComponent(params.name)
   const { error } = await supabase
     .from('youth_candidates')
-    .delete()
+    .update({ deleted_at: new Date().toISOString() })
     .eq('name', name)
 
   if (error) {

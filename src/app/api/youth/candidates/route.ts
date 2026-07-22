@@ -6,11 +6,12 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 )
 
-export async function GET() {
-  const { data, error } = await supabase
-    .from('youth_candidates')
-    .select('*')
-    .order('id')
+// ?trash=true でゴミ箱（論理削除済み）一覧を取得
+export async function GET(req: NextRequest) {
+  const trash = req.nextUrl.searchParams.get('trash') === 'true'
+  let query = supabase.from('youth_candidates').select('*').order('id')
+  query = trash ? query.not('deleted_at', 'is', null) : query.is('deleted_at', null)
+  const { data, error } = await query
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })

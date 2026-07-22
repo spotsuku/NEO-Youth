@@ -138,7 +138,9 @@ export default function RecruitmentDashboard({ candidates: initial, sessions, ve
     <>
       <header className="db-header">
         <div className="db-logo">
-          NEO ACADEMIA <span>2nd / Dashboard</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/neo-academia-logo.png" alt="NEO ACADEMIA" className="db-logo-img" />
+          <span>2nd / Dashboard</span>
         </div>
         <nav className="db-nav">
           {TABS.map((t) => (

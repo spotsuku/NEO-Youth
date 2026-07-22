@@ -4,6 +4,7 @@ import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import type { YouthCandidate, YouthInterview } from '@/types/dashboard'
 import type { VerdictRecord } from '@/app/dashboard/page'
 import Modal from './Modal'
+import TrashPanel from './TrashPanel'
 
 interface Props {
   candidates: YouthCandidate[]
@@ -51,6 +52,7 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, o
   const [selected, setSelected] = useState<YouthCandidate | null>(null)
   const [interviewTarget, setInterviewTarget] = useState<YouthCandidate | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
+  const [showTrash, setShowTrash] = useState(false)
   const [promoting, setPromoting] = useState<Set<string>>(new Set())
 
   const handlePromote = async (name: string) => {
@@ -135,6 +137,9 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, o
         <div className="section-title" style={{ marginBottom: 0 }}>候補者管理</div>
         <button className="iv-save-btn" style={{ fontSize: '0.72rem', padding: '0.35rem 0.8rem' }} onClick={() => setShowAddForm(true)}>
           + 候補者を追加
+        </button>
+        <button className="filter-btn" style={{ fontSize: '0.72rem' }} onClick={() => setShowTrash(true)}>
+          🗑 ゴミ箱
         </button>
       </div>
 
@@ -369,6 +374,11 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, o
           onSaved={() => setShowAddForm(false)}
           onAdd={onAdd}
         />
+      </Modal>
+
+      {/* ゴミ箱モーダル（論理削除からの復元） */}
+      <Modal open={showTrash} onClose={() => setShowTrash(false)} title="ゴミ箱">
+        <TrashPanel apiPath="/api/youth/candidates" nameField="name" labelField="name" open={showTrash} />
       </Modal>
     </>
   )

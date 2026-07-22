@@ -5,64 +5,95 @@
    --mu, --bd, --bd2, --red, --gold, --grn, --blu
    ======================================== */
 
-/* HEADER */
+/* HEADER — Liquid Glass: translucent, blurred, layered highlight/shadow */
 .db-header {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(245, 242, 236, 0.96);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--bd);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(245, 242, 236, 0.72));
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 8px 24px rgba(20, 20, 20, 0.05);
   padding: 0 2rem;
   display: flex;
   align-items: center;
   gap: 2rem;
-  height: 56px;
+  height: 64px;
 }
 
 .db-logo {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
-  color: var(--red);
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
   white-space: nowrap;
 }
 
+.db-logo-img {
+  height: 28px;
+  width: auto;
+  display: block;
+}
+
 .db-logo span {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
   color: var(--mu);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
 }
 
 .db-nav {
   display: flex;
-  gap: 0;
+  align-items: center;
+  gap: 0.3rem;
   flex: 1;
   overflow-x: auto;
 }
 
 .db-nav button {
-  background: none;
-  border: none;
+  background: transparent;
+  border: 1px solid transparent;
   color: var(--mu);
   font-family: 'Zen Kaku Gothic New', sans-serif;
   font-size: 0.8rem;
-  padding: 0 1.1rem;
-  height: 56px;
+  padding: 0.5rem 1.05rem;
+  border-radius: 999px;
   cursor: pointer;
-  border-bottom: 2px solid transparent;
   white-space: nowrap;
-  transition: all 0.15s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .db-nav button:hover {
   color: var(--ink);
-  border-bottom-color: var(--red);
+  background: rgba(255, 255, 255, 0.5);
 }
 
 .db-nav button.active {
-  color: var(--red);
-  border-bottom-color: var(--red);
+  color: var(--ink);
   font-weight: 700;
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(8px) saturate(160%);
+  border-color: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 1px 3px rgba(20, 20, 20, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+}
+
+/* スマホ幅: ヘッダー・余白を詰めて、ナビは横スクロールのまま許容する */
+@media (max-width: 640px) {
+  .db-header {
+    padding: 0 1rem;
+    gap: 1rem;
+  }
+  .db-logo span {
+    display: none;
+  }
+  .db-page {
+    padding: 1.1rem 0.9rem;
+  }
+  .kpi-row {
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 0.6rem;
+  }
 }
 
 /* MAIN */
@@ -235,7 +266,7 @@
 
 .table-wrap.sticky-head thead th {
   position: sticky;
-  top: 56px; /* .db-header height */
+  top: 64px; /* .db-header height */
   z-index: 20;
   background: var(--sur2);
   box-shadow: 0 1px 0 var(--bd);

@@ -1,4 +1,4 @@
--- Migration 016: 団体連携（大学・団体との提携管理）テーブル
+-- Migration 016: 学校連携（大学・団体との提携管理）テーブル
 --
 -- 背景:
 --   PartnershipsTab は当初 localStorage のみに保存していたため、
