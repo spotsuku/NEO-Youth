@@ -1035,7 +1035,7 @@ function PartnerAssets({
               style={{ width: '40px', height: '40px', objectFit: 'contain', border: '1px solid var(--bd)', borderRadius: '4px' }}
             />
           )}
-          <label className="pt-mini" style={{ cursor: 'pointer' }}>
+          <label className="pt-add" style={{ cursor: 'pointer' }}>
             {uploadingLogo ? 'アップロード中...' : row.logo_url ? 'ロゴを変更' : 'ロゴを追加'}
             <input
               type="file"
@@ -1050,7 +1050,7 @@ function PartnerAssets({
           </label>
         </div>
 
-        <label className="pt-mini" style={{ cursor: 'pointer' }}>
+        <label className="pt-add" style={{ cursor: 'pointer' }}>
           {uploadingDoc ? 'アップロード中...' : '＋ 資料を追加'}
           <input
             type="file"
