@@ -17,6 +17,12 @@ interface ContactShape {
   logs?: { date?: string; content?: string }[]
 }
 
+interface DocumentShape {
+  name?: string
+  url?: string
+  uploaded_at?: string
+}
+
 interface RowShape {
   id?: string
   university?: string
@@ -29,6 +35,10 @@ interface RowShape {
   contact_line?: string
   contact_messenger?: string
   logs?: { date?: string; content?: string }[]
+  // 学校連携（旧: 団体連携）拡張 — 契約管理・資料添付
+  is_contracted?: boolean
+  logo_url?: string
+  documents?: DocumentShape[]
 }
 
 // 旧スキーマ → 新スキーマへ正規化（GET 結果に対する保険）
@@ -56,6 +66,9 @@ function normalize(row: RowShape) {
     internal_handler: row.internal_handler ?? '',
     partnership_details: row.partnership_details ?? '',
     partner_contacts: normalized,
+    is_contracted: row.is_contracted ?? false,
+    logo_url: row.logo_url ?? '',
+    documents: Array.isArray(row.documents) ? row.documents : [],
   }
 }
 
@@ -110,6 +123,9 @@ export async function POST(req: NextRequest) {
     contact_line: '',
     contact_messenger: '',
     logs: [],
+    is_contracted: body.is_contracted ?? false,
+    logo_url: body.logo_url ?? '',
+    documents: Array.isArray(body.documents) ? body.documents : [],
   }
 
   const { data, error } = await supabase

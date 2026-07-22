@@ -18,6 +18,10 @@ const ALLOWED = new Set([
   'ob_photo', 'ob_portal', 'ob_slack', 'ob_profile',
   'ob_motivation_written', 'ob_pledge', 'ob_handbook', 'ob_pass_criteria',
   'attended_session',
+  // アプローチ管理（ユースDB改修）
+  'step', 'entry_year', 'course_length',
+  'next_action', 'na_due_date', 'na_written_at',
+  'contact_method', 'inflow_source', 'note', 'partner_id', 'archived',
 ])
 
 export async function PATCH(
@@ -27,9 +31,17 @@ export async function PATCH(
   const name = decodeURIComponent(params.name)
   const body = await req.json()
 
+  // changed_by は候補者テーブルのカラムではなく、step_history への属性付けにのみ使う
+  const changedBy = typeof body.changed_by === 'string' ? body.changed_by : null
+
   const payload: Record<string, unknown> = {}
   for (const [k, v] of Object.entries(body)) {
     if (ALLOWED.has(k)) payload[k] = v
+  }
+
+  // ネクストアクションを更新したのに記入日が明示されていなければ、当日を自動セット
+  if ('next_action' in payload && !('na_written_at' in payload)) {
+    payload.na_written_at = new Date().toISOString().slice(0, 10)
   }
 
   if (Object.keys(payload).length === 0) {
@@ -62,6 +74,21 @@ export async function PATCH(
   if (!data || data.length === 0) {
     return NextResponse.json({ error: '候補者が見つかりません', searched: name }, { status: 404 })
   }
+
+  // step が変わった場合、DBトリガーが自動記録した step_history の changed_by を補完する
+  // （ログイン機能がないため、クライアントが送った操作者名をベストエフォートで反映）
+  if ('step' in payload && changedBy) {
+    const { data: latest } = await supabase
+      .from('step_history')
+      .select('id')
+      .eq('youth_candidate_id', data[0].id)
+      .order('id', { ascending: false })
+      .limit(1)
+    if (latest && latest[0]) {
+      await supabase.from('step_history').update({ changed_by: changedBy }).eq('id', latest[0].id)
+    }
+  }
+
   return NextResponse.json(data[0])
 }
 

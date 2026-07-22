@@ -17,6 +17,10 @@ const ALLOWED = new Set([
   'contact_line',
   'contact_messenger',
   'logs',
+  // 学校連携（旧: 団体連携）拡張 — 契約管理・資料添付
+  'is_contracted',
+  'logo_url',
+  'documents',
 ])
 
 export async function PATCH(

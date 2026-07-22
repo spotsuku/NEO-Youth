@@ -10,6 +10,7 @@ import FlowTab from './FlowTab'
 import OnboardingTab from './OnboardingTab'
 import SessionsTab from './SessionsTab'
 import PartnershipsTab from './PartnershipsTab'
+import ApproachTab from './ApproachTab'
 
 const TABS = [
   { key: 'overview', label: '概要' },
@@ -18,7 +19,8 @@ const TABS = [
   { key: 'flow', label: '選考フロー' },
   { key: 'onboarding', label: 'オンボーディング' },
   { key: 'sessions', label: '説明会' },
-  { key: 'partnerships', label: '団体連携' },
+  { key: 'approach', label: 'アプローチ' },
+  { key: 'partnerships', label: '学校連携' },
 ] as const
 
 type TabKey = (typeof TABS)[number]['key']
@@ -223,6 +225,11 @@ export default function RecruitmentDashboard({ candidates: initial, sessions, ve
         {tab === 'sessions' && (
           <div className="db-page">
             <SessionsTab sessions={sessions} />
+          </div>
+        )}
+        {tab === 'approach' && (
+          <div className="db-page">
+            <ApproachTab candidates={candidates} onUpdate={updateCandidate} />
           </div>
         )}
         {tab === 'partnerships' && (
