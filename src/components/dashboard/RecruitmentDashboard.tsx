@@ -14,14 +14,14 @@ import ApproachTab from './ApproachTab'
 import Modal from './Modal'
 
 const TABS = [
-  { key: 'overview', label: '概要' },
-  { key: 'applicants', label: '候補者' },
-  { key: 'interviews', label: '面談記録' },
-  { key: 'flow', label: '選考フロー' },
-  { key: 'onboarding', label: 'オンボーディング' },
-  { key: 'sessions', label: '説明会' },
-  { key: 'approach', label: 'アプローチ' },
-  { key: 'partnerships', label: '学校連携' },
+  { key: 'overview', label: '概要', icon: '🏠' },
+  { key: 'applicants', label: '候補者', icon: '👥' },
+  { key: 'interviews', label: '面談記録', icon: '🗣️' },
+  { key: 'flow', label: '選考フロー', icon: '🧭' },
+  { key: 'onboarding', label: 'オンボーディング', icon: '✅' },
+  { key: 'sessions', label: '説明会', icon: '📅' },
+  { key: 'approach', label: 'アプローチ', icon: '🎯' },
+  { key: 'partnerships', label: '学校連携', icon: '🤝' },
 ] as const
 
 type TabKey = (typeof TABS)[number]['key']
@@ -184,7 +184,7 @@ export default function RecruitmentDashboard({ candidates: initial, sessions, ve
               className={`shell-nav-item ${tab === t.key ? 'active' : ''}`}
               onClick={() => setTab(t.key)}
             >
-              <span className="shell-nav-dot" />
+              <span className="shell-nav-icon">{t.icon}</span>
               {t.label}
             </button>
           ))}

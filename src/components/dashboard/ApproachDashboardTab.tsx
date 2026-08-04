@@ -146,9 +146,14 @@ export default function ApproachDashboardTab({ candidates, onDrill }: Props) {
                     onClick={() => onDrill(s)}
                     title={`${c.name} のリストへ`}
                   >
-                    <div className="kc-name">{c.name}</div>
-                    <div className="kc-sub">{c.school ?? '所属未登録'}</div>
-                    {c.next_action && <div className="kc-sub">▸ {c.next_action}</div>}
+                    <div className="kc-badge" style={{ borderColor: APPROACH_STEP_COLORS[s], color: APPROACH_STEP_COLORS[s] }}>
+                      {c.name.slice(0, 1)}
+                    </div>
+                    <div>
+                      <div className="kc-name">{c.name}</div>
+                      <div className="kc-sub">{c.school ?? '所属未登録'}</div>
+                      {c.next_action && <div className="kc-sub">▸ {c.next_action}</div>}
+                    </div>
                   </div>
                 ))}
               </div>

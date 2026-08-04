@@ -168,7 +168,8 @@ export default function OverviewTab({ candidates, applicantCount, interviewCount
   return (
     <>
       <div className="hero">
-        <div>
+        <div className="hero-body">
+          <span className="sticker hero-eyebrow">{showArchived ? 'ARCHIVE' : 'NEXT SEASON'}</span>
           <div className="hero-title display">
             {showArchived ? '2期生 選考サマリー' : '次期選考の準備中です'}
           </div>
@@ -176,8 +177,10 @@ export default function OverviewTab({ candidates, applicantCount, interviewCount
             採用充足率 {confirmed} / {target} 名（{pct}%）
           </div>
         </div>
-        <div style={{ minWidth: '220px', flex: '1 1 260px', maxWidth: '360px' }}>
-          <div className="xp-track"><div className="xp-fill" style={{ width: `${Math.min(pct, 100)}%` }} /></div>
+        <div className="hero-panel">
+          <div className="stat-label">採用充足率</div>
+          <div className="stat-value">{confirmed}<span style={{ fontSize: '0.9rem', color: 'var(--mu)', fontWeight: 600 }}> / {target}名</span></div>
+          <div className="xp-track" style={{ marginTop: '0.5rem' }}><div className="xp-fill" style={{ width: `${Math.min(pct, 100)}%` }} /></div>
         </div>
       </div>
 
