@@ -21,7 +21,7 @@ const TABS = [
   { key: 'onboarding', label: 'オンボーディング', icon: '✅' },
   { key: 'sessions', label: '説明会', icon: '📅' },
   { key: 'approach', label: 'アプローチ', icon: '🎯' },
-  { key: 'partnerships', label: '学校連携', icon: '🤝' },
+  { key: 'partnerships', label: '連携団体', icon: '🤝' },
 ] as const
 
 type TabKey = (typeof TABS)[number]['key']
@@ -76,8 +76,8 @@ export default function RecruitmentDashboard({ candidates: initial, sessions, ve
   const [archiveModalOpen, setArchiveModalOpen] = useState(false)
   const [archiving, setArchiving] = useState(false)
 
-  // 選考パイプライン系タブ（概要／候補者／面談記録／選考フロー／オンボーディング／説明会）のみ
-  // アーカイブ切替の対象。アプローチ・学校連携は常に全候補者を見る。
+  // 選考パイプライン系タブ（概要／候補者／面談記録／選考フロー／オンボーディング／説明会／アプローチ）
+  // がアーカイブ切替の対象。連携団体（学校連携）は年間通して継続する関係構築なので対象外。
   const selectionCandidates = useMemo(
     () => (showArchived ? candidates : candidates.filter((c) => !c.selection_archived_at)),
     [candidates, showArchived],
@@ -86,6 +86,7 @@ export default function RecruitmentDashboard({ candidates: initial, sessions, ve
     () => candidates.filter((c) => c.selection_archived_at).length,
     [candidates],
   )
+  const visibleSessions = useMemo(() => (showArchived ? sessions : []), [sessions, showArchived])
 
   const archiveSelection = useCallback(async () => {
     setArchiving(true)
@@ -201,7 +202,7 @@ export default function RecruitmentDashboard({ candidates: initial, sessions, ve
   }, [])
 
   const interviewed = selectionCandidates.filter((c) => c.interview_date)
-  const showArchiveToolbar = tab !== 'approach' && tab !== 'partnerships'
+  const showArchiveToolbar = tab !== 'partnerships'
 
   const renderNavEntry = (entry: NavEntry, sub = false) => {
     if (entry.type === 'tab') {
@@ -287,8 +288,8 @@ export default function RecruitmentDashboard({ candidates: initial, sessions, ve
           <Modal open={archiveModalOpen} onClose={() => setArchiveModalOpen(false)} title="選考をアーカイブしますか？">
             <p style={{ fontSize: '0.85rem', color: 'var(--mu)', marginBottom: '1rem', lineHeight: 1.7 }}>
               現在の候補者{candidates.filter((c) => !c.deleted_at && !c.selection_archived_at).length}名の選考データを
-              アーカイブします。データは削除されず、「過去の選考データを表示」で後からいつでも確認できます。
-              アプローチ管理・学校連携のデータは影響を受けません。
+              アーカイブします（アプローチ・説明会も含む）。データは削除されず、「過去の選考データを表示」で
+              後からいつでも確認できます。連携団体のデータは影響を受けません。
             </p>
             <div className="modal-actions">
               <button className="btn btn-secondary" onClick={() => setArchiveModalOpen(false)} disabled={archiving}>
@@ -305,7 +306,7 @@ export default function RecruitmentDashboard({ candidates: initial, sessions, ve
               candidates={selectionCandidates}
               applicantCount={selectionCandidates.length}
               interviewCount={interviewed.length}
-              sessionCount={sessions.length}
+              sessionCount={visibleSessions.length}
               verdictMap={verdictMap}
               showArchived={showArchived}
             />
@@ -324,8 +325,8 @@ export default function RecruitmentDashboard({ candidates: initial, sessions, ve
           {tab === 'interviews' && <InterviewsTab candidates={interviewed} />}
           {tab === 'flow' && <FlowTab candidates={selectionCandidates} onUpdate={updateCandidate} />}
           {tab === 'onboarding' && <OnboardingTab candidates={selectionCandidates} onUpdate={updateCandidate} />}
-          {tab === 'sessions' && <SessionsTab sessions={sessions} />}
-          {tab === 'approach' && <ApproachTab candidates={candidates} onUpdate={updateCandidate} />}
+          {tab === 'sessions' && <SessionsTab sessions={visibleSessions} />}
+          {tab === 'approach' && <ApproachTab candidates={selectionCandidates} onUpdate={updateCandidate} />}
           {tab === 'partnerships' && <PartnershipsTab />}
         </main>
       </div>

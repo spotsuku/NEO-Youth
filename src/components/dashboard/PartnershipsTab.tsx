@@ -464,7 +464,7 @@ export default function PartnershipsTab() {
     if (!legacyRows || importing) return
     if (
       !confirm(
-        `ローカルブラウザに保存されている ${legacyRows.length} 件の学校連携データを DB にインポートしますか？\n\n` +
+        `ローカルブラウザに保存されている ${legacyRows.length} 件の連携団体データを DB にインポートしますか？\n\n` +
           '※ 既に DB に同名の団体がある場合は重複して追加されます（後から手動で調整してください）\n' +
           '※ 元データは自動的にバックアップキーへ退避され、すぐには削除されません',
       )
@@ -541,7 +541,7 @@ export default function PartnershipsTab() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `学校連携_${new Date().toISOString().slice(0, 10)}.csv`
+    a.download = `連携団体_${new Date().toISOString().slice(0, 10)}.csv`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -554,7 +554,7 @@ export default function PartnershipsTab() {
   return (
     <>
       <div className="flex-between" style={{ marginBottom: '1.1rem' }}>
-        <div className="section-title" style={{ marginBottom: 0 }}>学校連携</div>
+        <div className="section-title" style={{ marginBottom: 0 }}>連携団体</div>
         <span style={{ fontSize: '0.72rem', fontWeight: 700, color: savingIds.size > 0 ? 'var(--gold)' : 'var(--grn)' }}>
           {savingIds.size === 0 && !loading && <span className="live-dot" />}
           {syncLabel}
@@ -602,7 +602,7 @@ export default function PartnershipsTab() {
             ローカル保存データが見つかりました（{legacyRows.length} 件）
           </div>
           <div style={{ color: 'var(--ink2)', lineHeight: 1.6, marginBottom: '0.6rem', fontSize: '0.78rem' }}>
-            以前の学校連携タブ（localStorage 版）で登録された {legacyRows.length} 件のデータがこのブラウザに残っています。
+            以前の連携団体タブ（localStorage 版）で登録された {legacyRows.length} 件のデータがこのブラウザに残っています。
             DB 同期版に切り替わったため、そのままでは他のユーザーに共有されません。
             <br />
             <strong>DB にインポート</strong> を押すと、全件を Supabase へ登録し、全員に共有されるようになります。
