@@ -26,8 +26,11 @@ const TABS = [
 
 type TabKey = (typeof TABS)[number]['key']
 
-// サイドバーの表示構造: 概要 → 募集活動（アプローチ/説明会/学校連携） →
-// 候補者 → 選考フロー → 面談（面談記録/面談シート） → オンボーディング
+// サイドバーの表示構造: 概要 → 集客・関係構築（人を集める活動） →
+// 候補者対応（一人ひとりを選考〜定着まで進める活動）の2グループ構成。
+// 「選考フロー」を「候補者」から切り離さないことで、候補者個人を
+// 扱う一連の画面（候補者/選考フロー/面談記録/面談シート/オンボーディング）
+// を一つのまとまりとして認識しやすくしている。
 type NavEntry =
   | { type: 'tab'; key: TabKey }
   | { type: 'link'; href: string; label: string; icon: string }
@@ -37,24 +40,24 @@ const SIDEBAR_NAV: NavEntry[] = [
   { type: 'tab', key: 'overview' },
   {
     type: 'group',
-    label: '募集活動',
+    label: '集客・関係構築',
     items: [
       { type: 'tab', key: 'approach' },
       { type: 'tab', key: 'sessions' },
       { type: 'tab', key: 'partnerships' },
     ],
   },
-  { type: 'tab', key: 'applicants' },
-  { type: 'tab', key: 'flow' },
   {
     type: 'group',
-    label: '面談',
+    label: '候補者対応',
     items: [
+      { type: 'tab', key: 'applicants' },
+      { type: 'tab', key: 'flow' },
       { type: 'tab', key: 'interviews' },
       { type: 'link', href: '/', label: '面談シート', icon: '📝' },
+      { type: 'tab', key: 'onboarding' },
     ],
   },
-  { type: 'tab', key: 'onboarding' },
 ]
 
 interface Props {
