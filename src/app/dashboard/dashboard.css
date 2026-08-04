@@ -73,13 +73,13 @@
 .shell-nav-item:active { transform: translateY(3px); box-shadow: 0 0 0 var(--bd); }
 
 .shell-nav-item.active {
-  background: var(--neo-pink);
+  background: #fff;
   border-color: var(--neo-ink);
-  color: #fff;
-  box-shadow: 0 4px 0 var(--neo-pink-strong);
+  color: var(--neo-ink);
+  box-shadow: 0 4px 0 var(--neo-ink);
 }
-.shell-nav-item.active:hover { border-color: var(--neo-ink); color: #fff; }
-.shell-nav-item.active:active { transform: translateY(4px); box-shadow: 0 0 0 var(--neo-pink-strong); }
+.shell-nav-item.active:hover { border-color: var(--neo-ink); color: var(--neo-ink); }
+.shell-nav-item.active:active { transform: translateY(4px); box-shadow: 0 0 0 var(--neo-ink); }
 
 .shell-nav-group-label {
   font-size: 0.62rem;
@@ -179,13 +179,13 @@
   .shell-bottomnav-item:active { transform: translateY(2px); box-shadow: 0 0 0 var(--bd); }
 
   .shell-bottomnav-item.active {
-    background: var(--neo-pink);
+    background: #fff;
     border-color: var(--neo-ink);
-    color: #fff;
-    box-shadow: 0 3px 0 var(--neo-pink-strong);
+    color: var(--neo-ink);
+    box-shadow: 0 3px 0 var(--neo-ink);
   }
-  .shell-bottomnav-item.active:hover { border-color: var(--neo-ink); color: #fff; }
-  .shell-bottomnav-item.active:active { transform: translateY(3px); box-shadow: 0 0 0 var(--neo-pink-strong); }
+  .shell-bottomnav-item.active:hover { border-color: var(--neo-ink); color: var(--neo-ink); }
+  .shell-bottomnav-item.active:active { transform: translateY(3px); box-shadow: 0 0 0 var(--neo-ink); }
 }
 
 /* ============ TOOLBAR (archive toggle etc.) ============ */
