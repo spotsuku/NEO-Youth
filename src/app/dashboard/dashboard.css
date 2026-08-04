@@ -55,8 +55,8 @@
   display: flex;
   align-items: center;
   gap: 0.65rem;
-  background: rgba(255,255,255,0.7);
-  border: 2px solid var(--bd);
+  background: transparent;
+  border: none;
   color: var(--ink2);
   font-family: inherit;
   font-size: 0.84rem;
@@ -65,14 +65,11 @@
   border-radius: 999px;
   cursor: pointer;
   text-align: left;
-  box-shadow: 0 3px 0 var(--bd);
 }
 
 .shell-nav-item.active {
   background: #fff;
-  border-color: var(--neo-ink);
   color: var(--neo-ink);
-  box-shadow: 0 4px 0 var(--neo-ink);
 }
 
 .shell-nav-group-label {
@@ -97,11 +94,11 @@
   width: 22px;
   height: 22px;
   border-radius: 7px;
-  background: rgba(63,53,70,0.06);
+  background: var(--sur2);
   font-size: 0.85rem;
   flex-shrink: 0;
 }
-.shell-nav-item.active .shell-nav-icon { background: rgba(255,255,255,0.28); }
+.shell-nav-item.active .shell-nav-icon { background: var(--sur2); }
 
 .shell-foot {
   border-top: 2px dashed var(--bd);
@@ -233,7 +230,7 @@
 .hero-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.4rem; }
 
 .hero-panel {
-  background: rgba(255,255,255,0.88);
+  background: #fff;
   border: 2px solid var(--neo-ink);
   border-radius: var(--neo-radius-card);
   padding: 0.9rem 1.1rem;
