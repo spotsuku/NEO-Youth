@@ -26,6 +26,37 @@ const TABS = [
 
 type TabKey = (typeof TABS)[number]['key']
 
+// サイドバーの表示構造: 概要 → 募集活動（アプローチ/説明会/学校連携） →
+// 候補者 → 選考フロー → 面談（面談記録/面談シート） → オンボーディング
+type NavEntry =
+  | { type: 'tab'; key: TabKey }
+  | { type: 'link'; href: string; label: string; icon: string }
+  | { type: 'group'; label: string; items: NavEntry[] }
+
+const SIDEBAR_NAV: NavEntry[] = [
+  { type: 'tab', key: 'overview' },
+  {
+    type: 'group',
+    label: '募集活動',
+    items: [
+      { type: 'tab', key: 'approach' },
+      { type: 'tab', key: 'sessions' },
+      { type: 'tab', key: 'partnerships' },
+    ],
+  },
+  { type: 'tab', key: 'applicants' },
+  { type: 'tab', key: 'flow' },
+  {
+    type: 'group',
+    label: '面談',
+    items: [
+      { type: 'tab', key: 'interviews' },
+      { type: 'link', href: '/', label: '面談シート', icon: '📝' },
+    ],
+  },
+  { type: 'tab', key: 'onboarding' },
+]
+
 interface Props {
   candidates: YouthCandidate[]
   sessions: YouthSession[]
@@ -169,6 +200,36 @@ export default function RecruitmentDashboard({ candidates: initial, sessions, ve
   const interviewed = selectionCandidates.filter((c) => c.interview_date)
   const showArchiveToolbar = tab !== 'approach' && tab !== 'partnerships'
 
+  const renderNavEntry = (entry: NavEntry, sub = false) => {
+    if (entry.type === 'tab') {
+      const t = TABS.find((x) => x.key === entry.key)!
+      return (
+        <button
+          key={t.key}
+          className={`shell-nav-item ${sub ? 'shell-nav-subitem' : ''} ${tab === t.key ? 'active' : ''}`}
+          onClick={() => setTab(t.key)}
+        >
+          <span className="shell-nav-icon">{t.icon}</span>
+          {t.label}
+        </button>
+      )
+    }
+    if (entry.type === 'link') {
+      return (
+        <a key={entry.href} className={`shell-nav-item ${sub ? 'shell-nav-subitem' : ''}`} href={entry.href}>
+          <span className="shell-nav-icon">{entry.icon}</span>
+          {entry.label}
+        </a>
+      )
+    }
+    return (
+      <div key={entry.label}>
+        <div className="shell-nav-group-label">{entry.label}</div>
+        {entry.items.map((item) => renderNavEntry(item, true))}
+      </div>
+    )
+  }
+
   return (
     <div className="shell">
       <aside className="shell-sidebar">
@@ -178,16 +239,7 @@ export default function RecruitmentDashboard({ candidates: initial, sessions, ve
           <span className="shell-logo-text">2nd<br />Dashboard</span>
         </div>
         <nav className="shell-nav">
-          {TABS.map((t) => (
-            <button
-              key={t.key}
-              className={`shell-nav-item ${tab === t.key ? 'active' : ''}`}
-              onClick={() => setTab(t.key)}
-            >
-              <span className="shell-nav-icon">{t.icon}</span>
-              {t.label}
-            </button>
-          ))}
+          {SIDEBAR_NAV.map((entry) => renderNavEntry(entry))}
         </nav>
       </aside>
 
