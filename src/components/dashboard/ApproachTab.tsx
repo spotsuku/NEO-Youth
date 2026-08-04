@@ -24,14 +24,22 @@ export default function ApproachTab({ candidates, onUpdate }: Props) {
 
   return (
     <>
-      <div className="search-row" style={{ gap: '0.35rem' }}>
-        <button className={`filter-btn ${subView === 'dashboard' ? 'active' : ''}`} onClick={() => setSubView('dashboard')}>
-          ダッシュボード
-        </button>
-        <button className={`filter-btn ${subView === 'list' ? 'active' : ''}`} onClick={() => setSubView('list')}>
-          リスト
-        </button>
-        <button className="filter-btn" onClick={() => setShowOptions(true)} style={{ marginLeft: 'auto' }}>
+      <div className="toolbar">
+        <div className="flex-row">
+          <button
+            className={`btn-chip ${subView === 'dashboard' ? 'active' : ''}`}
+            onClick={() => setSubView('dashboard')}
+          >
+            ダッシュボード
+          </button>
+          <button
+            className={`btn-chip ${subView === 'list' ? 'active' : ''}`}
+            onClick={() => setSubView('list')}
+          >
+            リスト
+          </button>
+        </div>
+        <button className="btn btn-secondary btn-sm" style={{ marginLeft: 'auto' }} onClick={() => setShowOptions(true)}>
           ⚙ 選択肢を管理
         </button>
       </div>

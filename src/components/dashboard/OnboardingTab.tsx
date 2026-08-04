@@ -53,94 +53,84 @@ export default function OnboardingTab({ candidates, onUpdate }: Props) {
 
   return (
     <>
-      <div className="kpi-row">
-        <div className="kpi-card grn">
-          <div className="kpi-label">対象者数</div>
-          <div className="kpi-value">
-            {candidates.length}
-            <span> 名</span>
-          </div>
+      <div className="grid grid-3" style={{ marginBottom: '1.4rem' }}>
+        <div className="card-state mint">
+          <div className="stat-label">対象者数</div>
+          <div className="stat-value">{candidates.length}<span style={{ fontSize: '0.9rem', fontWeight: 700 }}> 名</span></div>
         </div>
-        <div className="kpi-card gold">
-          <div className="kpi-label">完了タスク</div>
-          <div className="kpi-value">
-            {doneChecks}
-            <span> / {totalChecks}</span>
-          </div>
+        <div className="card-state sun">
+          <div className="stat-label">完了タスク</div>
+          <div className="stat-value">{doneChecks}<span style={{ fontSize: '0.9rem', fontWeight: 700 }}> / {totalChecks}</span></div>
         </div>
-        <div className="kpi-card red">
-          <div className="kpi-label">進捗率</div>
-          <div className="kpi-value">
-            {totalChecks > 0 ? Math.round((doneChecks / totalChecks) * 100) : 0}
-            <span>%</span>
-          </div>
+        <div className="card-state danger">
+          <div className="stat-label">進捗率</div>
+          <div className="stat-value">{totalChecks > 0 ? Math.round((doneChecks / totalChecks) * 100) : 0}<span style={{ fontSize: '0.9rem', fontWeight: 700 }}>%</span></div>
         </div>
       </div>
 
-      <div className="progress-wrap">
-        <div className="progress-label">
+      <div className="card-info" style={{ marginBottom: '1.4rem' }}>
+        <div className="xp-head">
           <span>オンボーディング全体進捗</span>
           <span>{doneChecks} / {totalChecks}</span>
         </div>
-        <div className="progress-bar">
+        <div className="xp-track">
           <div
-            className="progress-fill grn"
+            className="xp-fill mint"
             style={{ width: totalChecks > 0 ? `${(doneChecks / totalChecks) * 100}%` : '0%' }}
           />
         </div>
       </div>
 
       {/* 変更履歴トグル */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '1rem' }}>
+      <div className="flex-between" style={{ marginBottom: '1rem' }}>
         <div className="section-title" style={{ marginBottom: 0 }}>候補者別チェックリスト</div>
         <button
-          className="detail-btn"
+          className="btn btn-secondary btn-sm"
           onClick={() => setShowLog(!showLog)}
-          style={{ fontSize: '0.68rem' }}
         >
           {showLog ? '履歴を閉じる' : `変更履歴 (${logs.length})`}
         </button>
       </div>
 
       {showLog && (
-        <div className="ob-log-panel">
+        <div className="card-info" style={{ marginBottom: '1.4rem' }}>
           {logs.length === 0 ? (
-            <div style={{ color: 'var(--mu)', fontSize: '0.78rem', textAlign: 'center', padding: '1rem' }}>
-              変更履歴はありません
-            </div>
+            <div className="empty-state">変更履歴はありません</div>
           ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th>日時</th>
-                  <th>候補者</th>
-                  <th>項目</th>
-                  <th>操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                {logs.slice(0, 50).map((l) => (
-                  <tr key={l.id}>
-                    <td style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.68rem', whiteSpace: 'nowrap' }}>
-                      {new Date(l.changed_at).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                    </td>
-                    <td style={{ fontWeight: 500 }}>{l.candidate_name}</td>
-                    <td>{l.field_label}</td>
-                    <td>
-                      <span className={`badge ${l.new_value ? 'grn' : 'gray'}`}>
-                        {l.new_value ? '完了' : '取消'}
-                      </span>
-                    </td>
+            <div className="table-wrap">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>日時</th>
+                    <th>候補者</th>
+                    <th>項目</th>
+                    <th>操作</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {logs.slice(0, 50).map((l) => (
+                    <tr key={l.id}>
+                      <td style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.68rem', whiteSpace: 'nowrap' }}>
+                        {new Date(l.changed_at).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                      </td>
+                      <td style={{ fontWeight: 600 }}>{l.candidate_name}</td>
+                      <td>{l.field_label}</td>
+                      <td>
+                        <span className={`badge ${l.new_value ? 'grn' : 'gray'}`}>
+                          {l.new_value ? '完了' : '取消'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       )}
 
       <div className="table-wrap">
-        <table className="ob-table">
+        <table className="table">
           <thead>
             <tr>
               <th style={{ position: 'sticky', left: 0, background: 'var(--sur2)', zIndex: 2 }}>氏名</th>
@@ -162,29 +152,27 @@ export default function OnboardingTab({ candidates, onUpdate }: Props) {
                       left: 0,
                       background: 'var(--sur)',
                       zIndex: 1,
-                      fontWeight: 600,
+                      fontWeight: 700,
                       whiteSpace: 'nowrap',
                     }}
                   >
                     {c.name}
                   </td>
                   {OB_FIELDS.map((f) => (
-                    <td key={f} style={{ textAlign: 'center' }}>
-                      <button
-                        className={`ob-cell ${c[f] ? 'checked' : ''}`}
-                        onClick={() => toggle(c, f)}
-                        type="button"
-                      >
-                        {c[f] ? '\u2713' : ''}
-                      </button>
+                    <td key={f} className="table-check">
+                      <input
+                        type="checkbox"
+                        checked={!!c[f]}
+                        onChange={() => toggle(c, f)}
+                      />
                     </td>
                   ))}
                   <td>
-                    <div className="ob-row-progress">
-                      <div className="ob-row-bar">
-                        <div className="ob-row-fill" style={{ width: `${pct}%` }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '110px' }}>
+                      <div className="xp-track" style={{ flex: 1 }}>
+                        <div className="xp-fill mint" style={{ width: `${pct}%` }} />
                       </div>
-                      <span className="ob-row-pct">{done}/{OB_FIELDS.length}</span>
+                      <span style={{ fontSize: '0.68rem', color: 'var(--mu)', fontFamily: "'JetBrains Mono', monospace", whiteSpace: 'nowrap' }}>{done}/{OB_FIELDS.length}</span>
                     </div>
                   </td>
                 </tr>

@@ -80,28 +80,34 @@ export default function FlowTab({ candidates, onUpdate }: Props) {
   return (
     <>
       {/* ファネル */}
-      <div className="funnel-summary">
-        {STATUSES.map((s) => {
-          const n = count(s.key)
-          return (
-            <div className="funnel-step" key={s.key}>
-              <div className="funnel-step-bar" style={{ width: `${total > 0 ? Math.max((n / total) * 100, 3) : 3}%`, background: s.color }} />
-              <div className="funnel-step-label">{s.key} ({n})</div>
-            </div>
-          )
-        })}
+      <div className="card-info" style={{ marginBottom: '1.4rem' }}>
+        <div className="section-label">選考ファネル</div>
+        <div className="stepper">
+          {STATUSES.map((s) => {
+            const n = count(s.key)
+            const pct = total > 0 ? Math.max((n / total) * 100, n > 0 ? 6 : 0) : 0
+            return (
+              <div className="stepper-item" key={s.key}>
+                <div className="stepper-label">{s.key}</div>
+                <div className="stepper-track">
+                  <div className="stepper-fill" style={{ width: `${pct}%`, background: s.color }}>
+                    {n}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
       </div>
 
       {/* カンバンボード（横スクロール） */}
       <div className="section-title">ステータス管理（ドラッグで移動）</div>
-      <div className="kanban-scroll">
-        <div className="kanban-board-row">
-          {columns.map((col) => (
-            <KanbanCol key={col.key} col={col} dragName={dragName} overCol={overCol}
-              onDragStart={handleDragStart} onDragOver={handleDragOver} onDrop={handleDrop}
-              onDragEnd={resetDrag} setOverCol={setOverCol} onReject={handleReject} />
-          ))}
-        </div>
+      <div className="kanban">
+        {columns.map((col) => (
+          <KanbanCol key={col.key} col={col} dragName={dragName} overCol={overCol}
+            onDragStart={handleDragStart} onDragOver={handleDragOver} onDrop={handleDrop}
+            onDragEnd={resetDrag} setOverCol={setOverCol} onReject={handleReject} />
+        ))}
       </div>
     </>
   )
@@ -121,31 +127,37 @@ function KanbanCol({ col, dragName, overCol, onDragStart, onDragOver, onDrop, on
 }) {
   return (
     <div
-      className={`kanban-column ${overCol === col.key ? 'drag-over' : ''}`}
+      className="kanban-col"
       onDragOver={(e) => onDragOver(e, col.key)}
       onDragLeave={() => setOverCol(null)}
       onDrop={() => onDrop(col.key)}
+      style={overCol === col.key ? { outline: `2px dashed ${col.color}`, outlineOffset: '2px', borderRadius: 'var(--neo-radius-control)' } : undefined}
     >
-      <div className="kanban-col-head" style={{ borderBottomColor: col.color }}>
-        <span style={{ color: col.color }}>{col.key}</span>
+      <div className="kanban-col-head" style={{ borderBottom: `2px solid ${col.color}`, paddingBottom: '0.4rem' }}>
+        <span className="kanban-col-title" style={{ color: col.color }}>{col.key}</span>
         <span className="kanban-col-count">{col.candidates.filter((c) => !c.rejected_at).length}</span>
       </div>
       <div className="kanban-col-body">
         {col.candidates.map((c) => (
           <div
             key={c.name}
-            className={`kanban-card ${dragName === c.name ? 'dragging' : ''} ${c.rejected_at ? 'rejected' : ''}`}
+            className="card-info kanban-card"
             draggable
             onDragStart={() => onDragStart(c.name)}
             onDragEnd={onDragEnd}
+            style={{
+              opacity: dragName === c.name ? 0.4 : c.rejected_at ? 0.5 : 1,
+              padding: '0.7rem 0.85rem',
+            }}
           >
-            <div className="kc-top">
+            <div className="flex-between" style={{ gap: '0.4rem' }}>
               <div className="kc-name">{c.name}</div>
               <button
-                className={`kc-reject-btn ${c.rejected_at ? 'active' : ''}`}
+                className="btn btn-ghost btn-sm"
                 onClick={(e) => { e.stopPropagation(); onReject(c.name) }}
                 title={c.rejected_at ? '不合格を取消' : '不合格にする'}
                 type="button"
+                style={c.rejected_at ? { color: 'var(--red)' } : undefined}
               >
                 ✕
               </button>
@@ -153,7 +165,7 @@ function KanbanCol({ col, dragName, overCol, onDragStart, onDragOver, onDrop, on
             <div className="kc-sub">{c.school || c.type || '-'}</div>
           </div>
         ))}
-        {col.candidates.length === 0 && <div className="kanban-empty">ここにドロップ</div>}
+        {col.candidates.length === 0 && <div className="empty-state" style={{ padding: '1rem 0.5rem', fontSize: '0.72rem' }}>ここにドロップ</div>}
       </div>
     </div>
   )

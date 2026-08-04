@@ -553,46 +553,38 @@ export default function PartnershipsTab() {
   // ── レンダリング ────────────────────────
   return (
     <>
-      <div className="section-title">
-        学校連携
-        <span
-          style={{
-            marginLeft: 'auto',
-            fontSize: '0.62rem',
-            letterSpacing: '0.04em',
-            textTransform: 'none',
-            color: savingIds.size > 0 ? 'var(--gold)' : 'var(--grn)',
-            fontWeight: 600,
-          }}
-        >
+      <div className="flex-between" style={{ marginBottom: '1.1rem' }}>
+        <div className="section-title" style={{ marginBottom: 0 }}>学校連携</div>
+        <span style={{ fontSize: '0.72rem', fontWeight: 700, color: savingIds.size > 0 ? 'var(--gold)' : 'var(--grn)' }}>
+          {savingIds.size === 0 && !loading && <span className="live-dot" />}
           {syncLabel}
         </span>
       </div>
 
       <div className="search-row">
         <input
-          className="search-input"
+          className="input"
           type="text"
           placeholder="大学名・担当者・提携内容・ログで検索..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
-        <button className="filter-btn" onClick={addRow}>
+        <button className="btn btn-primary" onClick={addRow}>
           ＋ 行を追加
         </button>
-        <button className="filter-btn" onClick={exportCSV}>
+        <button className="btn btn-secondary" onClick={exportCSV}>
           ⬇ CSV出力（Excel対応）
         </button>
-        <button className="filter-btn" onClick={() => setShowTrash(true)}>
+        <button className="btn btn-secondary" onClick={() => setShowTrash(true)}>
           🗑 ゴミ箱
         </button>
       </div>
 
-      <div className="search-row" style={{ gap: '0.35rem' }}>
+      <div className="flex-row" style={{ marginBottom: '1.1rem' }}>
         {(['全て', '締結済み', '候補'] as const).map((f) => (
           <button
             key={f}
-            className={`filter-btn ${contractFilter === f ? 'active' : ''}`}
+            className={`btn-chip ${contractFilter === f ? 'active' : ''}`}
             onClick={() => setContractFilter(f)}
           >
             {f === '全て'
@@ -605,21 +597,11 @@ export default function PartnershipsTab() {
       </div>
 
       {legacyRows && (
-        <div
-          style={{
-            marginBottom: '0.9rem',
-            padding: '0.8rem 1rem',
-            fontSize: '0.78rem',
-            color: 'var(--ink)',
-            background: 'rgba(196,136,42,0.08)',
-            border: '1px solid rgba(196,136,42,0.35)',
-            borderRadius: '5px',
-          }}
-        >
-          <div style={{ fontWeight: 700, color: 'var(--gold)', marginBottom: '0.35rem' }}>
+        <div className="card-state sun" style={{ marginBottom: '1.1rem' }}>
+          <div style={{ fontWeight: 800, color: 'var(--gold)', marginBottom: '0.35rem', fontSize: '0.82rem' }}>
             ローカル保存データが見つかりました（{legacyRows.length} 件）
           </div>
-          <div style={{ color: 'var(--ink2)', lineHeight: 1.6, marginBottom: '0.6rem' }}>
+          <div style={{ color: 'var(--ink2)', lineHeight: 1.6, marginBottom: '0.6rem', fontSize: '0.78rem' }}>
             以前の学校連携タブ（localStorage 版）で登録された {legacyRows.length} 件のデータがこのブラウザに残っています。
             DB 同期版に切り替わったため、そのままでは他のユーザーに共有されません。
             <br />
@@ -627,14 +609,7 @@ export default function PartnershipsTab() {
             元データはブラウザ内のバックアップキーに自動退避されます（即時には削除しません）。
           </div>
           {importStatus && (
-            <div
-              style={{
-                fontSize: '0.72rem',
-                color: 'var(--mu)',
-                marginBottom: '0.5rem',
-                fontFamily: "'JetBrains Mono', monospace",
-              }}
-            >
+            <div className="field-hint" style={{ marginBottom: '0.5rem', fontFamily: "'JetBrains Mono', monospace" }}>
               進行状況: {importStatus.done} / {importStatus.total}
             </div>
           )}
@@ -651,16 +626,11 @@ export default function PartnershipsTab() {
               {importResult}
             </div>
           )}
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button
-              className="filter-btn"
-              onClick={importLegacy}
-              disabled={importing}
-              style={{ borderColor: 'var(--gold)', color: 'var(--gold)' }}
-            >
+          <div className="flex-row">
+            <button className="btn btn-secondary btn-sm" onClick={importLegacy} disabled={importing}>
               {importing ? 'インポート中...' : `⬆ DB にインポート（${legacyRows.length} 件）`}
             </button>
-            <button className="filter-btn" onClick={dismissLegacy} disabled={importing}>
+            <button className="btn btn-ghost btn-sm" onClick={dismissLegacy} disabled={importing}>
               今は閉じる
             </button>
           </div>
@@ -668,31 +638,20 @@ export default function PartnershipsTab() {
       )}
 
       {errorMsg && (
-        <div
-          style={{
-            marginBottom: '0.8rem',
-            padding: '0.5rem 0.8rem',
-            fontSize: '0.75rem',
-            color: 'var(--red)',
-            background: 'rgba(192,57,43,0.06)',
-            border: '1px solid rgba(192,57,43,0.2)',
-            borderRadius: '4px',
-            whiteSpace: 'pre-wrap',
-          }}
-        >
+        <div className="card-state danger" style={{ marginBottom: '1.1rem', fontSize: '0.75rem', whiteSpace: 'pre-wrap', color: 'var(--red)' }}>
           {errorMsg}
         </div>
       )}
 
-      <div className="pt-split">
+      <div className="split">
         {/* 左: 大学一覧サイドバー */}
-        <aside className="pt-sidebar">
-          <div className="pt-sidebar-head">
+        <aside className="card-info split-side">
+          <div className="section-label">
             大学・団体（{sortedRows.length}{query ? ` / ${rows.length}` : ''}）
           </div>
-          <div className="pt-sidebar-list">
+          <div>
             {sortedRows.length === 0 && !loading && (
-              <div className="pt-empty" style={{ padding: '1rem', textAlign: 'center' }}>
+              <div className="empty-state">
                 {query ? '該当する団体がありません' : '団体がまだ登録されていません'}
               </div>
             )}
@@ -703,23 +662,24 @@ export default function PartnershipsTab() {
               return (
                 <button
                   key={r.id}
-                  className={`pt-sidebar-item ${isSelected ? 'active' : ''}`}
+                  className={`split-list-item ${isSelected ? 'active' : ''}`}
                   onClick={() => setSelectedId(r.id)}
                   type="button"
+                  style={{ width: '100%', border: 'none', background: isSelected ? 'var(--neo-pink)' : 'transparent', font: 'inherit' }}
                 >
-                  <span className="pt-sidebar-uni">
+                  <span style={{ display: 'flex', alignItems: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {r.logo_url && (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={r.logo_url} alt="" style={{ width: '16px', height: '16px', objectFit: 'contain', borderRadius: '2px', marginRight: '0.35rem', verticalAlign: 'middle' }} />
+                      <img src={r.logo_url} alt="" style={{ width: '16px', height: '16px', objectFit: 'contain', borderRadius: '2px', marginRight: '0.4rem', flexShrink: 0 }} />
                     )}
                     {r.university || '（名称未設定）'}
                   </span>
-                  <span className="pt-sidebar-meta">
-                    <span className={`badge ${r.is_contracted ? 'grn' : 'gray'}`} style={{ fontSize: '0.6rem', padding: '0.1rem 0.4rem' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
+                    <span className={`badge ${r.is_contracted ? 'grn' : 'gray'}`}>
                       {r.is_contracted ? '締結済み' : '候補'}
                     </span>
-                    {isSaving && <span className="pt-saving-dot" title="保存中" />}
-                    <span className="pt-sidebar-count">{count}</span>
+                    {isSaving && <span className="live-dot" title="保存中" />}
+                    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.68rem', opacity: 0.8 }}>{count}</span>
                   </span>
                 </button>
               )
@@ -728,16 +688,9 @@ export default function PartnershipsTab() {
         </aside>
 
         {/* 右: 詳細パネル */}
-        <section className="pt-detail">
+        <section className="card-info">
           {!selected ? (
-            <div
-              style={{
-                textAlign: 'center',
-                color: 'var(--mu)',
-                padding: '3rem 1rem',
-                fontSize: '0.85rem',
-              }}
-            >
+            <div className="empty-state">
               {loading
                 ? '読み込み中...'
                 : rows.length === 0
@@ -763,7 +716,7 @@ export default function PartnershipsTab() {
         </section>
       </div>
 
-      <div className="pt-note">
+      <div className="field-hint" style={{ marginTop: '1rem' }}>
         ※ 1団体につき1行。先方担当は行内で複数登録できます。編集は Supabase に自動保存され、全ユーザーで共有されます（約0.6秒後に反映）。30秒ごとに他ユーザーの更新を取得します。
       </div>
 
@@ -806,19 +759,20 @@ function PartnershipDetail({
 }: DetailProps) {
   return (
     <>
-      <div className="pt-detail-head">
+      <div className="flex-between" style={{ marginBottom: '0.9rem', gap: '0.8rem' }}>
         <input
-          className="pt-cell pt-title"
+          className="input"
+          style={{ fontSize: '1.05rem', fontWeight: 800, border: 'none', padding: '0.2rem 0', flex: 1 }}
           value={row.university}
           placeholder="大学・団体名"
           onChange={(e) => onUpdate(row.id, (r) => ({ ...r, university: e.target.value }))}
         />
-        <button className="pt-mini pt-danger" onClick={onDelete} title="この団体を削除">
+        <button className="btn btn-danger btn-sm" onClick={onDelete} title="この団体を削除">
           団体を削除
         </button>
       </div>
 
-      <div className="pt-field" style={{ marginBottom: '1rem' }}>
+      <div className="field">
         <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
           <input
             type="checkbox"
@@ -833,11 +787,11 @@ function PartnershipDetail({
 
       <PartnerAssets row={row} onUpdate={onUpdate} />
 
-      <div className="pt-detail-fields">
-        <div className="pt-field">
-          <div className="pt-field-label">責任者名</div>
+      <div className="grid grid-2" style={{ marginBottom: '0.2rem' }}>
+        <div className="field">
+          <div className="field-label">責任者名</div>
           <input
-            className="pt-cell"
+            className="input"
             value={row.manager_name}
             placeholder="先方の責任者名"
             onChange={(e) =>
@@ -845,66 +799,66 @@ function PartnershipDetail({
             }
           />
         </div>
-        <div className="pt-field">
-          <div className="pt-field-label">社内担当（団体全体・元の担当）</div>
+        <div className="field">
+          <div className="field-label">社内担当（団体全体・元の担当）</div>
           <input
-            className="pt-cell"
+            className="input"
             value={row.internal_handler}
             placeholder="団体全体の担当者"
             onChange={(e) =>
               onUpdate(row.id, (r) => ({ ...r, internal_handler: e.target.value }))
             }
           />
-          <div className="pt-field-hint">
+          <div className="field-hint">
             ※ 先方担当ごとに分かれている場合は、各カード内の「社内担当」を使ってください
           </div>
         </div>
-        <div className="pt-field">
-          <div className="pt-field-label">提携内容</div>
-          <textarea
-            className="pt-cell pt-textarea"
-            value={row.partnership_details}
-            placeholder="授業連携、インターン紹介など"
-            onChange={(e) =>
-              onUpdate(row.id, (r) => ({ ...r, partnership_details: e.target.value }))
-            }
-          />
-        </div>
+      </div>
+      <div className="field">
+        <div className="field-label">提携内容</div>
+        <textarea
+          className="textarea"
+          value={row.partnership_details}
+          placeholder="授業連携、インターン紹介など"
+          onChange={(e) =>
+            onUpdate(row.id, (r) => ({ ...r, partnership_details: e.target.value }))
+          }
+        />
       </div>
 
-      <div className="pt-section-label">先方担当（{row.partner_contacts.length}名）</div>
+      <div className="section-label" style={{ marginTop: '0.4rem' }}>先方担当（{row.partner_contacts.length}名）</div>
 
-      <div className="pt-contacts">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
         {row.partner_contacts.map((c, idx) => {
           const key = expandKey(row.id, idx)
           const expanded = expandedLogs.has(key)
           return (
-            <div className="pt-contact-card" key={idx}>
-              <div className="pt-contact-row">
+            <div className="card-info" key={idx}>
+              <div className="flex-row" style={{ marginBottom: '0.7rem', flexWrap: 'nowrap' }}>
                 <input
-                  className="pt-cell"
+                  className="input"
                   value={c.name}
                   placeholder="氏名"
                   onChange={(e) => updateContact(row.id, idx, { name: e.target.value })}
                 />
                 <input
-                  className="pt-cell"
+                  className="input"
                   value={c.role}
                   placeholder="役職/所属"
                   onChange={(e) => updateContact(row.id, idx, { role: e.target.value })}
                 />
                 <button
-                  className="pt-mini"
+                  className="btn btn-ghost btn-sm"
                   onClick={() => removeContact(row.id, idx)}
                   title="この先方担当を削除"
                 >
                   ×
                 </button>
               </div>
-              <div className="pt-contact-handler">
-                <label className="pt-field-label">社内担当</label>
+              <div className="field">
+                <div className="field-label">社内担当</div>
                 <input
-                  className="pt-cell"
+                  className="input"
                   value={c.internal_handler}
                   placeholder={row.internal_handler || '担当者（この先方）'}
                   onChange={(e) =>
@@ -912,74 +866,83 @@ function PartnershipDetail({
                   }
                 />
               </div>
-              <div className="pt-contact-grid">
-                <label className="pt-field-label">メール</label>
-                <input
-                  className="pt-cell"
-                  value={c.email}
-                  placeholder="example@example.com"
-                  onChange={(e) => updateContact(row.id, idx, { email: e.target.value })}
-                />
-                <label className="pt-field-label">電話</label>
-                <input
-                  className="pt-cell"
-                  value={c.phone}
-                  placeholder="090-0000-0000"
-                  onChange={(e) => updateContact(row.id, idx, { phone: e.target.value })}
-                />
-                <label className="pt-field-label">LINE</label>
-                <input
-                  className="pt-cell"
-                  value={c.line}
-                  placeholder="LINE ID"
-                  onChange={(e) => updateContact(row.id, idx, { line: e.target.value })}
-                />
-                <label className="pt-field-label">Messenger</label>
-                <input
-                  className="pt-cell"
-                  value={c.messenger}
-                  placeholder="Messenger"
-                  onChange={(e) => updateContact(row.id, idx, { messenger: e.target.value })}
-                />
+              <div className="grid grid-4">
+                <div className="field" style={{ marginBottom: 0 }}>
+                  <div className="field-label">メール</div>
+                  <input
+                    className="input"
+                    value={c.email}
+                    placeholder="example@example.com"
+                    onChange={(e) => updateContact(row.id, idx, { email: e.target.value })}
+                  />
+                </div>
+                <div className="field" style={{ marginBottom: 0 }}>
+                  <div className="field-label">電話</div>
+                  <input
+                    className="input"
+                    value={c.phone}
+                    placeholder="090-0000-0000"
+                    onChange={(e) => updateContact(row.id, idx, { phone: e.target.value })}
+                  />
+                </div>
+                <div className="field" style={{ marginBottom: 0 }}>
+                  <div className="field-label">LINE</div>
+                  <input
+                    className="input"
+                    value={c.line}
+                    placeholder="LINE ID"
+                    onChange={(e) => updateContact(row.id, idx, { line: e.target.value })}
+                  />
+                </div>
+                <div className="field" style={{ marginBottom: 0 }}>
+                  <div className="field-label">Messenger</div>
+                  <input
+                    className="input"
+                    value={c.messenger}
+                    placeholder="Messenger"
+                    onChange={(e) => updateContact(row.id, idx, { messenger: e.target.value })}
+                  />
+                </div>
               </div>
-              <div className="pt-logs-bar">
+              <div className="flex-between" style={{ marginTop: '0.8rem', paddingTop: '0.7rem', borderTop: '1px solid var(--bd)' }}>
                 <button
-                  className="pt-log-toggle"
+                  className="btn btn-ghost btn-sm"
                   onClick={() => toggleLogs(row.id, idx)}
                   title={expanded ? 'ログを閉じる' : 'ログを開く'}
                 >
                   {expanded ? '▼' : '▶'} 実施ログ（{c.logs.length}）
                 </button>
-                <button className="pt-add" onClick={() => addLog(row.id, idx)}>
+                <button className="btn btn-secondary btn-sm" onClick={() => addLog(row.id, idx)}>
                   ＋ ログを追加
                 </button>
               </div>
               {expanded && (
-                <div className="pt-logs">
-                  {c.logs.length === 0 && <div className="pt-empty">実施記録はまだありません</div>}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.7rem' }}>
+                  {c.logs.length === 0 && <div className="empty-state" style={{ padding: '1rem' }}>実施記録はまだありません</div>}
                   {c.logs.map((l, logIdx) => (
-                    <div className="pt-log-row" key={logIdx}>
+                    <div className="flex-row" key={logIdx} style={{ flexWrap: 'nowrap' }}>
                       <input
-                        className="pt-cell pt-date"
+                        className="input"
+                        style={{ maxWidth: '150px' }}
                         type="date"
                         value={l.date}
                         onChange={(e) => updateLog(row.id, idx, logIdx, { date: e.target.value })}
                       />
                       <input
-                        className="pt-cell"
+                        className="input"
                         value={l.content}
                         placeholder="例）大学の授業で三木が講演実施"
                         onChange={(e) => updateLog(row.id, idx, logIdx, { content: e.target.value })}
                       />
                       <input
-                        className="pt-cell"
+                        className="input"
                         style={{ maxWidth: '110px' }}
                         value={l.author ?? ''}
                         placeholder="実施者"
                         onChange={(e) => updateLog(row.id, idx, logIdx, { author: e.target.value })}
                       />
                       <button
-                        className="pt-mini"
+                        className="btn btn-ghost btn-sm"
                         onClick={() => removeLog(row.id, idx, logIdx)}
                         title="ログを削除"
                       >
@@ -992,7 +955,7 @@ function PartnershipDetail({
             </div>
           )
         })}
-        <button className="pt-add pt-add-contact" onClick={() => addContact(row.id)}>
+        <button className="btn btn-secondary" onClick={() => addContact(row.id)}>
           ＋ 先方担当を追加
         </button>
       </div>
@@ -1054,10 +1017,10 @@ function PartnerAssets({
   }
 
   return (
-    <div className="pt-field" style={{ marginBottom: '1rem' }}>
-      <div className="pt-field-label">ロゴ・資料</div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+    <div className="field">
+      <div className="field-label">ロゴ・資料</div>
+      <div className="flex-row">
+        <div className="flex-row" style={{ gap: '0.5rem' }}>
           {row.logo_url && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -1066,7 +1029,7 @@ function PartnerAssets({
               style={{ width: '40px', height: '40px', objectFit: 'contain', border: '1px solid var(--bd)', borderRadius: '4px' }}
             />
           )}
-          <label className="pt-add" style={{ cursor: 'pointer' }}>
+          <label className="btn btn-secondary btn-sm" style={{ cursor: 'pointer' }}>
             {uploadingLogo ? 'アップロード中...' : row.logo_url ? 'ロゴを変更' : 'ロゴを追加'}
             <input
               type="file"
@@ -1081,7 +1044,7 @@ function PartnerAssets({
           </label>
         </div>
 
-        <label className="pt-add" style={{ cursor: 'pointer' }}>
+        <label className="btn btn-secondary btn-sm" style={{ cursor: 'pointer' }}>
           {uploadingDoc ? 'アップロード中...' : '＋ 資料を追加'}
           <input
             type="file"
@@ -1098,14 +1061,14 @@ function PartnerAssets({
       {assetError && <div style={{ color: 'var(--red)', fontSize: '0.72rem', marginTop: '0.35rem' }}>{assetError}</div>}
 
       {row.documents.length > 0 && (
-        <ul style={{ marginTop: '0.5rem', fontSize: '0.78rem', paddingLeft: '1.1rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', marginTop: '0.6rem' }}>
           {row.documents.map((d, idx) => (
-            <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <div key={idx} className="flex-row" style={{ fontSize: '0.78rem' }}>
               <a href={d.url} target="_blank" rel="noopener noreferrer">{d.name}</a>
-              <button className="pt-mini" onClick={() => removeDoc(idx)} title="削除">×</button>
-            </li>
+              <button className="btn btn-ghost btn-sm" onClick={() => removeDoc(idx)} title="削除">×</button>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   )

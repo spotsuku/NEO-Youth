@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { YouthCandidate, SelectOption } from '@/types/dashboard'
-import { APPROACH_STEPS } from '@/types/dashboard'
+import { APPROACH_STEPS, APPROACH_STEP_COLORS } from '@/types/dashboard'
 import { calcGrade } from '@/lib/grade'
 import { Linkify } from '@/lib/linkify'
 
@@ -163,31 +163,47 @@ export default function ApproachListTab({ candidates, onUpdate, initialStepFilte
 
   return (
     <>
-      <div className="section-title">アプローチリスト</div>
+      <div className="flex-between">
+        <div className="section-title" style={{ marginBottom: 0 }}>アプローチリスト</div>
+        <div className="flex-row">
+          <label className="toolbar-toggle">
+            <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} />
+            アーカイブを表示
+          </label>
+          <label className="toolbar-toggle">
+            <input type="checkbox" checked={showGraduated} onChange={(e) => setShowGraduated(e.target.checked)} />
+            卒業を表示
+          </label>
+        </div>
+      </div>
 
       <div className="search-row">
         <input
-          className="search-input"
+          className="input"
           type="text"
           placeholder="氏名・所属で検索..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
-        <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', color: 'var(--mu)' }}>
-          <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} />
-          アーカイブを表示
-        </label>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', color: 'var(--mu)' }}>
-          <input type="checkbox" checked={showGraduated} onChange={(e) => setShowGraduated(e.target.checked)} />
-          卒業を表示
-        </label>
+        <select className="select" style={{ width: 'auto' }} value={assigneeFilter} onChange={(e) => setAssigneeFilter(e.target.value)}>
+          <option value="全て">対応者: 全て</option>
+          {assignees.map((a) => <option key={a} value={a}>{a}</option>)}
+        </select>
+        <select className="select" style={{ width: 'auto' }} value={inflowFilter} onChange={(e) => setInflowFilter(e.target.value)}>
+          <option value="全て">流入経路: 全て</option>
+          {inflowSources.map((o) => <option key={o.id} value={o.value}>{o.value}</option>)}
+        </select>
+        <select className="select" style={{ width: 'auto' }} value={gradeFilter} onChange={(e) => setGradeFilter(e.target.value)}>
+          <option value="全て">学年: 全て</option>
+          {grades.map((g) => <option key={g} value={g}>{g}</option>)}
+        </select>
       </div>
 
-      <div className="search-row" style={{ flexWrap: 'wrap', gap: '0.35rem' }}>
+      <div className="search-row" style={{ marginBottom: '1.1rem' }}>
         {['全て', ...APPROACH_STEPS].map((s) => (
           <button
             key={s}
-            className={`filter-btn ${stepFilter === s ? 'active' : ''}`}
+            className={`btn-chip ${stepFilter === s ? 'active' : ''}`}
             onClick={() => setStepFilter(s)}
           >
             {s === '全て' ? `全て (${candidates.filter((c) => !c.archived).length})` : `${s} (${candidates.filter((c) => c.step === s && !c.archived).length})`}
@@ -195,23 +211,8 @@ export default function ApproachListTab({ candidates, onUpdate, initialStepFilte
         ))}
       </div>
 
-      <div className="search-row" style={{ gap: '0.5rem' }}>
-        <select className="cell-select" value={assigneeFilter} onChange={(e) => setAssigneeFilter(e.target.value)}>
-          <option value="全て">対応者: 全て</option>
-          {assignees.map((a) => <option key={a} value={a}>{a}</option>)}
-        </select>
-        <select className="cell-select" value={inflowFilter} onChange={(e) => setInflowFilter(e.target.value)}>
-          <option value="全て">流入経路: 全て</option>
-          {inflowSources.map((o) => <option key={o.id} value={o.value}>{o.value}</option>)}
-        </select>
-        <select className="cell-select" value={gradeFilter} onChange={(e) => setGradeFilter(e.target.value)}>
-          <option value="全て">学年: 全て</option>
-          {grades.map((g) => <option key={g} value={g}>{g}</option>)}
-        </select>
-      </div>
-
-      <div className="table-wrap sticky-head">
-        <table className="editable-table">
+      <div className="table-wrap">
+        <table className="table">
           <thead>
             <tr>
               {COLUMNS.map((col) => (
@@ -249,12 +250,22 @@ export default function ApproachListTab({ candidates, onUpdate, initialStepFilte
                   </td>
                   <td>
                     {readOnly ? (
-                      c.step ?? '未観測'
+                      <span
+                        className="badge"
+                        style={{
+                          background: `color-mix(in srgb, ${APPROACH_STEP_COLORS[c.step ?? '未観測']} 16%, transparent)`,
+                          borderColor: `color-mix(in srgb, ${APPROACH_STEP_COLORS[c.step ?? '未観測']} 45%, transparent)`,
+                          color: 'var(--ink)',
+                        }}
+                      >
+                        {c.step ?? '未観測'}
+                      </span>
                     ) : (
                       <select
                         className="cell-select"
                         value={c.step ?? '未観測'}
                         onChange={(e) => stepChange(c.name, e.target.value)}
+                        style={{ borderLeft: `4px solid ${APPROACH_STEP_COLORS[c.step ?? '未観測']}` }}
                       >
                         {APPROACH_STEPS.map((s) => <option key={s} value={s}>{s}</option>)}
                       </select>
@@ -387,7 +398,7 @@ export default function ApproachListTab({ candidates, onUpdate, initialStepFilte
             })}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={COLUMNS.length + 2} style={{ textAlign: 'center', color: 'var(--mu)', padding: '2rem' }}>
+                <td colSpan={COLUMNS.length + 2} className="empty-state">
                   該当する対象者がいません
                 </td>
               </tr>
@@ -462,7 +473,7 @@ function NextActionCell({ value, onSave }: { value: string; onSave: (v: string) 
   }
 
   return (
-    <div className="cell-text" onClick={() => setEditing(true)}>
+    <div onClick={() => setEditing(true)} style={{ cursor: 'text', padding: '0.22rem 0.3rem', minHeight: '1.4em' }}>
       {value || <span style={{ color: 'var(--bd2)' }}>-</span>}
     </div>
   )
@@ -498,7 +509,10 @@ function NoteCell({ value, onSave }: { value: string; onSave: (v: string) => voi
   }
 
   return (
-    <div className="cell-text" onClick={() => setEditing(true)} style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+    <div
+      onClick={() => setEditing(true)}
+      style={{ cursor: 'text', padding: '0.22rem 0.3rem', minHeight: '1.4em', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
+    >
       {value ? <Linkify text={value} /> : <span style={{ color: 'var(--bd2)' }}>-</span>}
     </div>
   )

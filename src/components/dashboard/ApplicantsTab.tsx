@@ -106,46 +106,48 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, o
   return (
     <>
       {/* KPIカード */}
-      <div className="kpi-row">
-        <div className="kpi-card red">
-          <div className="kpi-label">候補者（累積）</div>
-          <div className="kpi-value">{totalCount}<span> 名</span></div>
+      <div className="grid grid-auto" style={{ marginBottom: '1.4rem' }}>
+        <div className="card-state pink">
+          <div className="stat-label">候補者（累積）</div>
+          <div className="stat-value">{totalCount}</div>
         </div>
-        <div className="kpi-card grn">
-          <div className="kpi-label">応募者（累積）</div>
-          <div className="kpi-value">{appliedCount}<span> 名</span></div>
+        <div className="card-state mint">
+          <div className="stat-label">応募者（累積）</div>
+          <div className="stat-value">{appliedCount}</div>
         </div>
-        <div className="kpi-card blu">
-          <div className="kpi-label">学生</div>
-          <div className="kpi-value">{studentCount}<span> 名</span></div>
+        <div className="card-state sky">
+          <div className="stat-label">学生</div>
+          <div className="stat-value">{studentCount}</div>
         </div>
-        <div className="kpi-card gold">
-          <div className="kpi-label">社会人</div>
-          <div className="kpi-value">{shakaijinCount}<span> 名</span></div>
+        <div className="card-state sun">
+          <div className="stat-label">社会人</div>
+          <div className="stat-value">{shakaijinCount}</div>
         </div>
-        <div className="kpi-card blu">
-          <div className="kpi-label">合格基準</div>
-          <div className="kpi-value">{passCriteriaCount}<span> 名</span></div>
+        <div className="card-state sky">
+          <div className="stat-label">合格基準</div>
+          <div className="stat-value">{passCriteriaCount}</div>
         </div>
-        <div className="kpi-card grn">
-          <div className="kpi-label">合格</div>
-          <div className="kpi-value">{passCount}<span> 名</span></div>
+        <div className="card-state mint">
+          <div className="stat-label">合格</div>
+          <div className="stat-value">{passCount}</div>
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '1rem' }}>
+      <div className="flex-between" style={{ marginBottom: '1rem' }}>
         <div className="section-title" style={{ marginBottom: 0 }}>候補者管理</div>
-        <button className="iv-save-btn" style={{ fontSize: '0.72rem', padding: '0.35rem 0.8rem' }} onClick={() => setShowAddForm(true)}>
-          + 候補者を追加
-        </button>
-        <button className="filter-btn" style={{ fontSize: '0.72rem' }} onClick={() => setShowTrash(true)}>
-          🗑 ゴミ箱
-        </button>
+        <div className="flex-row">
+          <button className="btn btn-primary btn-sm" onClick={() => setShowAddForm(true)}>
+            + 候補者を追加
+          </button>
+          <button className="btn btn-secondary btn-sm" onClick={() => setShowTrash(true)}>
+            🗑 ゴミ箱
+          </button>
+        </div>
       </div>
 
       <div className="search-row">
         <input
-          className="search-input"
+          className="input"
           type="text"
           placeholder="氏名・ふりがな・所属で検索..."
           value={query}
@@ -153,11 +155,11 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, o
         />
       </div>
       {/* 区分フィルター（学生/社会人） */}
-      <div className="search-row" style={{ gap: '0.35rem' }}>
+      <div className="flex-row" style={{ marginBottom: '0.6rem' }}>
         {(['全て', '学生', '社会人'] as const).map((f) => (
           <button
             key={f}
-            className={`filter-btn ${typeFilter === f ? 'active' : ''}`}
+            className={`btn-chip ${typeFilter === f ? 'active' : ''}`}
             onClick={() => setTypeFilter(f)}
           >
             {f === '全て'
@@ -168,11 +170,11 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, o
           </button>
         ))}
       </div>
-      <div className="search-row" style={{ flexWrap: 'wrap', gap: '0.35rem' }}>
+      <div className="flex-row" style={{ marginBottom: '1.1rem' }}>
         {STATUS_FILTERS.map((f) => (
           <button
             key={f}
-            className={`filter-btn ${statusFilter === f ? 'active' : ''}`}
+            className={`btn-chip ${statusFilter === f ? 'active' : ''}`}
             onClick={() => setStatusFilter(f)}
           >
             {f === '全て' ? `全て (${candidates.length})` : f === '不合格' ? `不合格 (${candidates.filter((c) => !!c.rejected_at).length})` : `${f} (${candidates.filter((c) => c.status === f).length})`}
@@ -180,8 +182,8 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, o
         ))}
       </div>
 
-      <div className="table-wrap sticky-head">
-        <table className="editable-table">
+      <div className="table-wrap">
+        <table className="table">
           <thead>
             <tr>
               <th>#</th>
@@ -255,45 +257,28 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, o
                     {c.applied_at ? c.applied_at.slice(0, 10) : '-'}
                   </td>
                   {/* 合格基準 */}
-                  <td style={{ textAlign: 'center' }}>
-                    <button
-                      className={`ob-cell ${c.ob_pass_criteria ? 'checked' : ''}`}
-                      onClick={() => onUpdate(c.name, { ob_pass_criteria: !c.ob_pass_criteria })}
-                      type="button"
-                    >
-                      {c.ob_pass_criteria ? '\u2713' : ''}
-                    </button>
+                  <td className="table-check">
+                    <CellCheck checked={!!c.ob_pass_criteria} onClick={() => onUpdate(c.name, { ob_pass_criteria: !c.ob_pass_criteria })} />
                   </td>
                   {/* 不合格 */}
-                  <td style={{ textAlign: 'center' }}>
-                    <button
-                      className={`ob-cell ${c.rejected_at ? 'checked reject' : ''}`}
+                  <td className="table-check">
+                    <CellCheck
+                      checked={!!c.rejected_at}
+                      tone="red"
                       onClick={() => onUpdate(c.name, { rejected_at: c.rejected_at ? null : new Date().toISOString() })}
-                      type="button"
-                    >
-                      {c.rejected_at ? '\u2713' : ''}
-                    </button>
+                    />
                   </td>
                   {/* 説明会 */}
-                  <td style={{ textAlign: 'center' }}>
-                    <button
-                      className={`ob-cell ${c.attended_session ? 'checked' : ''}`}
-                      onClick={() => onUpdate(c.name, { attended_session: !c.attended_session })}
-                      type="button"
-                    >
-                      {c.attended_session ? '\u2713' : ''}
-                    </button>
+                  <td className="table-check">
+                    <CellCheck checked={!!c.attended_session} onClick={() => onUpdate(c.name, { attended_session: !c.attended_session })} />
                   </td>
                   {/* 面談済チェック */}
-                  <td style={{ textAlign: 'center' }}>
-                    <button
-                      className={`ob-cell ${c.interview_date ? 'checked' : ''}`}
-                      onClick={() => onUpdate(c.name, { interview_date: c.interview_date ? null : new Date().toISOString().slice(0, 10) })}
-                      type="button"
+                  <td className="table-check">
+                    <CellCheck
+                      checked={!!c.interview_date}
                       title={c.interview_date ? `面談日: ${c.interview_date}` : '面談済にする'}
-                    >
-                      {c.interview_date ? '\u2713' : ''}
-                    </button>
+                      onClick={() => onUpdate(c.name, { interview_date: c.interview_date ? null : new Date().toISOString().slice(0, 10) })}
+                    />
                   </td>
                   {/* 最終面接結果 */}
                   <td>
@@ -303,7 +288,7 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, o
                         {v.score_total != null && <span style={{ marginLeft: '0.3rem', opacity: 0.7 }}>{v.score_total}pt</span>}
                       </span>
                     ) : (
-                      <span style={{ color: 'var(--bd2)', fontSize: '0.72rem' }}>-</span>
+                      <span className="muted" style={{ fontSize: '0.72rem' }}>-</span>
                     )}
                   </td>
                   {/* 最終面接シート連携 */}
@@ -313,7 +298,7 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, o
                         <span className="badge grn" title="最終面接シートに追加済み">✓ 連携済</span>
                       ) : (
                         <button
-                          className="detail-btn"
+                          className="btn btn-secondary btn-sm"
                           onClick={() => handlePromote(c.name)}
                           disabled={promoting.has(c.name)}
                           title="この候補者を最終面接シートに追加します"
@@ -324,21 +309,21 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, o
                     ) : promotedNames.has(c.name) ? (
                       <span className="badge gray" title="最終面接シートに登録済（過去）">登録済</span>
                     ) : (
-                      <span style={{ color: 'var(--bd2)', fontSize: '0.72rem' }}>-</span>
+                      <span className="muted" style={{ fontSize: '0.72rem' }}>-</span>
                     )}
                   </td>
                   {/* 面談ボタン */}
                   <td>
-                    <button className="detail-btn" onClick={() => openInterview(c)}>面談</button>
+                    <button className="btn btn-secondary btn-sm" onClick={() => openInterview(c)}>面談</button>
                   </td>
                   {/* 詳細 */}
                   <td>
-                    <button className="detail-btn" onClick={() => setSelected(c)}>詳細</button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => setSelected(c)}>詳細</button>
                   </td>
                   {/* 削除 */}
                   <td>
                     <button
-                      className="detail-btn delete-btn"
+                      className="btn btn-danger btn-sm"
                       onClick={() => {
                         if (confirm(`${c.name} を削除しますか？この操作は元に戻せません。`)) {
                           onDelete(c.name)
@@ -352,7 +337,7 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, o
               )
             })}
             {filtered.length === 0 && (
-              <tr><td colSpan={16} style={{ textAlign: 'center', color: 'var(--mu)', padding: '2rem' }}>該当する候補者がいません</td></tr>
+              <tr><td colSpan={16}><div className="empty-state">該当する候補者がいません</div></td></tr>
             )}
           </tbody>
         </table>
@@ -381,6 +366,41 @@ export default function ApplicantsTab({ candidates, onUpdate, onAdd, onDelete, o
         <TrashPanel apiPath="/api/youth/candidates" nameField="name" labelField="name" open={showTrash} />
       </Modal>
     </>
+  )
+}
+
+/* ── テーブル用チェックボタン（合格基準・不合格・説明会・面談済） ── */
+function CellCheck({ checked, onClick, title, tone = 'grn' }: {
+  checked: boolean
+  onClick: () => void
+  title?: string
+  tone?: 'grn' | 'red'
+}) {
+  const color = tone === 'red' ? 'var(--red)' : 'var(--grn)'
+  const bg = tone === 'red' ? 'rgba(212,65,86,0.1)' : 'rgba(47,165,122,0.12)'
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      style={{
+        width: 22,
+        height: 22,
+        borderRadius: 6,
+        border: `1.5px solid ${checked ? color : 'var(--bd)'}`,
+        background: checked ? bg : 'transparent',
+        color,
+        fontSize: '0.75rem',
+        fontWeight: 800,
+        cursor: 'pointer',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 0,
+      }}
+    >
+      {checked ? '✓' : ''}
+    </button>
   )
 }
 
@@ -421,11 +441,10 @@ function EditableText({ value, onSave, bold, placeholder }: {
 
   return (
     <div
-      className="cell-text"
-      style={{ fontWeight: bold ? 600 : 400 }}
+      style={{ fontWeight: bold ? 700 : 400, fontSize: '0.8rem', cursor: 'text', color: 'var(--ink)' }}
       onClick={() => setEditing(true)}
     >
-      {value || <span style={{ color: 'var(--bd2)' }}>{placeholder || '-'}</span>}
+      {value || <span className="muted">{placeholder || '-'}</span>}
     </div>
   )
 }
@@ -476,40 +495,40 @@ function CandidateDetail({ candidate: c, onOpenInterview, onUpdate }: {
 
   return (
     <>
-      <div className="field-row">
-        <div><div className="field-label">ふりがな</div><EditableField value={c.kana ?? ''} onSave={save('kana')} /></div>
-        <div><div className="field-label">メール</div><EditableField value={c.email ?? ''} onSave={save('email')} mono /></div>
+      <div className="grid grid-2">
+        <div className="field"><div className="field-label">ふりがな</div><EditableField value={c.kana ?? ''} onSave={save('kana')} /></div>
+        <div className="field"><div className="field-label">メール</div><EditableField value={c.email ?? ''} onSave={save('email')} mono /></div>
       </div>
-      <div className="field-row">
-        <div><div className="field-label">区分</div><div className="field-value">{c.type ?? '-'}</div></div>
-        <div><div className="field-label">所属</div><EditableField value={c.school ?? ''} onSave={save('school')} /></div>
+      <div className="grid grid-2">
+        <div className="field"><div className="field-label">区分</div><div style={{ fontSize: '0.82rem', color: 'var(--ink)' }}>{c.type ?? '-'}</div></div>
+        <div className="field"><div className="field-label">所属</div><EditableField value={c.school ?? ''} onSave={save('school')} /></div>
       </div>
-      <div className="field-row">
-        <div><div className="field-label">学年・役職</div><EditableField value={c.grade ?? ''} onSave={save('grade')} /></div>
-        <div><div className="field-label">紹介元</div><EditableField value={c.source ?? ''} onSave={save('source')} /></div>
+      <div className="grid grid-2">
+        <div className="field"><div className="field-label">学年・役職</div><EditableField value={c.grade ?? ''} onSave={save('grade')} /></div>
+        <div className="field"><div className="field-label">紹介元</div><EditableField value={c.source ?? ''} onSave={save('source')} /></div>
       </div>
-      <div style={{ marginBottom: '0.85rem' }}>
+      <div className="field">
         <div className="field-label">志望動機</div>
         <EditableArea value={c.motivation ?? ''} onSave={save('motivation')} />
       </div>
-      <div style={{ marginBottom: '0.85rem' }}>
+      <div className="field">
         <div className="field-label">自己PR</div>
         <EditableArea value={c.pr ?? ''} onSave={save('pr')} />
       </div>
-      <div style={{ marginBottom: '0.85rem' }}>
+      <div className="field">
         <div className="field-label">貢献・活動方針</div>
         <EditableArea value={c.contribution ?? ''} onSave={save('contribution')} />
       </div>
-      <div style={{ marginBottom: '0.85rem' }}>
+      <div className="field">
         <div className="field-label">キャリアプラン</div>
         <EditableField value={c.career ?? ''} onSave={save('career')} />
       </div>
-      <div className="field-row">
-        <div><div className="field-label">2次面接希望日</div><div className="field-value" style={{ fontSize: '0.78rem' }}>{c.interview2_dates ?? '-'}</div></div>
-        <div><div className="field-label">3次面接</div><div className="field-value">{c.interview3_dates ?? '-'}</div></div>
+      <div className="grid grid-2">
+        <div className="field"><div className="field-label">2次面接希望日</div><div style={{ fontSize: '0.78rem', color: 'var(--ink)' }}>{c.interview2_dates ?? '-'}</div></div>
+        <div className="field"><div className="field-label">3次面接</div><div style={{ fontSize: '0.82rem', color: 'var(--ink)' }}>{c.interview3_dates ?? '-'}</div></div>
       </div>
-      <div style={{ marginTop: '1rem' }}>
-        <button className="detail-btn" style={{ padding: '0.5rem 1rem', fontSize: '0.8rem' }} onClick={onOpenInterview}>面談記録を開く</button>
+      <div style={{ marginTop: '0.4rem' }}>
+        <button className="btn btn-secondary" onClick={onOpenInterview}>面談記録を開く</button>
       </div>
     </>
   )
@@ -525,13 +544,13 @@ function EditableField({ value, onSave, mono }: { value: string; onSave: (v: str
   const commit = () => { setEditing(false); if (draft !== value) onSave(draft) }
 
   if (editing) {
-    return <input ref={ref} className="iv-input" value={draft} onChange={(e) => setDraft(e.target.value)}
+    return <input ref={ref} className="input" value={draft} onChange={(e) => setDraft(e.target.value)}
       onBlur={commit} onKeyDown={(e) => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') { setDraft(value); setEditing(false) } }} />
   }
   return (
-    <div className="field-value" style={{ cursor: 'text', fontFamily: mono ? "'JetBrains Mono', monospace" : undefined, fontSize: mono ? '0.78rem' : undefined }}
+    <div style={{ cursor: 'text', fontFamily: mono ? "'JetBrains Mono', monospace" : undefined, fontSize: mono ? '0.78rem' : '0.82rem', color: 'var(--ink)' }}
       onClick={() => setEditing(true)}>
-      {value || <span style={{ color: 'var(--bd2)' }}>クリックして入力</span>}
+      {value || <span className="muted">クリックして入力</span>}
     </div>
   )
 }
@@ -546,13 +565,13 @@ function EditableArea({ value, onSave }: { value: string; onSave: (v: string) =>
   const commit = () => { setEditing(false); if (draft !== value) onSave(draft) }
 
   if (editing) {
-    return <textarea ref={ref} className="iv-textarea" value={draft} onChange={(e) => setDraft(e.target.value)}
+    return <textarea ref={ref} className="textarea" value={draft} onChange={(e) => setDraft(e.target.value)}
       onBlur={commit} rows={6} />
   }
   return (
-    <div className="field-value long" style={{ cursor: 'text', minHeight: '2rem' }}
+    <div style={{ cursor: 'text', minHeight: '2rem', fontSize: '0.82rem', color: 'var(--ink)', lineHeight: 1.6 }}
       onClick={() => setEditing(true)}>
-      {value || <span style={{ color: 'var(--bd2)' }}>クリックして入力</span>}
+      {value || <span className="muted">クリックして入力</span>}
     </div>
   )
 }
@@ -578,23 +597,23 @@ function InterviewListModal({ candidate, onClose }: { candidate: YouthCandidate;
   return (
     <Modal open onClose={onClose} title={`面談記録: ${candidate.name}`}>
       {loading ? (
-        <div style={{ color: 'var(--mu)', textAlign: 'center', padding: '1rem' }}>読み込み中...</div>
+        <div className="empty-state">読み込み中...</div>
       ) : records.length === 0 && !adding ? (
-        <div style={{ color: 'var(--mu)', textAlign: 'center', padding: '1.5rem 0' }}>面談記録はまだありません</div>
+        <div className="empty-state">面談記録はまだありません</div>
       ) : (
-        <div className="iv-records">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
           {records.map((r) => (
-            <div key={r.id} className="iv-record">
-              <div className="iv-record-head">
-                <span style={{ fontWeight: 600 }}>{r.handler || '担当未設定'}</span>
+            <div key={r.id} className="card-info">
+              <div className="flex-between" style={{ marginBottom: '0.3rem' }}>
+                <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--ink)' }}>{r.handler || '担当未設定'}</span>
                 <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.72rem', color: 'var(--mu)' }}>{r.interview_date || '日付未設定'}</span>
               </div>
-              <div className="iv-record-meta">
+              <div className="flex-row" style={{ marginBottom: '0.4rem' }}>
                 {r.course && <span className="badge blu">{r.course}</span>}
                 {r.result && <span className={`badge ${(r.result ?? '').includes('特別') ? 'grn' : 'gray'}`}>{r.result}</span>}
               </div>
-              {r.notes && <div className="iv-record-notes">{r.notes}</div>}
-              <div style={{ fontSize: '0.62rem', color: 'var(--bd2)', marginTop: '0.3rem' }}>{new Date(r.created_at).toLocaleString('ja-JP')}</div>
+              {r.notes && <div style={{ fontSize: '0.8rem', color: 'var(--ink2)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{r.notes}</div>}
+              <div style={{ fontSize: '0.62rem', color: 'var(--bd2)', marginTop: '0.4rem' }}>{new Date(r.created_at).toLocaleString('ja-JP')}</div>
             </div>
           ))}
         </div>
@@ -602,8 +621,8 @@ function InterviewListModal({ candidate, onClose }: { candidate: YouthCandidate;
       {adding ? (
         <InterviewForm candidateName={candidate.name} onSaved={handleSaved} onCancel={() => setAdding(false)} />
       ) : (
-        <div style={{ marginTop: '1rem' }}>
-          <button className="iv-save-btn" onClick={() => setAdding(true)}>+ 新しい面談記録を追加</button>
+        <div style={{ marginTop: '1.1rem' }}>
+          <button className="btn btn-primary btn-sm" onClick={() => setAdding(true)}>+ 新しい面談記録を追加</button>
         </div>
       )}
     </Modal>
@@ -632,20 +651,20 @@ function InterviewForm({ candidateName, onSaved, onCancel }: { candidateName: st
   }
 
   return (
-    <div className="interview-form" style={{ marginTop: '1rem', borderTop: '1px solid var(--bd)', paddingTop: '1rem' }}>
-      <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--mu)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>新規面談記録</div>
-      <div className="field-row">
-        <div><div className="field-label">面談担当</div><input className="iv-input" value={handler} onChange={(e) => setHandler(e.target.value)} placeholder="担当者名" /></div>
-        <div><div className="field-label">面談日</div><input className="iv-input" type="date" value={date} onChange={(e) => setDate(e.target.value)} /></div>
+    <div style={{ marginTop: '1.1rem', borderTop: '1px solid var(--bd)', paddingTop: '1.1rem' }}>
+      <div className="section-label">新規面談記録</div>
+      <div className="grid grid-2">
+        <div className="field"><div className="field-label">面談担当</div><input className="input" value={handler} onChange={(e) => setHandler(e.target.value)} placeholder="担当者名" /></div>
+        <div className="field"><div className="field-label">面談日</div><input className="input" type="date" value={date} onChange={(e) => setDate(e.target.value)} /></div>
       </div>
-      <div className="field-row">
-        <div><div className="field-label">進路希望</div><select className="iv-input" value={course} onChange={(e) => setCourse(e.target.value)}><option value="">選択</option><option value="起業">起業</option><option value="地元企業">地元企業</option><option value="大手企業">大手企業</option><option value="その他">その他</option></select></div>
-        <div><div className="field-label">結果</div><select className="iv-input" value={result} onChange={(e) => setResult(e.target.value)}><option value="">選択</option><option value="特別選考枠付与">特別選考枠付与</option><option value="付与なし（一般応募）">付与なし</option><option value="保留">保留</option></select></div>
+      <div className="grid grid-2">
+        <div className="field"><div className="field-label">進路希望</div><select className="select" value={course} onChange={(e) => setCourse(e.target.value)}><option value="">選択</option><option value="起業">起業</option><option value="地元企業">地元企業</option><option value="大手企業">大手企業</option><option value="その他">その他</option></select></div>
+        <div className="field"><div className="field-label">結果</div><select className="select" value={result} onChange={(e) => setResult(e.target.value)}><option value="">選択</option><option value="特別選考枠付与">特別選考枠付与</option><option value="付与なし（一般応募）">付与なし</option><option value="保留">保留</option></select></div>
       </div>
-      <div><div className="field-label">議事録・メモ</div><textarea className="iv-textarea" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="面談の内容を入力..." rows={6} /></div>
-      <div className="iv-footer">
-        <button className="iv-save-btn" onClick={save} disabled={saving}>{saving ? '保存中...' : '保存'}</button>
-        <button className="detail-btn" onClick={onCancel}>キャンセル</button>
+      <div className="field"><div className="field-label">議事録・メモ</div><textarea className="textarea" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="面談の内容を入力..." rows={6} /></div>
+      <div className="modal-actions">
+        <button className="btn btn-secondary" onClick={onCancel}>キャンセル</button>
+        <button className="btn btn-primary" onClick={save} disabled={saving}>{saving ? '保存中...' : '保存'}</button>
       </div>
     </div>
   )
@@ -685,43 +704,43 @@ function AddCandidateForm({ onSaved, onAdd }: { onSaved: () => void; onAdd: (dat
   }
 
   return (
-    <div className="interview-form">
-      <div className="field-row">
-        <div><div className="field-label">氏名 *</div><input className="iv-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="山田 太郎" /></div>
-        <div><div className="field-label">ふりがな</div><input className="iv-input" value={kana} onChange={(e) => setKana(e.target.value)} placeholder="やまだ たろう" /></div>
+    <div>
+      <div className="grid grid-2">
+        <div className="field"><div className="field-label">氏名 *</div><input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="山田 太郎" /></div>
+        <div className="field"><div className="field-label">ふりがな</div><input className="input" value={kana} onChange={(e) => setKana(e.target.value)} placeholder="やまだ たろう" /></div>
       </div>
-      <div className="field-row">
-        <div><div className="field-label">メール</div><input className="iv-input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@example.com" /></div>
-        <div><div className="field-label">区分</div>
-          <select className="iv-input" value={type} onChange={(e) => setType(e.target.value)}>
+      <div className="grid grid-2">
+        <div className="field"><div className="field-label">メール</div><input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@example.com" /></div>
+        <div className="field"><div className="field-label">区分</div>
+          <select className="select" value={type} onChange={(e) => setType(e.target.value)}>
             <option value="大学生・専門学生・大学院生">大学生・専門学生・大学院生</option>
             <option value="社会人">社会人</option>
           </select>
         </div>
       </div>
-      <div className="field-row">
-        <div><div className="field-label">所属</div><input className="iv-input" value={school} onChange={(e) => setSchool(e.target.value)} placeholder="九州大学" /></div>
-        <div><div className="field-label">学年・役職</div><input className="iv-input" value={grade} onChange={(e) => setGrade(e.target.value)} placeholder="工学部2年" /></div>
+      <div className="grid grid-2">
+        <div className="field"><div className="field-label">所属</div><input className="input" value={school} onChange={(e) => setSchool(e.target.value)} placeholder="九州大学" /></div>
+        <div className="field"><div className="field-label">学年・役職</div><input className="input" value={grade} onChange={(e) => setGrade(e.target.value)} placeholder="工学部2年" /></div>
       </div>
-      <div className="field-row">
-        <div><div className="field-label">ステータス</div>
-          <select className="iv-input" value={status} onChange={(e) => setStatus(e.target.value)}>
+      <div className="grid grid-2">
+        <div className="field"><div className="field-label">ステータス</div>
+          <select className="select" value={status} onChange={(e) => setStatus(e.target.value)}>
             {ALL_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
-        <div><div className="field-label">応募確度</div>
-          <select className="iv-input" value={yomi} onChange={(e) => setYomi(e.target.value)}>
+        <div className="field"><div className="field-label">応募確度</div>
+          <select className="select" value={yomi} onChange={(e) => setYomi(e.target.value)}>
             {YOMI_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.value || '—（未設定）'}</option>)}
           </select>
         </div>
       </div>
-      <div className="field-row">
-        <div><div className="field-label">紹介元</div><input className="iv-input" value={source} onChange={(e) => setSource(e.target.value)} placeholder="Instagram, 知人紹介 等" /></div>
+      <div className="grid grid-2">
+        <div className="field"><div className="field-label">紹介元</div><input className="input" value={source} onChange={(e) => setSource(e.target.value)} placeholder="Instagram, 知人紹介 等" /></div>
         <div />
       </div>
-      {error && <div style={{ color: 'var(--red)', fontSize: '0.78rem' }}>{error}</div>}
-      <div className="iv-footer">
-        <button className="iv-save-btn" onClick={save} disabled={saving}>{saving ? '追加中...' : '追加'}</button>
+      {error && <div style={{ color: 'var(--red)', fontSize: '0.78rem', marginBottom: '0.6rem' }}>{error}</div>}
+      <div className="modal-actions">
+        <button className="btn btn-primary" onClick={save} disabled={saving}>{saving ? '追加中...' : '追加'}</button>
       </div>
     </div>
   )

@@ -106,11 +106,11 @@ export type ApproachStep = (typeof APPROACH_STEPS)[number]
 export const APPROACH_STEP_COLORS: Record<string, string> = {
   '対象外': 'var(--bd2)',
   '未観測': 'var(--mu)',
-  'イベント参加（1回）': 'var(--gold)',
-  'イベント参加（複数回）': 'var(--blu)',
-  '1on1実施': 'var(--blu)',
-  'アカデミア興味あり': 'var(--grn)',
-  'アカデミア参加口頭内諾': 'var(--grn)',
+  'イベント参加（1回）': 'var(--neo-sun)',
+  'イベント参加（複数回）': 'var(--neo-sky)',
+  '1on1実施': 'var(--neo-purple)',
+  'アカデミア興味あり': 'var(--neo-mint)',
+  'アカデミア参加口頭内諾': 'var(--neo-pink)',
 }
 
 // youth_sessions テーブルと 1:1 対応

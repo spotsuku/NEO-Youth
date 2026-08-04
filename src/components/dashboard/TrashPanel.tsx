@@ -45,22 +45,22 @@ export default function TrashPanel({ apiPath, nameField, labelField, open }: {
     }
   }
 
-  if (loading) return <div style={{ padding: '1rem', color: 'var(--mu)' }}>読み込み中...</div>
-  if (rows.length === 0) return <div style={{ padding: '1rem', color: 'var(--mu)' }}>ゴミ箱は空です</div>
+  if (loading) return <div className="empty-state">読み込み中...</div>
+  if (rows.length === 0) return <div className="empty-state">ゴミ箱は空です</div>
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
       {rows.map((r) => {
         const key = String(r[nameField])
         return (
-          <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0.7rem', border: '1px solid var(--bd)', borderRadius: '5px' }}>
+          <div key={key} className="card-info flex-between">
             <div>
-              <div style={{ fontWeight: 600 }}>{String(r[labelField] ?? key)}</div>
-              <div style={{ fontSize: '0.68rem', color: 'var(--mu)' }}>
+              <div style={{ fontWeight: 700 }}>{String(r[labelField] ?? key)}</div>
+              <div className="field-hint">
                 削除日時: {r.deleted_at ? new Date(String(r.deleted_at)).toLocaleString('ja-JP') : '-'}
               </div>
             </div>
-            <button className="filter-btn" disabled={restoringId === key} onClick={() => restore(r)}>
+            <button className="btn btn-primary btn-sm" disabled={restoringId === key} onClick={() => restore(r)}>
               {restoringId === key ? '復元中...' : '復元'}
             </button>
           </div>

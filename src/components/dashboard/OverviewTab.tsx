@@ -130,146 +130,113 @@ export default function OverviewTab({ candidates, applicantCount, interviewCount
   const acceptCount = candidates.filter((c) => c.status === '承諾書提出' && !c.rejected_at).length
   const goukakuCount = candidates.filter((c) => (c.status === '合格' || c.status === '合格予定') && !c.rejected_at).length
 
+  const finalResultRows = [
+    { label: '参加承諾', value: acceptCount, target, color: 'var(--grn)' },
+    { label: '合格', value: goukakuCount, color: 'var(--grn)' },
+    { label: '合格基準', value: passCount, color: 'var(--blu)' },
+    { label: '不合格', value: candidates.filter((c) => !!c.rejected_at).length, color: 'var(--red)' },
+    { label: '辞退', value: candidates.filter((c) => c.status === '辞退' && !c.rejected_at).length, color: 'var(--gold)' },
+  ]
+  const finalResultMax = Math.max(...finalResultRows.map((r) => r.value), 1)
+
+  const pipelineRows = [
+    { label: '応募前', value: candidates.filter((c) => c.status === '応募前' && !c.rejected_at).length, color: 'var(--bd2)' },
+    { label: '応募完了', value: reachedCount(1), color: 'var(--grn)' },
+    { label: '書類選考', value: reachedCount(2), color: 'var(--blu)' },
+    { label: 'グループ面接', value: reachedCount(3), color: 'var(--gold)' },
+    { label: '最終面接', value: reachedCount(4), color: 'var(--red)' },
+    { label: '合格予定', value: reachedCount(5), color: 'var(--blu)' },
+    { label: '保留', value: candidates.filter((c) => c.status === '保留' && !c.rejected_at).length, color: 'var(--gold)' },
+  ]
+  const pipelineMax = Math.max(...pipelineRows.map((r) => r.value), 1)
+
+  const yomiRows = [
+    { label: '応募見込み80%', value: yomiSummary['応募見込み80%'] ?? 0, color: 'var(--grn)' },
+    { label: '応募見込み50%', value: yomiSummary['応募見込み50%'] ?? 0, color: 'var(--blu)' },
+    { label: '応募見込み20%', value: yomiSummary['応募見込み20%'] ?? 0, color: 'var(--gold)' },
+    { label: '応募対象外', value: yomiSummary['応募対象外'] ?? 0, color: 'var(--bd2)' },
+    { label: '3期生候補', value: yomiSummary['3期生候補'] ?? 0, color: 'var(--neo-purple)' },
+  ]
+  const yomiMax = Math.max(...yomiRows.map((r) => r.value), 1)
+  void totalYomi
+  void verdictCounts
+  void statusData
+  void yomiData
+
+  const pct = target > 0 ? Math.round((confirmed / target) * 100) : 0
+
   return (
     <>
-      {/* サマリーテーブル（3列横並び・バー形式） */}
-      <div className="summary-grid">
-        <div className="summary-card">
-          <div className="summary-card-title">最終結果</div>
-          <div className="summary-bars">
-            {[
-              { label: '参加承諾', value: acceptCount, target, color: 'var(--grn)' },
-              { label: '合格', value: goukakuCount, color: 'var(--grn)' },
-              { label: '合格基準', value: passCount, color: 'var(--blu)' },
-              { label: '不合格', value: candidates.filter((c) => !!c.rejected_at).length, color: 'var(--bd2)' },
-              { label: '辞退', value: candidates.filter((c) => c.status === '辞退' && !c.rejected_at).length, color: 'var(--red)' },
-            ].map((r) => {
-              const max = Math.max(acceptCount, goukakuCount, passCount, candidates.filter((c) => !!c.rejected_at).length, candidates.filter((c) => c.status === '辞退' && !c.rejected_at).length, 1)
-              return (
-                <div className="summary-bar-item" key={r.label}>
-                  <div className="summary-bar-label">{r.label}</div>
-                  <div className="summary-bar-track">
-                    <div
-                      className="summary-bar-fill"
-                      style={{
-                        width: `${Math.max((r.value / max) * 100, r.value > 0 ? 12 : 0)}%`,
-                        background: r.color,
-                      }}
-                    >
-                      {r.target !== undefined ? <span>{r.value} / {r.target}</span> : r.value > 0 && <span>{r.value}</span>}
-                    </div>
-                    {r.value === 0 && <span className="summary-bar-zero">{r.target !== undefined ? `0 / ${r.target}` : '0'}</span>}
-                  </div>
-                </div>
-              )
-            })}
+      <div className="hero">
+        <div>
+          <div className="hero-title display">
+            {showArchived ? '2期生 選考サマリー' : '次期選考の準備中です'}
+          </div>
+          <div className="hero-sub">
+            採用充足率 {confirmed} / {target} 名（{pct}%）
           </div>
         </div>
-
-        <div className="summary-card">
-          <div className="summary-card-title">選考中（累積: 各ステージに到達した人数）</div>
-          <div className="summary-bars">
-            {[
-              { label: '応募前', value: candidates.filter((c) => c.status === '応募前' && !c.rejected_at).length, color: 'var(--bd2)' },
-              { label: '応募完了', value: reachedCount(1), color: 'var(--grn)' },
-              { label: '書類選考', value: reachedCount(2), color: 'var(--blu)' },
-              { label: 'グループ面接', value: reachedCount(3), color: 'var(--gold)' },
-              { label: '最終面接', value: reachedCount(4), color: 'var(--red)' },
-              { label: '合格予定', value: reachedCount(5), color: 'var(--blu)' },
-              { label: '保留', value: candidates.filter((c) => c.status === '保留' && !c.rejected_at).length, color: 'var(--gold)' },
-            ].map((r) => {
-              const max = Math.max(
-                candidates.filter((c) => c.status === '応募前' && !c.rejected_at).length,
-                reachedCount(1),
-                reachedCount(2),
-                reachedCount(3),
-                reachedCount(4),
-                reachedCount(5),
-                candidates.filter((c) => c.status === '保留' && !c.rejected_at).length,
-                1
-              )
-              return (
-                <div className="summary-bar-item" key={r.label}>
-                  <div className="summary-bar-label">{r.label}</div>
-                  <div className="summary-bar-track">
-                    <div
-                      className="summary-bar-fill"
-                      style={{
-                        width: `${Math.max((r.value / max) * 100, r.value > 0 ? 12 : 0)}%`,
-                        background: r.color,
-                      }}
-                    >
-                      {r.value > 0 && <span>{r.value}</span>}
-                    </div>
-                    {r.value === 0 && <span className="summary-bar-zero">0</span>}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-
-        <div className="summary-card">
-          <div className="summary-card-title">応募前（ヨミ）</div>
-          <div className="summary-bars">
-            {[
-              { label: '応募見込み80%', value: yomiSummary['応募見込み80%'] ?? 0, color: 'var(--grn)' },
-              { label: '応募見込み50%', value: yomiSummary['応募見込み50%'] ?? 0, color: 'var(--blu)' },
-              { label: '応募見込み20%', value: yomiSummary['応募見込み20%'] ?? 0, color: 'var(--gold)' },
-              { label: '応募対象外', value: yomiSummary['応募対象外'] ?? 0, color: 'var(--bd2)' },
-              { label: '3期生候補', value: yomiSummary['3期生候補'] ?? 0, color: '#7b2d8e' },
-            ].map((r) => {
-              const max = Math.max(
-                yomiSummary['応募見込み80%'] ?? 0,
-                yomiSummary['応募見込み50%'] ?? 0,
-                yomiSummary['応募見込み20%'] ?? 0,
-                yomiSummary['応募対象外'] ?? 0,
-                yomiSummary['3期生候補'] ?? 0,
-                1
-              )
-              return (
-                <div className="summary-bar-item" key={r.label}>
-                  <div className="summary-bar-label">{r.label}</div>
-                  <div className="summary-bar-track">
-                    <div
-                      className="summary-bar-fill"
-                      style={{
-                        width: `${Math.max((r.value / max) * 100, r.value > 0 ? 12 : 0)}%`,
-                        background: r.color,
-                      }}
-                    >
-                      {r.value > 0 && <span>{r.value}</span>}
-                    </div>
-                    {r.value === 0 && <span className="summary-bar-zero">0</span>}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+        <div style={{ minWidth: '220px', flex: '1 1 260px', maxWidth: '360px' }}>
+          <div className="xp-track"><div className="xp-fill" style={{ width: `${Math.min(pct, 100)}%` }} /></div>
         </div>
       </div>
 
-      <div className="progress-wrap">
-        <div className="progress-label">
-          <span>採用充足率</span>
-          <span>
-            {confirmed} / {target} ({target > 0 ? Math.round((confirmed / target) * 100) : 0}%)
-          </span>
+      <div className="grid grid-3" style={{ marginBottom: '1.4rem' }}>
+        <div className="card-info">
+          <div className="section-label">最終結果</div>
+          {finalResultRows.map((r) => (
+            <div className="data-bar-row" key={r.label}>
+              <div className="data-bar-label">{r.label}</div>
+              <div className="data-bar-track">
+                <div className="data-bar-fill" style={{ width: `${Math.max((r.value / finalResultMax) * 100, r.value > 0 ? 12 : 0)}%`, background: r.color }}>
+                  {r.value > 0 && <span>{r.target !== undefined ? `${r.value} / ${r.target}` : r.value}</span>}
+                </div>
+                {r.value === 0 && <span className="data-bar-zero">{r.target !== undefined ? `0 / ${r.target}` : '0'}</span>}
+              </div>
+            </div>
+          ))}
         </div>
-        <div className="progress-bar">
-          <div className="progress-fill grn" style={{ width: `${target > 0 ? (confirmed / target) * 100 : 0}%` }} />
+
+        <div className="card-info">
+          <div className="section-label">選考中（累積: 各ステージに到達した人数）</div>
+          {pipelineRows.map((r) => (
+            <div className="data-bar-row" key={r.label}>
+              <div className="data-bar-label">{r.label}</div>
+              <div className="data-bar-track">
+                <div className="data-bar-fill" style={{ width: `${Math.max((r.value / pipelineMax) * 100, r.value > 0 ? 12 : 0)}%`, background: r.color }}>
+                  {r.value > 0 && <span>{r.value}</span>}
+                </div>
+                {r.value === 0 && <span className="data-bar-zero">0</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="card-info">
+          <div className="section-label">応募前（ヨミ）</div>
+          {yomiRows.map((r) => (
+            <div className="data-bar-row" key={r.label}>
+              <div className="data-bar-label">{r.label}</div>
+              <div className="data-bar-track">
+                <div className="data-bar-fill" style={{ width: `${Math.max((r.value / yomiMax) * 100, r.value > 0 ? 12 : 0)}%`, background: r.color }}>
+                  {r.value > 0 && <span>{r.value}</span>}
+                </div>
+                {r.value === 0 && <span className="data-bar-zero">0</span>}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
-      <div className="grid2">
-        <div className="card">
-          <div className="card-title">選考タイムライン</div>
+      <div className="grid grid-2">
+        <div className="card-info">
+          <div className="section-label">選考タイムライン</div>
           {showArchived ? (
             <div className="timeline">
               {TIMELINE.map((item, i) => (
                 <div className="tl-item" key={i}>
                   <div className={`tl-dot ${item.done ? 'done' : item.upcoming ? 'upcoming' : ''}`} />
-                  <div className="tl-content">
+                  <div>
                     <div className="tl-date">{item.date}</div>
                     <div className="tl-title">{item.title}</div>
                     <div className="tl-sub">{item.sub}</div>
@@ -278,39 +245,35 @@ export default function OverviewTab({ candidates, applicantCount, interviewCount
               ))}
             </div>
           ) : (
-            <div className="issue-card info">
-              <div className="issue-desc">次期選考のタイムラインは未定です。</div>
-            </div>
+            <div className="empty-state">次期選考のタイムラインは未定です。</div>
           )}
         </div>
 
-        <div className="card">
-          <div className="card-title">現在の課題</div>
+        <div className="card-info">
+          <div className="section-label">現在の課題</div>
           {showArchived ? (
-            <>
-              <div className="issue-card warn">
-                <div className="issue-title">面接日程の調整が必要</div>
-                <div className="issue-desc">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+              <div className="card-state sun">
+                <div style={{ fontWeight: 800, fontSize: '0.8rem', marginBottom: '0.2rem' }}>面接日程の調整が必要</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--ink2)' }}>
                   候補者で面接日程が未確定のケースあり。4/4(土)の面接枠を追加検討中。
                 </div>
               </div>
-              <div className="issue-card danger">
-                <div className="issue-title">応募目標未達</div>
-                <div className="issue-desc">
+              <div className="card-state danger">
+                <div style={{ fontWeight: 800, fontSize: '0.8rem', marginBottom: '0.2rem' }}>応募目標未達</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--ink2)' }}>
                   目標{target}名に対し確定{confirmed}名。残り{target - confirmed}名の選考を加速する必要あり。
                 </div>
               </div>
-              <div className="issue-card info">
-                <div className="issue-title">リファラル経路の強化</div>
-                <div className="issue-desc">
+              <div className="card-state sky">
+                <div style={{ fontWeight: 800, fontSize: '0.8rem', marginBottom: '0.2rem' }}>リファラル経路の強化</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--ink2)' }}>
                   1期生からの紹介が有効。追加の紹介依頼を検討中。
                 </div>
               </div>
-            </>
-          ) : (
-            <div className="issue-card info">
-              <div className="issue-desc">次期選考の課題はまだありません。</div>
             </div>
+          ) : (
+            <div className="empty-state">次期選考の課題はまだありません。</div>
           )}
         </div>
       </div>

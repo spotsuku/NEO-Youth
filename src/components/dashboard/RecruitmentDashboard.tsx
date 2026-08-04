@@ -167,94 +167,88 @@ export default function RecruitmentDashboard({ candidates: initial, sessions, ve
   }, [])
 
   const interviewed = selectionCandidates.filter((c) => c.interview_date)
+  const showArchiveToolbar = tab !== 'approach' && tab !== 'partnerships'
 
   return (
-    <>
-      <header className="db-header">
-        <div className="db-logo">
+    <div className="shell">
+      <aside className="shell-sidebar">
+        <div className="shell-logo">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/neo-academia-logo.png" alt="NEO ACADEMIA" className="db-logo-img" />
-          <span>2nd / Dashboard</span>
+          <img src="/neo-academia-logo.png" alt="NEO ACADEMIA" className="shell-logo-img" />
+          <span className="shell-logo-text">2nd<br />Dashboard</span>
         </div>
-        <nav className="db-nav">
+        <nav className="shell-nav">
           {TABS.map((t) => (
             <button
               key={t.key}
-              className={tab === t.key ? 'active' : ''}
+              className={`shell-nav-item ${tab === t.key ? 'active' : ''}`}
               onClick={() => setTab(t.key)}
             >
+              <span className="shell-nav-dot" />
               {t.label}
             </button>
           ))}
         </nav>
-        <a
-          href="/"
-          style={{
-            fontSize: '0.7rem',
-            color: 'var(--mu)',
-            textDecoration: 'none',
-            border: '1px solid var(--bd)',
-            borderRadius: '4px',
-            padding: '0.3rem 0.7rem',
-            whiteSpace: 'nowrap',
-            transition: 'all 0.12s',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = 'var(--red)'
-            e.currentTarget.style.color = 'var(--red)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = 'var(--bd)'
-            e.currentTarget.style.color = 'var(--mu)'
-          }}
-        >
-          面接シート
-        </a>
-      </header>
-
-      {dbError && (
-        <div style={{ padding: '0.8rem 2rem', fontSize: '0.78rem', color: 'var(--gold)', background: 'rgba(196,136,42,0.06)', borderBottom: '1px solid rgba(196,136,42,0.18)' }}>
-          DB接続エラー: {dbError}
+        <div className="shell-foot">
+          <a className="shell-foot-link" href="/">面接シート →</a>
         </div>
-      )}
+      </aside>
 
-      {tab !== 'approach' && tab !== 'partnerships' && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.6rem 2rem', borderBottom: '1px solid var(--bd)', fontSize: '0.75rem', color: 'var(--mu)' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-            <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} />
-            過去の選考データを表示{archivedCount > 0 ? `（${archivedCount}件）` : ''}
-          </label>
-          {archivedCount === 0 && (
-            <button
-              className="filter-btn"
-              onClick={() => setArchiveModalOpen(true)}
-              style={{ marginLeft: 'auto' }}
-            >
-              今年度の選考をアーカイブする
-            </button>
+      <nav className="shell-bottomnav">
+        {TABS.map((t) => (
+          <button
+            key={t.key}
+            className={`shell-bottomnav-item ${tab === t.key ? 'active' : ''}`}
+            onClick={() => setTab(t.key)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </nav>
+
+      <div className="shell-main">
+        <main className="shell-page">
+          {dbError && (
+            <div className="card-state danger" style={{ marginBottom: '1rem', fontSize: '0.8rem' }}>
+              DB接続エラー: {dbError}
+            </div>
           )}
-        </div>
-      )}
 
-      <Modal open={archiveModalOpen} onClose={() => setArchiveModalOpen(false)} title="選考をアーカイブしますか？">
-        <p style={{ fontSize: '0.85rem', color: 'var(--mu)', marginBottom: '1rem' }}>
-          現在の候補者{candidates.filter((c) => !c.deleted_at && !c.selection_archived_at).length}名の選考データを
-          アーカイブします。データは削除されず、「過去の選考データを表示」で後からいつでも確認できます。
-          アプローチ管理・学校連携のデータは影響を受けません。
-        </p>
-        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-          <button className="filter-btn" onClick={() => setArchiveModalOpen(false)} disabled={archiving}>
-            キャンセル
-          </button>
-          <button className="iv-save-btn" onClick={archiveSelection} disabled={archiving}>
-            {archiving ? 'アーカイブ中...' : 'アーカイブする'}
-          </button>
-        </div>
-      </Modal>
+          {showArchiveToolbar && (
+            <div className="toolbar">
+              <label className="toolbar-toggle">
+                <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} />
+                過去の選考データを表示{archivedCount > 0 ? `（${archivedCount}件）` : ''}
+              </label>
+              {archivedCount === 0 && (
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setArchiveModalOpen(true)}
+                  style={{ marginLeft: 'auto' }}
+                >
+                  今年度の選考をアーカイブする
+                </button>
+              )}
+            </div>
+          )}
 
-      <main className="db-main">
-        {tab === 'overview' && (
-          <div className="db-page">
+          <Modal open={archiveModalOpen} onClose={() => setArchiveModalOpen(false)} title="選考をアーカイブしますか？">
+            <p style={{ fontSize: '0.85rem', color: 'var(--mu)', marginBottom: '1rem', lineHeight: 1.7 }}>
+              現在の候補者{candidates.filter((c) => !c.deleted_at && !c.selection_archived_at).length}名の選考データを
+              アーカイブします。データは削除されず、「過去の選考データを表示」で後からいつでも確認できます。
+              アプローチ管理・学校連携のデータは影響を受けません。
+            </p>
+            <div className="modal-actions">
+              <button className="btn btn-secondary" onClick={() => setArchiveModalOpen(false)} disabled={archiving}>
+                キャンセル
+              </button>
+              <button className="btn btn-primary" onClick={archiveSelection} disabled={archiving}>
+                {archiving ? 'アーカイブ中...' : 'アーカイブする'}
+              </button>
+            </div>
+          </Modal>
+
+          {tab === 'overview' && (
             <OverviewTab
               candidates={selectionCandidates}
               applicantCount={selectionCandidates.length}
@@ -263,10 +257,8 @@ export default function RecruitmentDashboard({ candidates: initial, sessions, ve
               verdictMap={verdictMap}
               showArchived={showArchived}
             />
-          </div>
-        )}
-        {tab === 'applicants' && (
-          <div className="db-page">
+          )}
+          {tab === 'applicants' && (
             <ApplicantsTab
               candidates={selectionCandidates}
               onUpdate={updateCandidate}
@@ -276,39 +268,15 @@ export default function RecruitmentDashboard({ candidates: initial, sessions, ve
               verdictMap={verdictMap}
               promotedNames={promoted}
             />
-          </div>
-        )}
-        {tab === 'interviews' && (
-          <div className="db-page">
-            <InterviewsTab candidates={interviewed} />
-          </div>
-        )}
-        {tab === 'flow' && (
-          <div className="db-page">
-            <FlowTab candidates={selectionCandidates} onUpdate={updateCandidate} />
-          </div>
-        )}
-        {tab === 'onboarding' && (
-          <div className="db-page">
-            <OnboardingTab candidates={selectionCandidates} onUpdate={updateCandidate} />
-          </div>
-        )}
-        {tab === 'sessions' && (
-          <div className="db-page">
-            <SessionsTab sessions={sessions} />
-          </div>
-        )}
-        {tab === 'approach' && (
-          <div className="db-page">
-            <ApproachTab candidates={candidates} onUpdate={updateCandidate} />
-          </div>
-        )}
-        {tab === 'partnerships' && (
-          <div className="db-page">
-            <PartnershipsTab />
-          </div>
-        )}
-      </main>
-    </>
+          )}
+          {tab === 'interviews' && <InterviewsTab candidates={interviewed} />}
+          {tab === 'flow' && <FlowTab candidates={selectionCandidates} onUpdate={updateCandidate} />}
+          {tab === 'onboarding' && <OnboardingTab candidates={selectionCandidates} onUpdate={updateCandidate} />}
+          {tab === 'sessions' && <SessionsTab sessions={sessions} />}
+          {tab === 'approach' && <ApproachTab candidates={candidates} onUpdate={updateCandidate} />}
+          {tab === 'partnerships' && <PartnershipsTab />}
+        </main>
+      </div>
+    </div>
   )
 }
