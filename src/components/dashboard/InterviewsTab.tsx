@@ -31,7 +31,10 @@ export default function InterviewsTab({ candidates }: Props) {
         </div>
       </div>
 
-      <div className="section-title">面談記録一覧</div>
+      <div className="flex-between" style={{ marginBottom: '0.9rem' }}>
+        <div className="section-title" style={{ marginBottom: 0 }}>面談記録一覧</div>
+        <a className="btn btn-secondary btn-sm" href="/">最終面接シートを開く →</a>
+      </div>
 
       {candidates.length === 0 ? (
         <div className="empty-state">面談記録がありません。</div>

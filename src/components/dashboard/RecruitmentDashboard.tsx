@@ -189,9 +189,6 @@ export default function RecruitmentDashboard({ candidates: initial, sessions, ve
             </button>
           ))}
         </nav>
-        <div className="shell-foot">
-          <a className="shell-foot-link" href="/">面接シート →</a>
-        </div>
       </aside>
 
       <nav className="shell-bottomnav">
