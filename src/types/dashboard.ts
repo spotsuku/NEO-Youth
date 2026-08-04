@@ -65,6 +65,9 @@ export interface YouthCandidate {
   // アプローチ管理専用の `archived` とは別軸。null = 選考データとして表示対象
   selection_archived_at: string | null
 
+  // 論理削除（ゴミ箱）。null = 削除されていない
+  deleted_at: string | null
+
   created_at: string
   updated_at: string
 }
