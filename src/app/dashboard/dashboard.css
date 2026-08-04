@@ -296,10 +296,9 @@
   background: var(--sur);
   color: var(--ink);
   border: 1.5px solid var(--bd);
-  box-shadow: 0 2px 0 var(--bd);
 }
 .btn-secondary:hover:not(:disabled) { border-color: var(--neo-pink); color: var(--neo-pink-strong); }
-.btn-secondary:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 0 0 var(--bd); }
+.btn-secondary:active:not(:disabled) { transform: translateY(2px); }
 
 .btn-ghost {
   background: transparent;
@@ -315,10 +314,9 @@
   background: #fff;
   color: var(--red);
   border: 1.5px solid rgba(212,65,86,0.35);
-  box-shadow: 0 2px 0 rgba(212,65,86,0.2);
 }
 .btn-danger:hover:not(:disabled) { background: rgba(212,65,86,0.06); }
-.btn-danger:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 0 0 rgba(212,65,86,0.2); }
+.btn-danger:active:not(:disabled) { transform: translateY(2px); }
 
 .btn-sm { min-height: 30px; padding: 0.32rem 0.7rem; font-size: 0.7rem; }
 
@@ -331,18 +329,15 @@
   font-weight: 600;
   color: var(--mu);
   cursor: pointer;
-  box-shadow: 0 2px 0 var(--bd);
   transition: all 0.15s, transform 0.1s;
 }
 .btn-chip:hover { border-color: var(--neo-pink); color: var(--neo-pink-strong); }
-.btn-chip:active { transform: translateY(2px); box-shadow: 0 0 0 var(--bd); }
+.btn-chip:active { transform: translateY(2px); }
 .btn-chip.active {
   background: var(--neo-ink);
   border-color: var(--neo-ink);
   color: #fff;
-  box-shadow: 0 2px 0 rgba(63,53,70,0.4);
 }
-.btn-chip.active:active { box-shadow: 0 0 0 rgba(63,53,70,0.4); }
 
 /* ============ CARDS ============ */
 .card-info {
