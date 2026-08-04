@@ -148,7 +148,7 @@
   width: 100%; padding: 0.52rem 0.72rem;
   border: 1.5px solid var(--bd);
   border-radius: 5px;
-  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", YuGothic, system-ui, sans-serif;
   font-size: 0.8rem; color: var(--ink);
   background: var(--sur2); outline: none;
   transition: border-color 0.12s;
@@ -159,7 +159,7 @@
 .textarea {
   width: 100%; padding: 0.52rem 0.72rem;
   border: 1.5px solid var(--bd); border-radius: 5px;
-  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", YuGothic, system-ui, sans-serif;
   font-size: 0.8rem; color: var(--ink);
   background: var(--sur2); outline: none;
   resize: vertical; min-height: 72px;
@@ -202,7 +202,7 @@
   flex: 1; padding: 0.65rem;
   border-radius: 5px; border: 2px solid var(--bd);
   background: var(--sur2); cursor: pointer;
-  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", YuGothic, system-ui, sans-serif;
   font-size: 0.82rem; font-weight: 700;
   transition: all 0.1s;
 }
@@ -239,7 +239,7 @@
 .editCandArea {
   width: 100%; padding: 0.5rem 0.65rem;
   border: 1.5px solid var(--gold); border-radius: 5px;
-  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", YuGothic, system-ui, sans-serif;
   font-size: 0.78rem; color: var(--ink); background: rgba(196,136,42,0.04);
   resize: vertical; outline: none; min-height: 72px;
 }
@@ -249,7 +249,7 @@
 .editCandSave {
   padding: 0.6rem 1rem; background: var(--ink); color: #fff;
   border: none; border-radius: 5px;
-  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", YuGothic, system-ui, sans-serif;
   font-size: 0.78rem; font-weight: 700;
   cursor: pointer; transition: all 0.1s; align-self: flex-end;
 }
@@ -292,7 +292,7 @@
   width: 100%; padding: 0.82rem;
   background: #1a1510; color: #fff;
   border: none; border-radius: 6px;
-  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", YuGothic, system-ui, sans-serif;
   font-size: 0.85rem; font-weight: 700;
   cursor: pointer; transition: all 0.12s;
 }

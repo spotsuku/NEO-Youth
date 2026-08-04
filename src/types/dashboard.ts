@@ -61,6 +61,10 @@ export interface YouthCandidate {
   partner_id: string | null
   archived: boolean
 
+  // 選考パイプラインのアーカイブ（年度締切時にセット）
+  // アプローチ管理専用の `archived` とは別軸。null = 選考データとして表示対象
+  selection_archived_at: string | null
+
   created_at: string
   updated_at: string
 }

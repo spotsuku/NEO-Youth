@@ -23,6 +23,7 @@ const ALLOWED = new Set([
   'next_action', 'na_due_date', 'na_written_at',
   'contact_method', 'inflow_source', 'note', 'partner_id', 'archived',
   'deleted_at', // 復元（ゴミ箱から戻す）時に null をセットするために許可
+  'selection_archived_at', // 選考パイプラインのアーカイブ／解除
 ])
 
 export async function PATCH(

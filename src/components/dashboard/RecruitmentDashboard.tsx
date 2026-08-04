@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import type { YouthCandidate, YouthSession } from '@/types/dashboard'
 import type { VerdictRecord } from '@/app/dashboard/page'
 import OverviewTab from './OverviewTab'
@@ -11,6 +11,7 @@ import OnboardingTab from './OnboardingTab'
 import SessionsTab from './SessionsTab'
 import PartnershipsTab from './PartnershipsTab'
 import ApproachTab from './ApproachTab'
+import Modal from './Modal'
 
 const TABS = [
   { key: 'overview', label: '概要' },
@@ -37,6 +38,39 @@ export default function RecruitmentDashboard({ candidates: initial, sessions, ve
   const [tab, setTab] = useState<TabKey>('overview')
   const [candidates, setCandidates] = useState<YouthCandidate[]>(initial)
   const [promoted, setPromoted] = useState<Set<string>>(() => new Set(promotedNames))
+  const [showArchived, setShowArchived] = useState(false)
+  const [archiveModalOpen, setArchiveModalOpen] = useState(false)
+  const [archiving, setArchiving] = useState(false)
+
+  // 選考パイプライン系タブ（概要／候補者／面談記録／選考フロー／オンボーディング／説明会）のみ
+  // アーカイブ切替の対象。アプローチ・学校連携は常に全候補者を見る。
+  const selectionCandidates = useMemo(
+    () => (showArchived ? candidates : candidates.filter((c) => !c.selection_archived_at)),
+    [candidates, showArchived],
+  )
+  const archivedCount = useMemo(
+    () => candidates.filter((c) => c.selection_archived_at).length,
+    [candidates],
+  )
+
+  const archiveSelection = useCallback(async () => {
+    setArchiving(true)
+    try {
+      const res = await fetch('/api/youth/candidates/bulk-archive', { method: 'POST' })
+      if (!res.ok) {
+        console.error('[archiveSelection] error:', await res.json().catch(() => ({})))
+        return
+      }
+      const { names } = await res.json()
+      const archivedAt = new Date().toISOString()
+      setCandidates((prev) =>
+        prev.map((c) => (names?.includes(c.name) ? { ...c, selection_archived_at: archivedAt } : c)),
+      )
+      setArchiveModalOpen(false)
+    } finally {
+      setArchiving(false)
+    }
+  }, [])
 
   const promoteToFinal = useCallback(async (name: string): Promise<boolean> => {
     try {
@@ -132,7 +166,7 @@ export default function RecruitmentDashboard({ candidates: initial, sessions, ve
     } catch {}
   }, [])
 
-  const interviewed = candidates.filter((c) => c.interview_date)
+  const interviewed = selectionCandidates.filter((c) => c.interview_date)
 
   return (
     <>
@@ -184,22 +218,57 @@ export default function RecruitmentDashboard({ candidates: initial, sessions, ve
         </div>
       )}
 
+      {tab !== 'approach' && tab !== 'partnerships' && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.6rem 2rem', borderBottom: '1px solid var(--bd)', fontSize: '0.75rem', color: 'var(--mu)' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+            <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} />
+            過去の選考データを表示{archivedCount > 0 ? `（${archivedCount}件）` : ''}
+          </label>
+          {archivedCount === 0 && (
+            <button
+              className="filter-btn"
+              onClick={() => setArchiveModalOpen(true)}
+              style={{ marginLeft: 'auto' }}
+            >
+              今年度の選考をアーカイブする
+            </button>
+          )}
+        </div>
+      )}
+
+      <Modal open={archiveModalOpen} onClose={() => setArchiveModalOpen(false)} title="選考をアーカイブしますか？">
+        <p style={{ fontSize: '0.85rem', color: 'var(--mu)', marginBottom: '1rem' }}>
+          現在の候補者{candidates.filter((c) => !c.deleted_at && !c.selection_archived_at).length}名の選考データを
+          アーカイブします。データは削除されず、「過去の選考データを表示」で後からいつでも確認できます。
+          アプローチ管理・学校連携のデータは影響を受けません。
+        </p>
+        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+          <button className="filter-btn" onClick={() => setArchiveModalOpen(false)} disabled={archiving}>
+            キャンセル
+          </button>
+          <button className="iv-save-btn" onClick={archiveSelection} disabled={archiving}>
+            {archiving ? 'アーカイブ中...' : 'アーカイブする'}
+          </button>
+        </div>
+      </Modal>
+
       <main className="db-main">
         {tab === 'overview' && (
           <div className="db-page">
             <OverviewTab
-              candidates={candidates}
-              applicantCount={candidates.length}
+              candidates={selectionCandidates}
+              applicantCount={selectionCandidates.length}
               interviewCount={interviewed.length}
               sessionCount={sessions.length}
               verdictMap={verdictMap}
+              showArchived={showArchived}
             />
           </div>
         )}
         {tab === 'applicants' && (
           <div className="db-page">
             <ApplicantsTab
-              candidates={candidates}
+              candidates={selectionCandidates}
               onUpdate={updateCandidate}
               onAdd={addCandidate}
               onDelete={deleteCandidate}
@@ -216,12 +285,12 @@ export default function RecruitmentDashboard({ candidates: initial, sessions, ve
         )}
         {tab === 'flow' && (
           <div className="db-page">
-            <FlowTab candidates={candidates} onUpdate={updateCandidate} />
+            <FlowTab candidates={selectionCandidates} onUpdate={updateCandidate} />
           </div>
         )}
         {tab === 'onboarding' && (
           <div className="db-page">
-            <OnboardingTab candidates={candidates} onUpdate={updateCandidate} />
+            <OnboardingTab candidates={selectionCandidates} onUpdate={updateCandidate} />
           </div>
         )}
         {tab === 'sessions' && (

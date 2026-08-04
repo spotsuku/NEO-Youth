@@ -1,16 +1,38 @@
 :root {
-  --bg: #f5f2ec;
-  --sur: #ffffff;
-  --sur2: #faf8f4;
-  --ink: #1a1510;
-  --ink2: #4a4035;
-  --mu: #8c7d6a;
-  --bd: #e0d9ce;
-  --bd2: #c8bfb0;
-  --red: #c0392b;
-  --gold: #c4882a;
-  --grn: #2e7d52;
-  --blu: #2563a8;
+  /* NEO CAMPUS Design System — foundation/adventure tokens */
+  --neo-canvas: #FFFAF4;
+  --neo-paper: #FFFFFF;
+  --neo-ink: #3F3546;
+  --neo-muted: #776B7B;
+  --neo-line: #E7DCE8;
+  --neo-pink: #FF78B7;
+  --neo-pink-strong: #FF3B9D;
+  --neo-sky: #79D8FF;
+  --neo-sun: #FFDC4D;
+  --neo-mint: #7EE0BD;
+  --neo-purple: #A58BFF;
+
+  --neo-radius-control: 14px;
+  --neo-radius-card: 22px;
+  --neo-radius-hero: 32px;
+  --neo-border: 3px solid var(--neo-ink);
+  --neo-shadow: 0 6px 0 var(--neo-ink);
+  --neo-shadow-quiet: 0 12px 40px rgb(42 44 36 / 8%);
+  --neo-content: 1200px;
+
+  /* 既存の変数名は維持し、値だけ刷新（150以上のクラスルールを var(--x) 参照のまま活かす） */
+  --bg: var(--neo-canvas);
+  --sur: var(--neo-paper);
+  --sur2: #FBF6EE;
+  --ink: var(--neo-ink);
+  --ink2: #5B4F63;
+  --mu: var(--neo-muted);
+  --bd: var(--neo-line);
+  --bd2: #D9C9DA;
+  --red: #D44156;
+  --gold: #D9A62B;
+  --grn: #2FA57A;
+  --blu: #2E97C7;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -18,6 +40,25 @@
 body {
   background: var(--bg);
   color: var(--ink);
-  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", YuGothic, system-ui, sans-serif;
   min-height: 100vh;
+}
+
+.display {
+  font-family: "Hiragino Maru Gothic ProN", "ヒラギノ丸ゴ ProN",
+    "Arial Rounded MT Bold", "Yu Gothic", sans-serif;
+}
+
+:focus-visible {
+  outline: 3px solid var(--neo-purple);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

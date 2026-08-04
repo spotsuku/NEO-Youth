@@ -45,7 +45,7 @@
   background: none;
   border: 1.5px solid var(--bd2);
   border-radius: 4px;
-  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", YuGothic, system-ui, sans-serif;
   font-size: 0.7rem;
   color: var(--ink2);
   cursor: pointer;

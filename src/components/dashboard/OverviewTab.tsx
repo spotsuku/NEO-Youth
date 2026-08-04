@@ -10,6 +10,7 @@ interface Props {
   interviewCount: number
   sessionCount: number
   verdictMap: Record<string, VerdictRecord>
+  showArchived: boolean
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -68,7 +69,7 @@ const STAGE_INDEX: Record<string, number> = {
 const stageIdx = (status: string | null | undefined): number =>
   status && status in STAGE_INDEX ? STAGE_INDEX[status] : -1
 
-export default function OverviewTab({ candidates, applicantCount, interviewCount, sessionCount, verdictMap }: Props) {
+export default function OverviewTab({ candidates, applicantCount, interviewCount, sessionCount, verdictMap, showArchived }: Props) {
   const target = 36
   const confirmed = candidates.filter((c) => c.status === '参加確定').length
 
@@ -263,40 +264,54 @@ export default function OverviewTab({ candidates, applicantCount, interviewCount
       <div className="grid2">
         <div className="card">
           <div className="card-title">選考タイムライン</div>
-          <div className="timeline">
-            {TIMELINE.map((item, i) => (
-              <div className="tl-item" key={i}>
-                <div className={`tl-dot ${item.done ? 'done' : item.upcoming ? 'upcoming' : ''}`} />
-                <div className="tl-content">
-                  <div className="tl-date">{item.date}</div>
-                  <div className="tl-title">{item.title}</div>
-                  <div className="tl-sub">{item.sub}</div>
+          {showArchived ? (
+            <div className="timeline">
+              {TIMELINE.map((item, i) => (
+                <div className="tl-item" key={i}>
+                  <div className={`tl-dot ${item.done ? 'done' : item.upcoming ? 'upcoming' : ''}`} />
+                  <div className="tl-content">
+                    <div className="tl-date">{item.date}</div>
+                    <div className="tl-title">{item.title}</div>
+                    <div className="tl-sub">{item.sub}</div>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="issue-card info">
+              <div className="issue-desc">次期選考のタイムラインは未定です。</div>
+            </div>
+          )}
         </div>
 
         <div className="card">
           <div className="card-title">現在の課題</div>
-          <div className="issue-card warn">
-            <div className="issue-title">面接日程の調整が必要</div>
-            <div className="issue-desc">
-              候補者で面接日程が未確定のケースあり。4/4(土)の面接枠を追加検討中。
+          {showArchived ? (
+            <>
+              <div className="issue-card warn">
+                <div className="issue-title">面接日程の調整が必要</div>
+                <div className="issue-desc">
+                  候補者で面接日程が未確定のケースあり。4/4(土)の面接枠を追加検討中。
+                </div>
+              </div>
+              <div className="issue-card danger">
+                <div className="issue-title">応募目標未達</div>
+                <div className="issue-desc">
+                  目標{target}名に対し確定{confirmed}名。残り{target - confirmed}名の選考を加速する必要あり。
+                </div>
+              </div>
+              <div className="issue-card info">
+                <div className="issue-title">リファラル経路の強化</div>
+                <div className="issue-desc">
+                  1期生からの紹介が有効。追加の紹介依頼を検討中。
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="issue-card info">
+              <div className="issue-desc">次期選考の課題はまだありません。</div>
             </div>
-          </div>
-          <div className="issue-card danger">
-            <div className="issue-title">応募目標未達</div>
-            <div className="issue-desc">
-              目標{target}名に対し確定{confirmed}名。残り{target - confirmed}名の選考を加速する必要あり。
-            </div>
-          </div>
-          <div className="issue-card info">
-            <div className="issue-title">リファラル経路の強化</div>
-            <div className="issue-desc">
-              1期生からの紹介が有効。追加の紹介依頼を検討中。
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </>
