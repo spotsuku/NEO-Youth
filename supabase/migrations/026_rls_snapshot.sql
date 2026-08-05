@@ -47,6 +47,39 @@ join pg_namespace n on n.oid = c.relnamespace
 where n.nspname = 'public'
   and c.relkind = 'r';
 
+-- ---- テーブルGRANTのスナップショット ----
+-- RLSポリシーを狭めても anon ロールのテーブルGRANTは残る。027 でこれを REVOKE
+-- するため、現行の付与状態を保存しておく。
+-- information_schema.role_table_grants は実行ロールから見える範囲しか返さないので、
+-- pg_class.relacl を直接展開して確実に全件取る。
+drop table if exists ops.grants_snapshot_20260805;
+create table ops.grants_snapshot_20260805 as
+select
+  n.nspname as table_schema,
+  c.relname as table_name,
+  case when a.grantee = 0 then 'PUBLIC' else pg_get_userbyid(a.grantee) end as grantee,
+  a.privilege_type,
+  a.is_grantable,
+  now() as captured_at
+from pg_class c
+join pg_namespace n on n.oid = c.relnamespace
+cross join lateral aclexplode(c.relacl) a
+where n.nspname = 'public'
+  and c.relkind = 'r';
+
+-- ---- デフォルト権限のスナップショット ----
+-- Supabase は ALTER DEFAULT PRIVILEGES で「今後作るテーブル」にも anon 権限を
+-- 自動付与する設定を持つ。027 でこれも外すため記録しておく。
+drop table if exists ops.default_acl_snapshot_20260805;
+create table ops.default_acl_snapshot_20260805 as
+select
+  d.defaclrole::regrole::text as grantor_role,
+  coalesce(d.defaclnamespace::regnamespace::text, '(全スキーマ)') as schema_name,
+  d.defaclobjtype as object_type,
+  d.defaclacl::text as acl,
+  now() as captured_at
+from pg_default_acl d;
+
 -- ---- CREATE POLICY 文を組み立てる共通関数 ----
 -- 027 と 026/027 の各ロールバックで共用する。
 -- qual / with_check が null の場合は該当句を出力しない
@@ -93,10 +126,31 @@ $fn$;
 -- 027 適用前のロール構成を目視確認するための出力。
 -- roles に public / anon が含まれる行が、027 で authenticated に狭められる対象。
 select
+  'policy' as kind,
   tablename,
   policyname,
   cmd,
-  roles,
+  roles::text,
   case when 'public' = any(roles) or 'anon' = any(roles) then '← 027で変更' else '' end as note
 from ops.rls_snapshot_20260805
 order by tablename, policyname;
+
+-- anon に付与されているテーブル権限（027 で REVOKE する対象）
+select
+  table_name,
+  string_agg(privilege_type, ', ' order by privilege_type) as anon_privileges
+from ops.grants_snapshot_20260805
+where grantee = 'anon'
+group by table_name
+order by table_name;
+
+-- PUBLIC ロールに権限が付いていないことの確認。
+-- ここに行が出る場合、anon から REVOKE しても PUBLIC 経由で権限が残るため
+-- 027 だけでは遮断しきれない（その場合は報告して方針を再検討する）。
+select
+  table_name,
+  string_agg(privilege_type, ', ' order by privilege_type) as public_privileges
+from ops.grants_snapshot_20260805
+where grantee = 'PUBLIC'
+group by table_name
+order by table_name;

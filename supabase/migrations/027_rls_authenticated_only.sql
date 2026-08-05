@@ -70,6 +70,48 @@ begin
 end
 $$;
 
+-- ============================================================================
+-- anon ロールのテーブルGRANTを剥がす（多層防御）
+--
+-- ポリシーを authenticated に狭めた時点で anon は実質遮断されるが、
+-- GRANT 自体は残る。GRANT を外しておけば、将来誰かが誤って
+-- 「anon にも読ませる」ポリシーを1本追加しても権限側で止まる。
+--
+-- anon クライアント（src/lib/supabase.ts）は import 元ゼロのデッドコードなので、
+-- REVOKE によって壊れる呼び出し元は存在しない。
+-- ============================================================================
+
+do $$
+declare
+  t       record;
+  n_revoked int := 0;
+begin
+  for t in
+    select c.relname
+    from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public' and c.relkind = 'r'
+    order by c.relname
+  loop
+    execute format('revoke all privileges on table public.%I from anon', t.relname);
+    n_revoked := n_revoked + 1;
+  end loop;
+
+  raise notice 'anon から % テーブルの権限を剥がしました', n_revoked;
+end
+$$;
+
+-- ---- 今後作られるテーブルにも anon 権限が付かないようにする ----
+-- Supabase は ALTER DEFAULT PRIVILEGES で新規テーブルへ anon 権限を自動付与する。
+-- これを外さないと、フェーズ1で作る youths / organizations などが
+-- 同じ穴を開けた状態で生まれてしまう。
+--
+-- 注意: デフォルト権限は「設定した付与者ロール」ごとに保持される。
+-- ここで外せるのは実行ロール（SQL Editor では postgres）の分のみ。
+-- 他のロールが設定した分が残る可能性があるため、フェーズ1で新テーブルを
+-- 作った直後に scripts/verify-rls.mjs で必ず再検証する。
+alter default privileges in schema public revoke all on tables from anon;
+
 -- ---- RLS が全テーブルで有効であることを念のため保証する ----
 -- （既に有効なので実質 no-op。将来テーブルが増えたときの取りこぼし防止）
 do $$
@@ -87,15 +129,39 @@ begin
 end
 $$;
 
--- ---- 適用結果の確認 ----
--- すべての行の roles が {authenticated}（または service_role 併記）になっていること。
--- public / anon が残っていれば想定外なので調査する。
+-- ============================================================================
+-- 適用結果の確認
+-- ============================================================================
+
+-- 1) 全ポリシーの roles が authenticated（または service_role 併記）であること
 select
   tablename,
   policyname,
   cmd,
-  roles,
+  roles::text,
   case when 'public' = any(roles) or 'anon' = any(roles) then '⚠️ anon が残存' else 'OK' end as status
 from pg_policies
 where schemaname = 'public'
 order by tablename, policyname;
+
+-- 2) anon にテーブル権限が一切残っていないこと（0行が期待値）
+select
+  c.relname as table_name,
+  a.privilege_type,
+  '⚠️ anon 権限が残存' as status
+from pg_class c
+join pg_namespace n on n.oid = c.relnamespace
+cross join lateral aclexplode(c.relacl) a
+where n.nspname = 'public'
+  and c.relkind = 'r'
+  and a.grantee = 'anon'::regrole::oid
+order by c.relname, a.privilege_type;
+
+-- 3) デフォルト権限に anon が残っていないこと
+select
+  d.defaclrole::regrole::text as grantor_role,
+  d.defaclnamespace::regnamespace::text as schema_name,
+  d.defaclacl::text as acl,
+  case when d.defaclacl::text like '%anon=%' then '⚠️ anon が残存' else 'OK' end as status
+from pg_default_acl d
+where d.defaclobjtype = 'r';

@@ -39,6 +39,46 @@ begin
 end
 $$;
 
+-- ---- anon のテーブルGRANTを 026 時点の状態へ復元する ----
+do $$
+declare
+  g       record;
+  n_granted int := 0;
+begin
+  if not exists (
+    select 1 from information_schema.tables
+    where table_schema = 'ops' and table_name = 'grants_snapshot_20260805'
+  ) then
+    raise exception 'ops.grants_snapshot_20260805 が存在しません。GRANT を復元できません';
+  end if;
+
+  for g in
+    select * from ops.grants_snapshot_20260805
+    where grantee = 'anon'
+    order by table_name, privilege_type
+  loop
+    -- privilege_type は pg_class.relacl 由来のキーワードなので識別子引用しない。
+    -- 想定外の値が入っていた場合は権限文が壊れるより先に弾く。
+    if g.privilege_type not in
+       ('SELECT','INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER','MAINTAIN') then
+      raise exception '未知の権限種別: %', g.privilege_type;
+    end if;
+
+    execute format('grant %s on table %I.%I to anon',
+                   g.privilege_type, g.table_schema, g.table_name);
+    n_granted := n_granted + 1;
+  end loop;
+
+  raise notice 'anon へ % 件の権限を復元しました', n_granted;
+end
+$$;
+
+-- ---- デフォルト権限を復元する ----
+-- 026 のスナップショット（ops.default_acl_snapshot_20260805）に記録された
+-- 適用前の ACL は参照用。Supabase の既定は新規テーブルへ全権限を付与する設定なので、
+-- それに合わせて戻す。厳密な差分復元が必要な場合はスナップショットの acl 列を確認する。
+alter default privileges in schema public grant all on tables to anon;
+
 -- ---- 027 が追加で有効化した RLS を元に戻す ----
 -- 026 のスナップショットで rls_enabled = false だったテーブルのみ無効化する。
 do $$
